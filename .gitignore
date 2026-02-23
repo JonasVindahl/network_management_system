@@ -1,20 +1,43 @@
+# ==========================================
 # Maven
+# ==========================================
 target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-# Spring Boot
+# ==========================================
+# Spring Boot build artifacts
+# ==========================================
 *.jar
 *.war
 *.ear
+*.nar
 spring-shell.log
+
+# ==========================================
+# Java
+# ==========================================
+*.class
+hs_err_pid*
+replay_pid*
+
+# ==========================================
+# Test & Coverage
+# ==========================================
+jacoco.exec
+.jacoco/
+
+# ==========================================
+# IDEs
+# ==========================================
 
 # IntelliJ IDEA
 .idea/
 *.iws
 *.iml
 *.ipr
+out/
 
 # Eclipse
 .apt_generated
@@ -24,25 +47,60 @@ spring-shell.log
 .settings
 .springBeans
 .sts4-cache
+bin/
+
+# NetBeans
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
 
 # VS Code
 .vscode/
 
+# ==========================================
 # Environment & Secrets
+# ==========================================
 .env
 .env.*
 application-local.properties
 application-local.yml
 **/src/main/resources/application-secret*
 
+# ==========================================
 # OS
-.DS_Store
-Thumbs.db
+# ==========================================
 
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# ==========================================
+# Editor temp files
+# ==========================================
+*.swp
+*.swo
+*.orig
+*.bak
+
+# ==========================================
 # Logs
+# ==========================================
 logs/
 *.log
 
+# ==========================================
 # PostgreSQL / DB dumps
+# ==========================================
 *.sql.bak
 *.dump
