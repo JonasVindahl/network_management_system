@@ -1,4 +1,5 @@
 package dk.aau.network_management_system.noticeboard;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -22,6 +23,6 @@ public interface NoticeRepository extends JpaRepository<Notice, Long> {
     @Query("SELECT n FROM Notice n WHERE n.priority = :priority AND n.expiresAt > :now")
     List<Notice> findByPriority(@Param("priority") PriorityLevel priority, @Param("now") Instant now);
 
-    // Get all notices by sender
+    // Get all notices by creator
     List<Notice> findByCreatedBy(Long createdBy);
 }

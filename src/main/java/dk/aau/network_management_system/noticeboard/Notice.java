@@ -8,47 +8,47 @@ import java.time.Instant;
 public class Notice {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // bigserial → IDENTITY
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "notice_id")
-    private Long noticeId;                              // Long, ikke String
-
+    private Long noticeId;
 
     @Column(nullable = false)
     private String title;
 
     @Column(nullable = false, columnDefinition = "TEXT", name = "content")
-    private String content;         
+    private String content;
 
     @Column(name = "created_at")
-    private Instant createdAt;                          // timestamp, ikke long
+    private Instant createdAt;
 
     @Column(name = "last_updated")
-    private Instant lastUpdated;                        // timestamp, ikke long
+    private Instant lastUpdated;
 
-    @Enumerated(EnumType.ORDINAL)                       // smallint → ORDINAL
+    @Enumerated(EnumType.ORDINAL)
     @Column(nullable = false)
     private PriorityLevel priority;
 
     @Column(name = "created_by", nullable = false)
-    private Long createdBy;                             // bigint FK, ikke String
+    private Long createdBy;
 
     @Column(name = "expires_at")
-    private Instant expiresAt;                          // direkte timestamp i stedet for timeAlive
+    private Instant expiresAt;
 
+    // null = visible to all cooperatives
     @Column(name = "cooperative_id")
-    private Long cooperativeId;                         // bigint, ikke String
+    private Long cooperativeId;
 
     public Notice() {
         this.createdAt = Instant.now();
         this.lastUpdated = this.createdAt;
     }
 
-    public Notice(String title, String message, PriorityLevel priority, Long senderId, Instant timeAlive, Long cooperativeId) {
+    public Notice(String title, String content, PriorityLevel priority, Long createdBy, Instant expiresAt, Long cooperativeId) {
         this.title = title;
-        this.content = message;
+        this.content = content;
         this.priority = priority;
-        this.createdBy = senderId;
-        this.expiresAt = timeAlive;
+        this.createdBy = createdBy;
+        this.expiresAt = expiresAt;
         this.cooperativeId = cooperativeId;
         this.createdAt = Instant.now();
         this.lastUpdated = this.createdAt;
@@ -61,28 +61,28 @@ public class Notice {
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
 
-    public String getMessage() { return content; }
-    public void setMessage(String message) { this.content = message; }
+    public String getContent() { return content; }
+    public void setContent(String content) { this.content = content; }
 
-    public Instant getDateAdded() { return createdAt; }
-    public void setDateAdded(Instant dateAdded) { this.createdAt = dateAdded; }
+    public Instant getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
 
-    public Instant getModifiedDate() { return lastUpdated; }
-    public void setModifiedDate(Instant modifiedDate) { this.lastUpdated = modifiedDate; }
+    public Instant getLastUpdated() { return lastUpdated; }
+    public void setLastUpdated(Instant lastUpdated) { this.lastUpdated = lastUpdated; }
 
     public PriorityLevel getPriority() { return priority; }
     public void setPriority(PriorityLevel priority) { this.priority = priority; }
 
-    public Long getSenderId() { return createdBy; }
-    public void setSenderId(Long senderId) { this.createdBy = senderId; }
+    public Long getCreatedBy() { return createdBy; }
+    public void setCreatedBy(Long createdBy) { this.createdBy = createdBy; }
 
-    public Instant getTimeAlive() { return expiresAt; }
-    public void setTimeAlive(Instant timeAlive) { this.expiresAt = timeAlive; }
+    public Instant getExpiresAt() { return expiresAt; }
+    public void setExpiresAt(Instant expiresAt) { this.expiresAt = expiresAt; }
 
     public Long getCooperativeId() { return cooperativeId; }
     public void setCooperativeId(Long cooperativeId) { this.cooperativeId = cooperativeId; }
 
     public boolean isExpired() {
-        return Instant.now().isAfter(expiresAt);
+        return expiresAt != null && Instant.now().isAfter(expiresAt);
     }
 }

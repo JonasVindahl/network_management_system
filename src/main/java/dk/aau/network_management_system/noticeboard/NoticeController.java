@@ -1,4 +1,5 @@
 package dk.aau.network_management_system.noticeboard;
+
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -26,7 +27,7 @@ public class NoticeController {
     }
 
     // GET notices for a specific cooperative (includes global notices)
-    @GetMapping("/cooperative/{cooperativeId}") //http.[..]/api/cooperative/{id} //http.[..]/api/cooperative?id={id}
+    @GetMapping("/cooperative/{cooperativeId}")
     public ResponseEntity<List<Notice>> getNoticesForCooperative(@PathVariable Long cooperativeId) {
         List<Notice> notices = noticeService.getNoticesForCooperative(cooperativeId);
         return ResponseEntity.ok(notices);
@@ -59,7 +60,7 @@ public class NoticeController {
     public ResponseEntity<Notice> updateNotice(
             @PathVariable Long noticeId,
             @RequestBody NoticeDTO dto) {
-        return noticeService.modifyNotice(noticeId, dto.getTitle(), dto.getMessage())
+        return noticeService.modifyNotice(noticeId, dto.getTitle(), dto.getContent())
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

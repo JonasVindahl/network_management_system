@@ -16,8 +16,8 @@ public class NoticeService {
         this.noticeRepository = noticeRepository;
     }
 
-    // GET - get notices for a cooperative (includes global notices)
-    public List<Notice> getNotice(String title, String message, long dateAdded, String senderId, long timeAlive) {
+    // GET - get all active notices (non-expired)
+    public List<Notice> getAllNotices() {
         return noticeRepository.findAll().stream()
                 .filter(n -> !n.isExpired())
                 .toList();
@@ -43,23 +43,23 @@ public class NoticeService {
         return noticeRepository.findByPriority(priority, Instant.now());
     }
 
- // POST - create a new notice
+    // POST - create a new notice
     public Notice createNotice(String title, String content, PriorityLevel priority, Long createdBy, Instant expiresAt, Long cooperativeId) {
         Notice notice = new Notice(title, content, priority, createdBy, expiresAt, cooperativeId);
         return noticeRepository.save(notice);
     }
 
     public Notice createNotice(NoticeDTO dto) {
-        return createNotice(dto.getTitle(), dto.getMessage(), dto.getPriority(), dto.getSenderId(), dto.getTimeAlive(), dto.getCooperativeId());
+        return createNotice(dto.getTitle(), dto.getContent(), dto.getPriority(), dto.getCreatedBy(), dto.getExpiresAt(), dto.getCooperativeId());
     }
 
 
     // PUT - modify an existing notice
-    public Optional<Notice> modifyNotice(Long noticeId, String title, String message) {
+    public Optional<Notice> modifyNotice(Long noticeId, String title, String content) {
         return noticeRepository.findById(noticeId).map(notice -> {
             if (title != null && !title.isBlank()) notice.setTitle(title);
-            if (message != null && !message.isBlank()) notice.setMessage(message);
-            notice.setModifiedDate(Instant.now());
+            if (content != null && !content.isBlank()) notice.setContent(content);
+            notice.setLastUpdated(Instant.now());
             return noticeRepository.save(notice);
         });
     }

@@ -1,4 +1,6 @@
 package dk.aau.network_management_system.noticeboard;
+
+import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -9,16 +11,17 @@ public class NoticeDTO {
     @NotBlank(message = "Title is required")
     private String title;
 
-    @NotBlank(message = "Message is required")
-    private String message;
+    @NotBlank(message = "Content is required")
+    private String content;
 
     @NotNull(message = "Priority is required")
     private PriorityLevel priority;
 
-    @NotNull(message = "Sender ID is required")
-    private Long senderId;
+    @NotNull(message = "Creator ID is required")
+    private Long createdBy;
 
     @NotNull(message = "Expiry time is required")
+    @Future(message = "Expiry time must be in the future")
     private Instant expiresAt;
 
     // null = visible to all cooperatives
@@ -29,17 +32,17 @@ public class NoticeDTO {
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
 
-    public String getMessage() { return message; }
-    public void setMessage(String message) { this.message = message; }
+    public String getContent() { return content; }
+    public void setContent(String content) { this.content = content; }
 
     public PriorityLevel getPriority() { return priority; }
     public void setPriority(PriorityLevel priority) { this.priority = priority; }
 
-    public Long getSenderId() { return senderId; }
-    public void setSenderId(Long senderId) { this.senderId = senderId; }
+    public Long getCreatedBy() { return createdBy; }
+    public void setCreatedBy(Long createdBy) { this.createdBy = createdBy; }
 
-    public Instant getTimeAlive() { return expiresAt; }
-    public void setTimeAlive(Instant expiresAt) { this.expiresAt = expiresAt; }
+    public Instant getExpiresAt() { return expiresAt; }
+    public void setExpiresAt(Instant expiresAt) { this.expiresAt = expiresAt; }
 
     public Long getCooperativeId() { return cooperativeId; }
     public void setCooperativeId(Long cooperativeId) { this.cooperativeId = cooperativeId; }
