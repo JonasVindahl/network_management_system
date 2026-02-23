@@ -53,6 +53,7 @@ public class NoticeService {
         return createNotice(dto.getTitle(), dto.getContent(), dto.getPriority(), dto.getCreatedBy(), dto.getExpiresAt(), dto.getCooperativeId());
     }
 
+
     // PUT - modify an existing notice
     public Optional<Notice> modifyNotice(Long noticeId, String title, String content) {
         return noticeRepository.findById(noticeId).map(notice -> {
