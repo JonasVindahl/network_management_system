@@ -6,8 +6,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import org.springframework.http.HttpStatus;
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.*;
+
 
 
 // Selve REST API delen
@@ -20,24 +24,23 @@ public class CooperativeMaterialMultiplierController {
     
     // bruges til at oprette/opdatere data
     @PostMapping
-    // 
     public ResponseEntity<CooperativeMaterialMultiplier> saveOrUpdateMultiplier(
-            @RequestBody MultiplierDTO dto) {
+            @Valid @RequestBody MultiplierDTO dto) {
         // når der modtages et post requesten konvertes det til dto objekt 
         CooperativeMaterialMultiplier result = service.saveOrUpdateMultiplier(
             dto.getCooperativeId(), 
             dto.getMaterialId(), 
             dto.getMultiplierValue()
         );
-        return ResponseEntity.ok(result);
+        return ResponseEntity.status(HttpStatus.CREATED).body(result);
+
     }
     
     // her er en get request til at hente data 
-    @GetMapping
+    @GetMapping("/cooperative/{cooperativeId}/material/{materialId}")
     public ResponseEntity<CooperativeMaterialMultiplier> getMultiplier(
-        //nok kun admin der skal kunne hente cooperativeid
-            @RequestParam Long cooperativeId,
-            @RequestParam Long materialId) {
+            @PathVariable Long cooperativeId,
+            @PathVariable Long materialId) {
         return service.getMultiplier(cooperativeId, materialId)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());

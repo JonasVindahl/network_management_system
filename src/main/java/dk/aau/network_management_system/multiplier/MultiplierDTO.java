@@ -1,6 +1,6 @@
 package dk.aau.network_management_system.multiplier;
 
-// gør at klienten kun kan sende de nederse 3 
+
 // skal ændres til kun at være material og muliplier 
 // cooperative id skal vi gerne have fra man logger ind
 public class MultiplierDTO {
