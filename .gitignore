@@ -1,0 +1,48 @@
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# Spring Boot
+*.jar
+*.war
+*.ear
+spring-shell.log
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# Eclipse
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+# VS Code
+.vscode/
+
+# Environment & Secrets
+.env
+.env.*
+application-local.properties
+application-local.yml
+**/src/main/resources/application-secret*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# PostgreSQL / DB dumps
+*.sql.bak
+*.dump
