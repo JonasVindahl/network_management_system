@@ -1,4 +1,4 @@
-package dk.aau.network_management_system;
+package dk.aau.network_management_system.multiplier;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
