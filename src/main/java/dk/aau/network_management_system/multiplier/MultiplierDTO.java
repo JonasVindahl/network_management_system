@@ -1,4 +1,4 @@
-package dk.aau.network_management_system;
+package dk.aau.network_management_system.multiplier;
 
 // gør at klienten kun kan sende de nederse 3 
 // skal ændres til kun at være material og muliplier 

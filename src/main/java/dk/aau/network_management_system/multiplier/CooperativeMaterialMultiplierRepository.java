@@ -1,4 +1,4 @@
-package dk.aau.network_management_system;
+package dk.aau.network_management_system.multiplier;
 
 import java.util.List;
 import java.util.Optional;
