@@ -2,6 +2,8 @@ package dk.aau.network_management_system.noticeboard;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
+import java.time.Instant;
+
 public class NoticeDTO {
 
     @NotBlank(message = "Title is required")
@@ -13,14 +15,14 @@ public class NoticeDTO {
     @NotNull(message = "Priority is required")
     private PriorityLevel priority;
 
-    @NotBlank(message = "Sender ID is required")
-    private String senderId;
+    @NotNull(message = "Sender ID is required")
+    private Long senderId;
 
-    @NotNull(message = "Time alive is required")
-    private long timeAlive;
+    @NotNull(message = "Expiry time is required")
+    private Instant expiresAt;
 
     // null = visible to all cooperatives
-    private String cooperativeId;
+    private Long cooperativeId;
 
     public NoticeDTO() {}
 
@@ -33,12 +35,12 @@ public class NoticeDTO {
     public PriorityLevel getPriority() { return priority; }
     public void setPriority(PriorityLevel priority) { this.priority = priority; }
 
-    public String getSenderId() { return senderId; }
-    public void setSenderId(String senderId) { this.senderId = senderId; }
+    public Long getSenderId() { return senderId; }
+    public void setSenderId(Long senderId) { this.senderId = senderId; }
 
-    public long getTimeAlive() { return timeAlive; }
-    public void setTimeAlive(long timeAlive) { this.timeAlive = timeAlive; }
+    public Instant getTimeAlive() { return expiresAt; }
+    public void setTimeAlive(Instant expiresAt) { this.expiresAt = expiresAt; }
 
-    public String getCooperativeId() { return cooperativeId; }
-    public void setCooperativeId(String cooperativeId) { this.cooperativeId = cooperativeId; }
+    public Long getCooperativeId() { return cooperativeId; }
+    public void setCooperativeId(Long cooperativeId) { this.cooperativeId = cooperativeId; }
 }

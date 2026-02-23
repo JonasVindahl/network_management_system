@@ -24,31 +24,28 @@ public class NoticeService {
     }
 
     // GET - get all active notices for a specific cooperative
-    public List<Notice> getNoticesForCooperative(String cooperativeId) {
-        long now = Instant.now().toEpochMilli();
-        return noticeRepository.findActiveNoticesForCooperative(cooperativeId, now);
+    public List<Notice> getNoticesForCooperative(Long cooperativeId) {
+        return noticeRepository.findActiveNoticesForCooperative(cooperativeId, Instant.now());
     }
 
     // GET - get all active global notices
     public List<Notice> getAllActiveNotices() {
-        long now = Instant.now().toEpochMilli();
-        return noticeRepository.findActiveGlobalNotices(now);
+        return noticeRepository.findActiveGlobalNotices(Instant.now());
     }
 
     // GET - get single notice by ID
-    public Optional<Notice> getNoticeById(String noticeId) {
+    public Optional<Notice> getNoticeById(Long noticeId) {
         return noticeRepository.findById(noticeId);
     }
 
     // GET - get notices filtered by priority
     public List<Notice> getNoticesByPriority(PriorityLevel priority) {
-        long now = Instant.now().toEpochMilli();
-        return noticeRepository.findByPriority(priority, now);
+        return noticeRepository.findByPriority(priority, Instant.now());
     }
 
-    // POST - create a new notice
-    public Notice createNotice(String title, String message, PriorityLevel priority, String senderId, long timeAlive, String cooperativeId) {
-        Notice notice = new Notice(title, message, priority, senderId, timeAlive, cooperativeId);
+ // POST - create a new notice
+    public Notice createNotice(String title, String content, PriorityLevel priority, Long createdBy, Instant expiresAt, Long cooperativeId) {
+        Notice notice = new Notice(title, content, priority, createdBy, expiresAt, cooperativeId);
         return noticeRepository.save(notice);
     }
 
@@ -56,18 +53,19 @@ public class NoticeService {
         return createNotice(dto.getTitle(), dto.getMessage(), dto.getPriority(), dto.getSenderId(), dto.getTimeAlive(), dto.getCooperativeId());
     }
 
+
     // PUT - modify an existing notice
-    public Optional<Notice> modifyNotice(String noticeId, String title, String message) {
+    public Optional<Notice> modifyNotice(Long noticeId, String title, String message) {
         return noticeRepository.findById(noticeId).map(notice -> {
             if (title != null && !title.isBlank()) notice.setTitle(title);
             if (message != null && !message.isBlank()) notice.setMessage(message);
-            notice.setModifiedDate(Instant.now().toEpochMilli());
+            notice.setModifiedDate(Instant.now());
             return noticeRepository.save(notice);
         });
     }
 
     // DELETE - remove a notice
-    public boolean deleteNotice(String noticeId) {
+    public boolean deleteNotice(Long noticeId) {
         if (noticeRepository.existsById(noticeId)) {
             noticeRepository.deleteById(noticeId);
             return true;
