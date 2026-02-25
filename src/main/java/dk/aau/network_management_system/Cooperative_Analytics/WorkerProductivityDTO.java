@@ -7,7 +7,6 @@ public class WorkerProductivityDTO {
     private Long numberOfWeighings;
     private Double avgWeightPerWeighing;
     
-    // Constructor
     public WorkerProductivityDTO() {}
     
     public WorkerProductivityDTO(Long workerId, String workerName, 
