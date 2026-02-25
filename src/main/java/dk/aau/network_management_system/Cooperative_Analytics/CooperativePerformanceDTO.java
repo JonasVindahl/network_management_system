@@ -16,7 +16,7 @@ public class CooperativePerformanceDTO {
         this.activeWorkers = activeWorkers;
     }
     
-    // Getters and Setters
+    // Getters and setters
     public Double getTotalCollected() { return totalCollected; }
     public void setTotalCollected(Double totalCollected) { 
         this.totalCollected = totalCollected; 

@@ -12,7 +12,7 @@ import org.springframework.stereotype.Repository;
 public interface AnalyticsRepository extends JpaRepository<CooperativeEntity, Long> {
     
 
-    //Henter cooperatives info ift samlet, solgt, stock
+    //Cooperatives overview info
     @Query(value = """
         SELECT 
             COALESCE(SUM(s.total_collected_kg), 0) as total_collected,
@@ -73,7 +73,7 @@ public interface AnalyticsRepository extends JpaRepository<CooperativeEntity, Lo
     );
 
     
-    // Stock per material
+    //Stock per material/ sold pr material 
     @Query(value = """
         SELECT 
             mat.material_name as materialName,
@@ -89,6 +89,8 @@ public interface AnalyticsRepository extends JpaRepository<CooperativeEntity, Lo
         @Param("cooperativeId") Long cooperativeId
     );
  
+
+    //revenue for cooperative
     @Query(value = """
     SELECT 
         COALESCE(SUM(sa.weight * sa.price_kg), 0) as totalRevenue,

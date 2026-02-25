@@ -37,7 +37,7 @@ public class AnalyticsService {
     }
 
 
-    // GET - Worker productivity
+    //GET - Worker productivity
     public List<WorkerProductivityDTO> getWorkerProductivity(
             Long cooperativeId, Long workerId, LocalDateTime startDate, LocalDateTime endDate) {
         
@@ -57,6 +57,7 @@ public class AnalyticsService {
     }
 
 
+    //GET - Stock for material and sold
     public List<StockByMaterialDTO>  getStockByMaterial(Long cooperativeId){
         
         List<Object[]> stock = repository.getStockByMaterial(cooperativeId);
@@ -72,7 +73,7 @@ public class AnalyticsService {
     }
 
 
-
+    //GET - revenue for cooperative and sales + average kg price 
     public List<RevenueDTO> getRevenue(
         Long cooperativeId, LocalDateTime startDate, LocalDateTime endDate){
             

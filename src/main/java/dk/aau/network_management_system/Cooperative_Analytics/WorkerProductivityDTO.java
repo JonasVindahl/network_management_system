@@ -19,7 +19,7 @@ public class WorkerProductivityDTO {
         this.avgWeightPerWeighing = avgWeightPerWeighing;
     }
     
-    // Getters and Setters
+    //Getters and Setters
     public Long getWorkerId() { return workerId; }
     public void setWorkerId(Long workerId) { this.workerId = workerId; }
     

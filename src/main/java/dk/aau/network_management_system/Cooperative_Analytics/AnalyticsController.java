@@ -26,7 +26,7 @@ public class AnalyticsController {
     }
 
 
-    // GET cooperative performance overview
+    //GET - Cooperative performance overview
     @GetMapping("/{cooperativeId}/performance")
     public ResponseEntity<CooperativePerformanceDTO> getPerformance(
             @PathVariable Long cooperativeId) {
@@ -36,7 +36,7 @@ public class AnalyticsController {
     }
 
 
-     // GET all worker productivity in cooperative
+     //GET - All worker productivity in cooperative
     @GetMapping("/{cooperativeId}/workers/productivity")
     public ResponseEntity<List<WorkerProductivityDTO>> getAllWorkerProductivity(
             @PathVariable Long cooperativeId,
@@ -50,7 +50,7 @@ public class AnalyticsController {
     }
 
 
-     // GET specific worker productivity
+     //GET - Specific worker productivity
     @GetMapping("/{cooperativeId}/workers/{workerId}/productivity")
     public ResponseEntity<List<WorkerProductivityDTO>> getWorkerProductivity(
             @PathVariable Long cooperativeId,
@@ -65,7 +65,7 @@ public class AnalyticsController {
     }
 
 
-    // GET coopertiv stock hvor hvert item viser også solg collected 
+    //GET - Coopertiv stock - Sold, Material, colleted...
     @GetMapping("/{cooperativeId}/stock")
     public ResponseEntity<List<StockByMaterialDTO>> getStockByMaterial(
             @PathVariable Long cooperativeId
@@ -76,7 +76,7 @@ public class AnalyticsController {
     }
 
     // GET cooperative revenue and sales + averge priceperkg
-    //<EKSEMPEL> curl -X GET "http://127.0.0.1:8080/api/cooperative/analytics/1/revenue?startDate=2025-11-01T00:00:00&endDate=2025-11-30T23:59:59"
+    //<FX> curl -X GET "http://127.0.0.1:8080/api/cooperative/analytics/1/revenue?startDate=2025-11-01T00:00:00&endDate=2025-11-30T23:59:59"
     @GetMapping("/{cooperativeId}/revenue")
         public ResponseEntity<List<RevenueDTO>> getRevenue(
                 @PathVariable Long cooperativeId,

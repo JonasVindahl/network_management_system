@@ -13,7 +13,7 @@ public class RevenueDTO {
         this.avgPricePerKg = avgPricePerKg;
     }
     
-    // Getters and Setters
+    //Getters and Setters
     public Double getTotalRevenue() { return totalRevenue; }
     public void setTotalRevenue(Double totalRevenue) { 
         this.totalRevenue = totalRevenue; 
