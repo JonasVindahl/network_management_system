@@ -194,6 +194,27 @@ new BCryptPasswordEncoder().encode("plaintextPassword");
 
 ---
 
+## Testing API Calls
+
+The project includes a built-in browser-based API tester available at:
+
+```
+http://localhost:8080/test.html
+```
+
+Since all endpoints are protected by JWT by default, `test.html` provides a convenient way to test API calls without using curl or Postman. It lets you:
+
+1. **Login once** — enter CPF and password, click "Login & Save Token"
+2. **Token is saved** to `localStorage` automatically — survives page refreshes
+3. **Call any endpoint** — the token is attached automatically to every request
+4. **See the response** — displayed as formatted JSON
+
+The token status bar shows the logged-in CPF, role, and expiry time at a glance.
+
+> `test.html` is permitted without authentication in `SecurityConfig` and is intended for **development use only** — remove or restrict it before deploying to production.
+
+---
+
 ## Notes
 
 - CPF, PIS, RG, and password are stored as `bytea` in PostgreSQL — Java handles encoding/decoding using `UTF-8`
