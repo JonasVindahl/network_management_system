@@ -40,9 +40,16 @@ public class AnalyticsController {
     @GetMapping("/{cooperativeId}/workers/productivity")
     public ResponseEntity<List<WorkerProductivityDTO>> getAllWorkerProductivity(
             @PathVariable Long cooperativeId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
-        
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+    
+            // Sæt defaults hvis null
+            if (startDate == null) {
+                startDate = LocalDateTime.now().minusMonths(1); // f.eks. sidste måned
+            }
+            if (endDate == null) {
+                endDate = LocalDateTime.now();
+            }
         List<WorkerProductivityDTO> result = service.getAllWorkerProductivity(
             cooperativeId, startDate, endDate
         );
@@ -55,9 +62,16 @@ public class AnalyticsController {
     public ResponseEntity<List<WorkerProductivityDTO>> getWorkerProductivity(
             @PathVariable Long cooperativeId,
             @PathVariable Long workerId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
-        
+                 @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+    
+        // Sæt defaults hvis null
+            if (startDate == null) {
+                startDate = LocalDateTime.now().minusMonths(1); // f.eks. sidste måned
+            }
+            if (endDate == null) {
+                endDate = LocalDateTime.now();
+            }
         List<WorkerProductivityDTO> result = service.getWorkerProductivity(
             cooperativeId, workerId, startDate, endDate
         );
@@ -80,9 +94,16 @@ public class AnalyticsController {
     @GetMapping("/{cooperativeId}/revenue")
         public ResponseEntity<List<RevenueDTO>> getRevenue(
                 @PathVariable Long cooperativeId,
-                @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
-                @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
-            
+                @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+                @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+    
+            // Sæt defaults hvis null
+                if (startDate == null) {
+                    startDate = LocalDateTime.now().minusMonths(12); // f.eks. sidste måned
+                }
+                if (endDate == null) {
+                    endDate = LocalDateTime.now();
+                }
             List<RevenueDTO> result = service.getRevenue(cooperativeId, startDate, endDate);
             return ResponseEntity.ok(result);
     }
