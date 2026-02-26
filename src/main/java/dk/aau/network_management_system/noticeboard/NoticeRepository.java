@@ -21,7 +21,7 @@ public interface NoticeRepository extends JpaRepository<Notice, Long> {
 
     // Get notices by priority
     // Get notices by priority
-    @Query(value = "SELECT * FROM notice_board WHERE priority = CAST(:priority AS VARCHAR) AND expires_at > NOW()", nativeQuery = true)
+    @Query(value = "SELECT * FROM notice_board WHERE priority = :priority AND expires_at > NOW()", nativeQuery = true)
     List<Notice> findByPriority(@Param("priority") int priority);
 
     // Get all notices by creator
