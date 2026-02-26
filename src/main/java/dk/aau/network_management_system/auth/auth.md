@@ -196,22 +196,20 @@ new BCryptPasswordEncoder().encode("plaintextPassword");
 
 ## Testing API Calls
 
-The project includes a built-in browser-based API tester available at:
+Da systemet bruger JWT-baseret authentication, kræver alle API kald et gyldigt token. Den nemmeste måde at teste endpoints på under udvikling er via den indbyggede API tester:
 
-```
-http://localhost:8080/test.html
-```
+**`http://localhost:8080/test.html`**
 
-Since all endpoints are protected by JWT by default, `test.html` provides a convenient way to test API calls without using curl or Postman. It lets you:
+Log ind én gang — tokenet gemmes automatisk (i 24 timer) og bliver brugt til alle efterfølgende requests.
 
-1. **Login once** — enter CPF and password, click "Login & Save Token"
-2. **Token is saved** to `localStorage` automatically — survives page refreshes
-3. **Call any endpoint** — the token is attached automatically to every request
-4. **See the response** — displayed as formatted JSON
+**Test konti:**
 
-The token status bar shows the logged-in CPF, role, and expiry time at a glance.
+| Rolle  | CPF            | Password   |
+|--------|----------------|------------|
+| Worker | `testcpf123`   | `password` |
+| Admin  | `admintest123` | `password` |
 
-> `test.html` is permitted without authentication in `SecurityConfig` and is intended for **development use only** — remove or restrict it before deploying to production.
+> `test.html` er kun til udviklingsbrug — fjern eller begræns adgangen før deployment til produktion.
 
 ---
 
