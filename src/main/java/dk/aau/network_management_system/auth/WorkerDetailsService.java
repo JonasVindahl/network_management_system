@@ -43,7 +43,8 @@ public class WorkerDetailsService implements UserDetailsService {
                 .roles(userType.trim())
                 .build();
     }
-    public Map<String, Object> loadWorkerClaims(String cpf) {
+   
+   /*  public Map<String, Object> loadWorkerClaims(String cpf) {
         String sql = "SELECT worker_id, cooperative, user_type FROM public.workers WHERE cpf = ?";
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql,
                 cpf.getBytes(java.nio.charset.StandardCharsets.UTF_8));
@@ -53,7 +54,7 @@ public class WorkerDetailsService implements UserDetailsService {
         return rows.get(0);
     }
 
-
+*/
         public WorkerInfo getWorkerInfo(String cpf) {
         String sql = "SELECT worker_id, cooperative, user_type FROM public.workers WHERE cpf = ?";
         
