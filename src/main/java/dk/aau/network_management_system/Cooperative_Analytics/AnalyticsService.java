@@ -7,15 +7,20 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import dk.aau.network_management_system.auth.AuthenticatedUser;
+
 @Service
 public class AnalyticsService {
-    
+        
     private final AnalyticsRepository repository;
+    private final AuthenticatedUser authenticatedUser;
 
     @Autowired
-    public AnalyticsService(AnalyticsRepository repository){
-        this.repository = repository;
-    }
+        public AnalyticsService(AnalyticsRepository repository, AuthenticatedUser authenticatedUser){
+            this.repository = repository;
+            this.authenticatedUser = authenticatedUser;
+        }
+
 
     // GET - ALL Worker productivity
     public List<WorkerProductivityDTO> getAllWorkerProductivity(
