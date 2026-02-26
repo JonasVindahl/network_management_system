@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 
 @RestController
-@RequestMapping("/api/cooperative/analytics")
+@RequestMapping("/api")
 public class AnalyticsController {
 
     private final AnalyticsService service;
@@ -27,7 +27,7 @@ public class AnalyticsController {
 
 
     //GET - Cooperative performance overview
-    @GetMapping("/{cooperativeId}/performance")
+    @GetMapping("/performance")
     public ResponseEntity<CooperativePerformanceDTO> getPerformance(
             @PathVariable Long cooperativeId) {
         
@@ -37,7 +37,7 @@ public class AnalyticsController {
 
 
      //GET - All worker productivity in cooperative
-    @GetMapping("/{cooperativeId}/workers/productivity")
+    @GetMapping("/workers/productivity")
     public ResponseEntity<List<WorkerProductivityDTO>> getAllWorkerProductivity(
             @PathVariable Long cooperativeId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
@@ -58,7 +58,7 @@ public class AnalyticsController {
 
 
      //GET - Specific worker productivity
-    @GetMapping("/{cooperativeId}/workers/{workerId}/productivity")
+    @GetMapping("/workers/{workerId}/productivity")
     public ResponseEntity<List<WorkerProductivityDTO>> getWorkerProductivity(
             @PathVariable Long cooperativeId,
             @PathVariable Long workerId,
@@ -80,7 +80,7 @@ public class AnalyticsController {
 
 
     //GET - Coopertiv stock - Sold, Material, colleted...
-    @GetMapping("/{cooperativeId}/stock")
+    @GetMapping("/stock")
     public ResponseEntity<List<StockByMaterialDTO>> getStockByMaterial(
             @PathVariable Long cooperativeId
     ){
@@ -91,7 +91,7 @@ public class AnalyticsController {
 
     // GET cooperative revenue and sales + averge priceperkg
     //<FX> curl -X GET "http://127.0.0.1:8080/api/cooperative/analytics/1/revenue?startDate=2025-11-01T00:00:00&endDate=2025-11-30T23:59:59"
-    @GetMapping("/{cooperativeId}/revenue")
+    @GetMapping("/revenue")
         public ResponseEntity<List<RevenueDTO>> getRevenue(
                 @PathVariable Long cooperativeId,
                 @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
