@@ -1,10 +1,10 @@
 package dk.aau.network_management_system.noticeboard;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 @Service
 public class NoticeService {
@@ -39,12 +39,12 @@ public class NoticeService {
     }
 
     // GET - get notices filtered by priority
-    public List<Notice> getNoticesByPriority(PriorityLevel priority) {
-        return noticeRepository.findByPriority(priority, Instant.now());
+    public List<Notice> getNoticesByPriority(int priority) {
+        return noticeRepository.findByPriority(priority);  // Kun én parameter
     }
 
     // POST - create a new notice
-    public Notice createNotice(String title, String content, PriorityLevel priority, Long createdBy, Instant expiresAt, Long cooperativeId) {
+    public Notice createNotice(String title, String content, int priority, Long createdBy, Instant expiresAt, Long cooperativeId) {
         Notice notice = new Notice(title, content, priority, createdBy, expiresAt, cooperativeId);
         return noticeRepository.save(notice);
     }
@@ -54,7 +54,7 @@ public class NoticeService {
     }
 
 
-    // PUT - modify an existing notice
+    /* // PUT - modify an existing notice
     public Optional<Notice> modifyNotice(Long noticeId, String title, String content) {
         return noticeRepository.findById(noticeId).map(notice -> {
             if (title != null && !title.isBlank()) notice.setTitle(title);
@@ -62,7 +62,19 @@ public class NoticeService {
             notice.setLastUpdated(Instant.now());
             return noticeRepository.save(notice);
         });
-    }
+    } */
+
+      public Optional<Notice> modifyNotice(Long noticeId, NoticeDTO dto) {
+    return noticeRepository.findById(noticeId).map(notice -> {
+        if (dto.getTitle() != null && !dto.getTitle().isBlank()) notice.setTitle(dto.getTitle());
+        if (dto.getContent() != null && !dto.getContent().isBlank()) notice.setContent(dto.getContent());
+        if (dto.getPriority() != null) notice.setPriority(dto.getPriority());
+        if (dto.getExpiresAt() != null) notice.setExpiresAt(dto.getExpiresAt());
+        if (dto.getCooperativeId() != null) notice.setCooperativeId(dto.getCooperativeId());
+        notice.setLastUpdated(Instant.now());
+        return noticeRepository.save(notice);
+    });
+} 
 
     // DELETE - remove a notice
     public boolean deleteNotice(Long noticeId) {

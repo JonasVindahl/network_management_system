@@ -1,10 +1,12 @@
 package dk.aau.network_management_system.noticeboard;
 
+import java.time.Instant;
+
 import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-
-import java.time.Instant;
 
 public class NoticeDTO {
 
@@ -15,7 +17,9 @@ public class NoticeDTO {
     private String content;
 
     @NotNull(message = "Priority is required")
-    private PriorityLevel priority;
+    @Min(value = 1, message = "Priority must be between 1 and 3")
+    @Max(value = 3, message = "Priority must be between 1 and 3")
+    private Integer priority;  // Ændret til Integer
 
     @NotNull(message = "Creator ID is required")
     private Long createdBy;
@@ -24,7 +28,6 @@ public class NoticeDTO {
     @Future(message = "Expiry time must be in the future")
     private Instant expiresAt;
 
-    // null = visible to all cooperatives
     private Long cooperativeId;
 
     public NoticeDTO() {}
@@ -35,8 +38,8 @@ public class NoticeDTO {
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }
 
-    public PriorityLevel getPriority() { return priority; }
-    public void setPriority(PriorityLevel priority) { this.priority = priority; }
+    public Integer getPriority() { return priority; }
+    public void setPriority(Integer priority) { this.priority = priority; }
 
     public Long getCreatedBy() { return createdBy; }
     public void setCreatedBy(Long createdBy) { this.createdBy = createdBy; }
