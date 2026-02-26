@@ -26,14 +26,16 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
     }
 
-    public String generateToken(String cpf, String role) {
+    public String generateToken(String cpf, String role, Long workerId, Long cooperativeId) {
         return Jwts.builder()
-                .subject(cpf)
-                .claim("role", role)
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSigningKey())
-                .compact();
+            .subject(cpf)
+            .claim("role", role)
+            .claim("workerId", workerId)
+            .claim("cooperativeId", cooperativeId)
+            .issuedAt(new Date())
+            .expiration(new Date(System.currentTimeMillis() + expiration))
+            .signWith(getSigningKey())
+            .compact();
     }
 
     public String extractCpf(String token) {

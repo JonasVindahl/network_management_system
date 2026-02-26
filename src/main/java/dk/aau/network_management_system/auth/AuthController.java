@@ -1,5 +1,7 @@
 package dk.aau.network_management_system.auth;
 
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -26,13 +28,17 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest request) {
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getCpf(), request.getPassword()));
+            new UsernamePasswordAuthenticationToken(request.getCpf(), request.getPassword()));
 
         UserDetails userDetails = workerDetailsService.loadUserByUsername(request.getCpf());
+        Map<String, Object> claims = workerDetailsService.loadWorkerClaims(request.getCpf());
+
         String role = userDetails.getAuthorities().iterator().next().getAuthority()
                 .replace("ROLE_", "");
+        Long workerId = ((Number) claims.get("worker_id")).longValue();
+        Long cooperativeId = ((Number) claims.get("cooperative")).longValue();
 
-        String token = jwtUtil.generateToken(request.getCpf(), role);
+        String token = jwtUtil.generateToken(request.getCpf(), role, workerId, cooperativeId);
         return ResponseEntity.ok(new AuthResponse(token));
     }
 }

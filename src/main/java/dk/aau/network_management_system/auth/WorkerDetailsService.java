@@ -43,4 +43,13 @@ public class WorkerDetailsService implements UserDetailsService {
                 .roles(userType.trim())
                 .build();
     }
+    public Map<String, Object> loadWorkerClaims(String cpf) {
+        String sql = "SELECT worker_id, cooperative, user_type FROM public.workers WHERE cpf = ?";
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql,
+                cpf.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        if (rows.isEmpty()) {
+            throw new UsernameNotFoundException("Worker not found with CPF: " + cpf);
+        }
+        return rows.get(0);
+    }
 }
