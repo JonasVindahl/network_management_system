@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Tester</title>
+    <style>
+        body { font-family: monospace; padding: 20px; max-width: 800px; }
+        input, textarea { width: 100%; margin: 5px 0; padding: 5px; }
+        button { margin: 5px 5px 5px 0; padding: 8px 15px; cursor: pointer; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; white-space: pre-wrap; }
+        .token-status { padding: 5px; margin: 5px 0; }
+        .ok { background: #d4edda; }
+        .no { background: #f8d7da; }
+    </style>
+</head>
+<body>
+    <h2>API Tester</h2>
+
+    <h3>1. Login</h3>
+    <input id="cpf" placeholder="CPF" value="testcpf123" />
+    <input id="password" type="password" placeholder="Password" value="password" />
+    <button onclick="login()">Login & Save Token</button>
+    <div id="tokenStatus" class="token-status no">No token saved</div>
+
+    <h3>2. Call API</h3>
+    <input id="url" placeholder="URL e.g. /getTop3" value="/getTop3" />
+    <select id="method">
+        <option>GET</option>
+        <option>POST</option>
+        <option>PUT</option>
+        <option>DELETE</option>
+    </select>
+    <textarea id="body" placeholder='Request body (JSON) - leave empty for GET' rows="4"></textarea>
+    <button onclick="callApi()">Send Request</button>
+    <button onclick="clearToken()" style="background:#f8d7da">Clear Token</button>
+
+    <h3>Response</h3>
+    <pre id="response">-</pre>
+
+    <script>
+        const TOKEN_KEY = 'jwt_token';
+
+        function updateStatus() {
+            const token = localStorage.getItem(TOKEN_KEY);
+            const el = document.getElementById('tokenStatus');
+            if (token) {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                const exp = new Date(payload.exp * 1000).toLocaleString();
+                el.className = 'token-status ok';
+                el.textContent = `Token saved — CPF: ${payload.sub} | Role: ${payload.role} | Expires: ${exp}`;
+            } else {
+                el.className = 'token-status no';
+                el.textContent = 'No token saved';
+            }
+        }
+
+        async function login() {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    cpf: document.getElementById('cpf').value,
+                    password: document.getElementById('password').value
+                })
+            });
+            const data = await res.json();
+            if (data.token) {
+                localStorage.setItem(TOKEN_KEY, data.token);
+                updateStatus();
+                document.getElementById('response').textContent = 'Login successful — token saved!';
+            } else {
+                document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+            }
+        }
+
+        async function callApi() {
+            const token = localStorage.getItem(TOKEN_KEY);
+            const url = document.getElementById('url').value;
+            const method = document.getElementById('method').value;
+            const body = document.getElementById('body').value;
+
+            const options = {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token && { 'Authorization': `Bearer ${token}` })
+                },
+                ...(body && method !== 'GET' && { body })
+            };
+
+            const res = await fetch(url, options);
+            const text = await res.text();
+            try {
+                document.getElementById('response').textContent = 
+                    `${res.status} ${res.statusText}\n\n${JSON.stringify(JSON.parse(text), null, 2)}`;
+            } catch {
+                document.getElementById('response').textContent = `${res.status} ${res.statusText}\n\n${text}`;
+            }
+        }
+
+        function clearToken() {
+            localStorage.removeItem(TOKEN_KEY);
+            updateStatus();
+        }
+
+        updateStatus();
+    </script>
+</body>
+</html>
