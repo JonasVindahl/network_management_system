@@ -28,17 +28,23 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest request) {
         authenticationManager.authenticate(
-            new UsernamePasswordAuthenticationToken(request.getCpf(), request.getPassword()));
+                new UsernamePasswordAuthenticationToken(request.getCpf(), request.getPassword()));
 
         UserDetails userDetails = workerDetailsService.loadUserByUsername(request.getCpf());
-        Map<String, Object> claims = workerDetailsService.loadWorkerClaims(request.getCpf());
-
+        
+        // Hent cooperative_id og worker_id fra database
+        WorkerInfo workerInfo = workerDetailsService.getWorkerInfo(request.getCpf());
+        
         String role = userDetails.getAuthorities().iterator().next().getAuthority()
                 .replace("ROLE_", "");
-        Long workerId = ((Number) claims.get("worker_id")).longValue();
-        Long cooperativeId = ((Number) claims.get("cooperative")).longValue();
 
-        String token = jwtUtil.generateToken(request.getCpf(), role, workerId, cooperativeId);
+        String token = jwtUtil.generateToken(
+            request.getCpf(), 
+            role, 
+            workerInfo.getCooperativeId(),  
+            workerInfo.getWorkerId()        
+        );
+        
         return ResponseEntity.ok(new AuthResponse(token));
     }
 }

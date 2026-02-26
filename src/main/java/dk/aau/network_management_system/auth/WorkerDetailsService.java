@@ -52,4 +52,21 @@ public class WorkerDetailsService implements UserDetailsService {
         }
         return rows.get(0);
     }
+
+
+        public WorkerInfo getWorkerInfo(String cpf) {
+        String sql = "SELECT worker_id, cooperative, user_type FROM public.workers WHERE cpf = ?";
+        
+        Map<String, Object> row = jdbcTemplate.queryForMap(sql, 
+                cpf.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        
+        return new WorkerInfo(
+            ((Number) row.get("worker_id")).longValue(),
+            ((Number) row.get("cooperative")).longValue(),
+            ((String) row.get("user_type")).trim()
+        );
+    }
+
+
+
 }

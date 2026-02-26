@@ -38,6 +38,8 @@ public class JwtUtil {
             .compact();
     }
 
+
+
     public String extractCpf(String token) {
         return parseClaims(token).getSubject();
     }
@@ -45,6 +47,16 @@ public class JwtUtil {
     public String extractRole(String token) {
         return parseClaims(token).get("role", String.class);
     }
+
+    public Long extractCooperativeId(String token) {
+    return parseClaims(token).get("cooperativeId", Long.class);
+    }
+
+    public Long extractWorkerId(String token) {
+        return parseClaims(token).get("workerId", Long.class);
+    }
+
+
 
     public boolean isTokenValid(String token) {
         try {
