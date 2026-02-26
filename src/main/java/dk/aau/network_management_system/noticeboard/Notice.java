@@ -1,7 +1,13 @@
 package dk.aau.network_management_system.noticeboard;
 
-import jakarta.persistence.*;
 import java.time.Instant;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "notice_board")
@@ -23,10 +29,9 @@ public class Notice {
 
     @Column(name = "last_updated")
     private Instant lastUpdated;
-
-    @Enumerated(EnumType.ORDINAL)
+        
     @Column(nullable = false)
-    private PriorityLevel priority;
+    private int priority;
 
     @Column(name = "created_by", nullable = false)
     private Long createdBy;
@@ -43,7 +48,7 @@ public class Notice {
         this.lastUpdated = this.createdAt;
     }
 
-    public Notice(String title, String content, PriorityLevel priority, Long createdBy, Instant expiresAt, Long cooperativeId) {
+    public Notice(String title, String content, int priority, Long createdBy, Instant expiresAt, Long cooperativeId) {
         this.title = title;
         this.content = content;
         this.priority = priority;
@@ -70,8 +75,8 @@ public class Notice {
     public Instant getLastUpdated() { return lastUpdated; }
     public void setLastUpdated(Instant lastUpdated) { this.lastUpdated = lastUpdated; }
 
-    public PriorityLevel getPriority() { return priority; }
-    public void setPriority(PriorityLevel priority) { this.priority = priority; }
+    public int getPriority() { return priority; }
+    public void setPriority(int priority) { this.priority = priority;}
 
     public Long getCreatedBy() { return createdBy; }
     public void setCreatedBy(Long createdBy) { this.createdBy = createdBy; }

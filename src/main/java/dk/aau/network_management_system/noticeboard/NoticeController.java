@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
@@ -29,14 +28,14 @@ public class NoticeController {
     }
 
     // GET all active global notices
-    @GetMapping
+    @GetMapping("/all")
     public ResponseEntity<List<Notice>> getAllActiveNotices() {
         List<Notice> notices = noticeService.getAllActiveNotices();
         return ResponseEntity.ok(notices);
     }
 
     // GET notices for a specific cooperative (includes global notices)
-    @GetMapping("/cooperative/{cooperativeId}/")
+    @GetMapping("/cooperative/{cooperativeId}")
     public ResponseEntity<List<Notice>> getNoticesForCooperative(@PathVariable Long cooperativeId) {
         List<Notice> notices = noticeService.getNoticesForCooperative(cooperativeId);
         return ResponseEntity.ok(notices);
@@ -50,20 +49,23 @@ public class NoticeController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    /* // GET notices filtered by priority
-    @GetMapping("/priority/{priority}")
-    public ResponseEntity<List<Notice>> getNoticesByPriority(@PathVariable PriorityLevel priority) {
+ 
+    
+     // GET notices filtered by priority
+    @GetMapping("/filter/{priority}")
+    public ResponseEntity<List<Notice>> getNoticesByPriority(@PathVariable int priority) {
         List<Notice> notices = noticeService.getNoticesByPriority(priority);
         return ResponseEntity.ok(notices);
-    } */
-
+    } 
+/* 
     // GET notices filtered by priority (e.g. /api/notices/filter?priority=High)
-@GetMapping("/filter")
-public ResponseEntity<List<Notice>> getNoticesByPriority(@RequestParam PriorityLevel priority) {
-    List<Notice> notices = noticeService.getNoticesByPriority(priority);
+   @GetMapping("/filter")
+public ResponseEntity<List<Notice>> getNoticesByPriority(@RequestParam int priority) {
+    PriorityLevel priorityLevel = PriorityLevel.fromValue(priority);
+    List<Notice> notices = noticeService.getNoticesByPriority(priorityLevel);
     return ResponseEntity.ok(notices);
 }
-
+*/
     // POST - create a new notice (Manager only)
     @PostMapping
     public ResponseEntity<Notice> createNotice(@Valid @RequestBody NoticeDTO dto) {

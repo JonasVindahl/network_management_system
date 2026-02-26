@@ -39,12 +39,12 @@ public class NoticeService {
     }
 
     // GET - get notices filtered by priority
-    public List<Notice> getNoticesByPriority(PriorityLevel priority) {
-        return noticeRepository.findByPriority(priority, Instant.now());
+    public List<Notice> getNoticesByPriority(int priority) {
+        return noticeRepository.findByPriority(priority);  // Kun én parameter
     }
 
     // POST - create a new notice
-    public Notice createNotice(String title, String content, PriorityLevel priority, Long createdBy, Instant expiresAt, Long cooperativeId) {
+    public Notice createNotice(String title, String content, int priority, Long createdBy, Instant expiresAt, Long cooperativeId) {
         Notice notice = new Notice(title, content, priority, createdBy, expiresAt, cooperativeId);
         return noticeRepository.save(notice);
     }
