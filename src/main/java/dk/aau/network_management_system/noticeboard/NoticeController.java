@@ -27,7 +27,7 @@ public class NoticeController {
     }
 
     // GET notices for a specific cooperative (includes global notices)
-    @GetMapping("/cooperative/{cooperativeId}")
+    @GetMapping("/cooperative/{cooperativeId}/")
     public ResponseEntity<List<Notice>> getNoticesForCooperative(@PathVariable Long cooperativeId) {
         List<Notice> notices = noticeService.getNoticesForCooperative(cooperativeId);
         return ResponseEntity.ok(notices);
