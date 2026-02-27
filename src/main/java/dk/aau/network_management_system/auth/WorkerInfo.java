@@ -1,9 +1,9 @@
 package dk.aau.network_management_system.auth;
 
 public class WorkerInfo {
-    private Long workerId;
-    private Long cooperativeId;
-    private String role;
+    private final Long workerId;
+    private final Long cooperativeId;
+    private final String role;
     
     public WorkerInfo(Long workerId, Long cooperativeId, String role) {
         this.workerId = workerId;

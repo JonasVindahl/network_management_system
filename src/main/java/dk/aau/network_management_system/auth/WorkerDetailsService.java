@@ -21,6 +21,7 @@ public class WorkerDetailsService implements UserDetailsService {
         String sql = "SELECT cpf, password, user_type FROM public.workers WHERE cpf = ?";
 
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, 
+                //eventuelt ændre til objekt så der ikke er warning
                 cpf.getBytes(java.nio.charset.StandardCharsets.UTF_8));
 
         System.out.println("Query returned " + rows.size() + " rows for CPF: " + cpf);
@@ -59,6 +60,7 @@ public class WorkerDetailsService implements UserDetailsService {
         String sql = "SELECT worker_id, cooperative, user_type FROM public.workers WHERE cpf = ?";
         
         Map<String, Object> row = jdbcTemplate.queryForMap(sql, 
+                //eventuelt ændre til objekt så der ikke er warning
                 cpf.getBytes(java.nio.charset.StandardCharsets.UTF_8));
         
         return new WorkerInfo(

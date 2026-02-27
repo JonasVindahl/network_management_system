@@ -20,7 +20,7 @@ public class AuthenticatedUser {
 
     public String getRole(){
         return getCurrentUserDetails().getAuthorities()
-            .iterator().next().getAuthority().replace("ROLE_", "");  // ← FEJL: .getAuthorities() i stedet for .getAuthority()
+            .iterator().next().getAuthority().replace("ROLE_", "");
     }
 
     public Long getCooperativeId() {

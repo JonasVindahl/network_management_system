@@ -31,12 +31,13 @@ public class AuthController {
 
         UserDetails userDetails = workerDetailsService.loadUserByUsername(request.getCpf());
         
-        // Hent cooperative_id og worker_id fra database
+        //hent cooperative_id og worker_id fra database
         WorkerInfo workerInfo = workerDetailsService.getWorkerInfo(request.getCpf());
         
         String role = userDetails.getAuthorities().iterator().next().getAuthority()
                 .replace("ROLE_", "");
 
+        // tilføjet cooperative and worker
         String token = jwtUtil.generateToken(
             request.getCpf(), 
             role, 

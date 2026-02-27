@@ -5,12 +5,14 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import dk.aau.network_management_system.auth.AuthenticatedUser;
 
@@ -29,13 +31,31 @@ public class AnalyticsController {
         this.authenticatedUser = authenticatedUser;
     }
 
-
-    //GET - Cooperative performance overview
+    //opdateret for presmission
     @GetMapping("/performance")
     public ResponseEntity<CooperativePerformanceDTO> getPerformance(
-            @PathVariable Long cooperativeId) {
+            @RequestParam(required = false) Long cooperativeId) {
         
-        CooperativePerformanceDTO result = service.getCooperativePerformance(cooperativeId);
+        // Workers kan ikke tilgå cooperative performance
+        if (authenticatedUser.isWorker()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                "Workers cannot access cooperative performance data");
+        }
+        
+        // Bestem hvilken cooperative der skal hentes data for
+        Long targetCooperativeId;
+        
+        if (authenticatedUser.isAdmin()) {
+            // Admin kan vælge cooperative via query param, eller få sin egen
+            targetCooperativeId = cooperativeId != null 
+                ? cooperativeId 
+                : authenticatedUser.getCooperativeId();
+        } else {
+            // Manager kan KUN se egen cooperative (ignorer cooperativeId param)
+            targetCooperativeId = authenticatedUser.getCooperativeId();
+        }
+        
+        CooperativePerformanceDTO result = service.getCooperativePerformance(targetCooperativeId);
         return ResponseEntity.ok(result);
     }
 
