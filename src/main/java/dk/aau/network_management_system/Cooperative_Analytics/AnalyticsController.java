@@ -46,7 +46,7 @@ public class AnalyticsController {
         Long targetCooperativeId;
         
         if (authenticatedUser.isAdmin()) {
-            // Admin kan vælge cooperative via query param, eller få sin egen
+            // Skal ændres - admins er ikke bundet til cooperative
             targetCooperativeId = cooperativeId != null 
                 ? cooperativeId 
                 : authenticatedUser.getCooperativeId();
