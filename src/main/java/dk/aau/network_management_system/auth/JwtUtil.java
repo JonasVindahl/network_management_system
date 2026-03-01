@@ -26,7 +26,7 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
     }
 
-    public String generateToken(String cpf, String role, Long workerId, Long cooperativeId) {
+    public String generateToken(String cpf, String role, Long cooperativeId, Long workerId) {
         return Jwts.builder()
             .subject(cpf)
             .claim("role", role)
