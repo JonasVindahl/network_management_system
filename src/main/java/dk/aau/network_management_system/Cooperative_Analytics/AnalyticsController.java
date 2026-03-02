@@ -62,21 +62,57 @@ public class AnalyticsController {
 
      //GET - All worker productivity in cooperative
     @GetMapping("/productivity")
-    public ResponseEntity<List<WorkerProductivityDTO>> getAllWorkerProductivity(
-            @PathVariable Long cooperativeId,
+    public ResponseEntity<List<WorkerProductivityDTO>> getProductivity(
+            @RequestParam(required = false) Long cooperativeId,
+            @RequestParam(required = false) Long workerId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
-    
-            // Sæt defaults hvis null
-            if (startDate == null) {
-                startDate = LocalDateTime.now().minusMonths(1); // f.eks. sidste måned
-            }
-            if (endDate == null) {
-                endDate = LocalDateTime.now();
-            }
-        List<WorkerProductivityDTO> result = service.getAllWorkerProductivity(
-            cooperativeId, startDate, endDate
-        );
+        
+        // Default dates
+        if (startDate == null) {
+            startDate = LocalDateTime.now().minusDays(30);
+        }
+        if (endDate == null) {
+            endDate = LocalDateTime.now();
+        }
+     
+        // Auth
+
+        Long targetCooperativeId;
+        Long targetWorkerId;
+        
+        if (authenticatedUser.isWorker()) {
+            // Workers kan KUN se deres egen productivity
+            targetCooperativeId = authenticatedUser.getCooperativeId();
+            targetWorkerId = authenticatedUser.getWorkerId();
+            
+        } else if (authenticatedUser.isManager()) {
+            // Manager kan se alle workers i egen cooperative
+            targetCooperativeId = authenticatedUser.getCooperativeId();
+            targetWorkerId = workerId; 
+            
+        } else {
+            //skal nok ændre
+            targetCooperativeId = cooperativeId != null 
+                ? cooperativeId 
+                : authenticatedUser.getCooperativeId();
+            targetWorkerId = workerId;
+        }
+        
+        // Til at hente data 
+
+        List<WorkerProductivityDTO> result;
+        
+        if (targetWorkerId != null) {
+            // Specific worker
+            result = service.getWorkerProductivity(
+                targetCooperativeId, targetWorkerId, startDate, endDate);
+        } else {
+            // All workers in cooperative
+            result = service.getAllWorkerProductivity(
+                targetCooperativeId, startDate, endDate);
+        }
+        
         return ResponseEntity.ok(result);
     }
 

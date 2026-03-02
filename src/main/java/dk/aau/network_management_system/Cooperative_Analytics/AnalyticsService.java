@@ -28,6 +28,19 @@ public class AnalyticsService {
     public List<WorkerProductivityDTO> getAllWorkerProductivity(
             Long cooperativeId, LocalDateTime startDate, LocalDateTime endDate) {
         
+        // Security check: Workers cannot see ALL workers
+        if (authenticatedUser.isWorker()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                "Workers can only view their own productivity");
+        }
+        
+        // Non-admins can only see own cooperative
+        if (!authenticatedUser.isAdmin() && 
+            !cooperativeId.equals(authenticatedUser.getCooperativeId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                "You can only access your own cooperative's data");
+        }
+        
         List<Object[]> raw = repository.findAllWorkerProductivityRaw(
             cooperativeId, startDate, endDate
         );
