@@ -5,39 +5,63 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+
+import dk.aau.network_management_system.auth.AuthenticatedUser;
 
 
 @RestController
-@RequestMapping("/api/cooperative/analytics")
+@RequestMapping("/api")
 public class AnalyticsController {
 
     private final AnalyticsService service;
+    private final AuthenticatedUser authenticatedUser;
 
 
     @Autowired
-    public AnalyticsController(AnalyticsService service) {
+    public AnalyticsController(AnalyticsService service, AuthenticatedUser authenticatedUser) {
         this.service = service;
+        this.authenticatedUser = authenticatedUser;
     }
 
-
-    //GET - Cooperative performance overview
-    @GetMapping("/{cooperativeId}/performance")
+    //opdateret for presmission
+    @GetMapping("/performance")
     public ResponseEntity<CooperativePerformanceDTO> getPerformance(
-            @PathVariable Long cooperativeId) {
+            @RequestParam(required = false) Long cooperativeId) {
         
-        CooperativePerformanceDTO result = service.getCooperativePerformance(cooperativeId);
+        // Workers kan ikke tilgå cooperative performance
+        if (authenticatedUser.isWorker()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                "Workers cannot access cooperative performance data");
+        }
+        
+        // Bestem hvilken cooperative der skal hentes data for
+        Long targetCooperativeId;
+        
+        if (authenticatedUser.isAdmin()) {
+            // Skal ændres - admins er ikke bundet til cooperative
+            targetCooperativeId = cooperativeId != null 
+                ? cooperativeId 
+                : authenticatedUser.getCooperativeId();
+        } else {
+            // Manager kan KUN se egen cooperative (ignorer cooperativeId param)
+            targetCooperativeId = authenticatedUser.getCooperativeId();
+        }
+        
+        CooperativePerformanceDTO result = service.getCooperativePerformance(targetCooperativeId);
         return ResponseEntity.ok(result);
     }
 
 
      //GET - All worker productivity in cooperative
-    @GetMapping("/{cooperativeId}/workers/productivity")
+    @GetMapping("/productivity")
     public ResponseEntity<List<WorkerProductivityDTO>> getAllWorkerProductivity(
             @PathVariable Long cooperativeId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
@@ -58,7 +82,7 @@ public class AnalyticsController {
 
 
      //GET - Specific worker productivity
-    @GetMapping("/{cooperativeId}/workers/{workerId}/productivity")
+    @GetMapping("/workers/{workerId}/productivity")
     public ResponseEntity<List<WorkerProductivityDTO>> getWorkerProductivity(
             @PathVariable Long cooperativeId,
             @PathVariable Long workerId,
@@ -80,7 +104,7 @@ public class AnalyticsController {
 
 
     //GET - Coopertiv stock - Sold, Material, colleted...
-    @GetMapping("/{cooperativeId}/stock")
+    @GetMapping("/stock")
     public ResponseEntity<List<StockByMaterialDTO>> getStockByMaterial(
             @PathVariable Long cooperativeId
     ){
@@ -91,7 +115,7 @@ public class AnalyticsController {
 
     // GET cooperative revenue and sales + averge priceperkg
     //<FX> curl -X GET "http://127.0.0.1:8080/api/cooperative/analytics/1/revenue?startDate=2025-11-01T00:00:00&endDate=2025-11-30T23:59:59"
-    @GetMapping("/{cooperativeId}/revenue")
+    @GetMapping("/revenue")
         public ResponseEntity<List<RevenueDTO>> getRevenue(
                 @PathVariable Long cooperativeId,
                 @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,

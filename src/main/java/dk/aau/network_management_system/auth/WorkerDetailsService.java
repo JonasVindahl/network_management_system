@@ -21,6 +21,7 @@ public class WorkerDetailsService implements UserDetailsService {
         String sql = "SELECT cpf, password, user_type FROM public.workers WHERE cpf = ?";
 
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, 
+                //eventuelt ændre til objekt så der ikke er warning
                 cpf.getBytes(java.nio.charset.StandardCharsets.UTF_8));
 
         System.out.println("Query returned " + rows.size() + " rows for CPF: " + cpf);
@@ -43,4 +44,32 @@ public class WorkerDetailsService implements UserDetailsService {
                 .roles(userType.trim())
                 .build();
     }
+   
+   /*  public Map<String, Object> loadWorkerClaims(String cpf) {
+        String sql = "SELECT worker_id, cooperative, user_type FROM public.workers WHERE cpf = ?";
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql,
+                cpf.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        if (rows.isEmpty()) {
+            throw new UsernameNotFoundException("Worker not found with CPF: " + cpf);
+        }
+        return rows.get(0);
+    }
+
+*/
+        public WorkerInfo getWorkerInfo(String cpf) {
+        String sql = "SELECT worker_id, cooperative, user_type FROM public.workers WHERE cpf = ?";
+        
+        Map<String, Object> row = jdbcTemplate.queryForMap(sql, 
+                //eventuelt ændre til objekt så der ikke er warning
+                cpf.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        
+        return new WorkerInfo(
+            ((Number) row.get("worker_id")).longValue(),
+            ((Number) row.get("cooperative")).longValue(),
+            ((String) row.get("user_type")).trim()
+        );
+    }
+
+
+
 }
