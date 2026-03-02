@@ -92,7 +92,7 @@ public class AnalyticsController {
             targetWorkerId = workerId; 
             
         } else {
-            //skal nok ændre
+            //skal nok ændres
             targetCooperativeId = cooperativeId != null 
                 ? cooperativeId 
                 : authenticatedUser.getCooperativeId();
