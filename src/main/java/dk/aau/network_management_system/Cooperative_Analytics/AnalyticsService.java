@@ -5,21 +5,41 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;  
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import dk.aau.network_management_system.auth.AuthenticatedUser;
 
 @Service
 public class AnalyticsService {
-    
+        
     private final AnalyticsRepository repository;
+    private final AuthenticatedUser authenticatedUser;
 
     @Autowired
-    public AnalyticsService(AnalyticsRepository repository){
-        this.repository = repository;
-    }
+        public AnalyticsService(AnalyticsRepository repository, AuthenticatedUser authenticatedUser){
+            this.repository = repository;
+            this.authenticatedUser = authenticatedUser;
+        }
+
 
     // GET - ALL Worker productivity
     public List<WorkerProductivityDTO> getAllWorkerProductivity(
             Long cooperativeId, LocalDateTime startDate, LocalDateTime endDate) {
+        
+        // Workers cannot see ALL workers
+        if (authenticatedUser.isWorker()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                "Workers can only view their own productivity");
+        }
+        
+        // Managers can only see own cooperative
+        if (!authenticatedUser.isAdmin() && 
+            !cooperativeId.equals(authenticatedUser.getCooperativeId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                "You can only access your own cooperative's data");
+        }
         
         List<Object[]> raw = repository.findAllWorkerProductivityRaw(
             cooperativeId, startDate, endDate
@@ -91,14 +111,27 @@ public class AnalyticsService {
 
 
     public CooperativePerformanceDTO getCooperativePerformance(Long cooperativeId){
+        
+        if (authenticatedUser.isWorker()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                "Workers cannot access cooperative performance data");
+        }
+        
+        if (!authenticatedUser.isAdmin() && 
+            !cooperativeId.equals(authenticatedUser.getCooperativeId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                "You can only access your own cooperative's data");
+        }
+        
+        //hent data fra repository
         List<Object[]> results = repository.findCooperativePerformanceRaw(cooperativeId);
         
-        //fejl håndtering udner udvikling
+        //håndtere null
         if (results == null || results.isEmpty()) {
             return new CooperativePerformanceDTO(0.0, 0.0, 0.0, 0);
         }
         
-      
+        // hent første række
         Object[] raw = results.get(0);
         
         Double totalCollected = raw[0] != null ? ((Number) raw[0]).doubleValue() : 0.0;
@@ -113,7 +146,4 @@ public class AnalyticsService {
             activeWorkers
         ); 
     }
-
-    
-
 }

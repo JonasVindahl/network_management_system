@@ -1,5 +1,6 @@
 package dk.aau.network_management_system.auth;
 
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -29,10 +30,21 @@ public class AuthController {
                 new UsernamePasswordAuthenticationToken(request.getCpf(), request.getPassword()));
 
         UserDetails userDetails = workerDetailsService.loadUserByUsername(request.getCpf());
+        
+        //hent cooperative_id og worker_id fra database
+        WorkerInfo workerInfo = workerDetailsService.getWorkerInfo(request.getCpf());
+        
         String role = userDetails.getAuthorities().iterator().next().getAuthority()
                 .replace("ROLE_", "");
 
-        String token = jwtUtil.generateToken(request.getCpf(), role);
+        // tilføjet cooperative and worker
+        String token = jwtUtil.generateToken(
+            request.getCpf(), 
+            role, 
+            workerInfo.getCooperativeId(),  
+            workerInfo.getWorkerId()        
+        );
+        
         return ResponseEntity.ok(new AuthResponse(token));
     }
 }

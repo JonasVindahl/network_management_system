@@ -18,13 +18,16 @@ import jakarta.servlet.http.HttpServletResponse;
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
+    private static final ThreadLocal<String> currentToken = new ThreadLocal<>();  // ← MANGLEDE!
+
+
     @Autowired
     private JwtUtil jwtUtil;
 
     @Autowired
     private WorkerDetailsService workerDetailsService;
 
-    @Override
+   @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain)
@@ -38,6 +41,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         String token = authHeader.substring(7);
+        currentToken.set(token);
 
         if (jwtUtil.isTokenValid(token)) {
             String cpf = jwtUtil.extractCpf(token);
@@ -51,6 +55,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             SecurityContextHolder.getContext().setAuthentication(auth);
         }
 
-        filterChain.doFilter(request, response);
+        try {
+            filterChain.doFilter(request, response);
+        } finally {
+            currentToken.remove(); 
+        }
+    }
+    
+    public static String getCurrentToken() {
+        return currentToken.get();
     }
 }
