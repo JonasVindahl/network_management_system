@@ -11,16 +11,35 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import dk.aau.network_management_system.auth.AuthenticatedUser;
+
 // Markerer klassen som en REST API controller
 @RestController
 public class LeaderboardController {
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
+    private final JdbcTemplate jdbcTemplate;
+    private final AuthenticatedUser authenticatedUser;
 
-    // Endpoint der svarer på GET requests til /getTop3?cooperativeId=1
-    @GetMapping("/api/getTop3")
-    public List<Map<String, Object>> getTop3(@RequestParam long cooperativeId) {
+    @Autowired
+    public LeaderboardController(JdbcTemplate jdbcTemplate, AuthenticatedUser authenticatedUser) {
+        this.jdbcTemplate = jdbcTemplate;
+        this.authenticatedUser = authenticatedUser;
+    }
+
+    @GetMapping("/api/leaderboard")
+    public List<Map<String, Object>> getTop3(
+            @RequestParam(required = false) Long cooperativeId) {
+
+        // Bestem hvilken cooperative der skal hentes data for
+        Long targetCooperativeId;
+        if (authenticatedUser.isAdmin()) {
+            targetCooperativeId = cooperativeId != null
+                    ? cooperativeId
+                    : authenticatedUser.getCooperativeId();
+        } else {
+            // Manager kan KUN se egen cooperative (ignorer cooperativeId param)
+            targetCooperativeId = authenticatedUser.getCooperativeId();
+        }
 
         // SQL der henter alle målinger per worker per materiale
         // COALESCE bruges som fallback hvis værdien er NULL (bruger 0 eller 1.0 i stedet)
@@ -53,9 +72,9 @@ public class LeaderboardController {
         """;
 
         // Udfører sql og gemmer resultatet som en liste af rækker Hver række er et Map hvor nøglen er kolonnenavnet og værdien er data
-        List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, cooperativeId);
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, targetCooperativeId);
 
-        double randomMultiplier = jdbcTemplate.queryForObject(multipliersql, Double.class, cooperativeId);
+        double randomMultiplier = jdbcTemplate.queryForObject(multipliersql, Double.class, targetCooperativeId);
 
         Map<Long, Map<String, Object>> workerMap = new LinkedHashMap<>();
 
