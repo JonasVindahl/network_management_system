@@ -66,14 +66,14 @@ public class AnalyticsController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
         
-        // Default dates
-        if (startDate == null) {
-            startDate = LocalDateTime.now().minusDays(30);
-        }
+                // Default dates
         if (endDate == null) {
-            endDate = LocalDateTime.now();
+             endDate = LocalDateTime.now();
         }
-     
+             
+        if (startDate == null) {
+            startDate = endDate.minusDays(120);
+        }
         // Auth
 
         Long targetCooperativeId;
@@ -126,12 +126,13 @@ public class AnalyticsController {
                 @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
     
             // Sæt defaults hvis null
-                if (startDate == null) {
-                    startDate = LocalDateTime.now().minusMonths(12); // f.eks. sidste måned
-                }
-                if (endDate == null) {
-                    endDate = LocalDateTime.now();
-                }
+        if (endDate == null) {
+             endDate = LocalDateTime.now();
+        }
+             
+        if (startDate == null) {
+            startDate = endDate.minusDays(365);
+        }
 
         Long targetCooperativeId;
         
