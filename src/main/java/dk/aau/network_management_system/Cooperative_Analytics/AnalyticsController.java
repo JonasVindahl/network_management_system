@@ -161,8 +161,8 @@ public class AnalyticsController {
 
 
 
-        @GetMapping("/stock")
-        public ResponseEntity<List<StockByMaterialDTO>> getStockByMaterial(
+    @GetMapping("/stock")
+    public ResponseEntity<List<StockByMaterialDTO>> getStockByMaterial(
                 @RequestParam(required = false) Long cooperativeId) {    
        
         Long targetCooperativeId;
