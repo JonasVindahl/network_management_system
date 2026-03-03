@@ -8,7 +8,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,7 +22,6 @@ public class AnalyticsController {
 
     private final AnalyticsService service;
     private final AuthenticatedUser authenticatedUser;
-
 
     @Autowired
     public AnalyticsController(AnalyticsService service, AuthenticatedUser authenticatedUser) {
@@ -123,7 +121,7 @@ public class AnalyticsController {
     //<FX> curl -X GET "http://127.0.0.1:8080/api/cooperative/analytics/1/revenue?startDate=2025-11-01T00:00:00&endDate=2025-11-30T23:59:59"
     @GetMapping("/revenue")
         public ResponseEntity<List<RevenueDTO>> getRevenue(
-                @PathVariable Long cooperativeId,
+                @RequestParam(required = false) Long cooperativeId,
                 @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
                 @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
     
@@ -134,7 +132,62 @@ public class AnalyticsController {
                 if (endDate == null) {
                     endDate = LocalDateTime.now();
                 }
-            List<RevenueDTO> result = service.getRevenue(cooperativeId, startDate, endDate);
+
+        Long targetCooperativeId;
+        
+        if (authenticatedUser.isWorker()) {
+            // Workers kan KUN se deres egen productivity
+            targetCooperativeId = authenticatedUser.getCooperativeId();
+            
+        } else if (authenticatedUser.isManager()) {
+            // Manager kan se alle workers i egen cooperative
+            targetCooperativeId = authenticatedUser.getCooperativeId();
+            
+        } else {
+        // Admin SKAL specificere cooperativeId
+        if (cooperativeId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
+                "Admin must specify cooperativeId parameter");
+        }
+        targetCooperativeId = cooperativeId;
+    }
+
+        List<RevenueDTO> result;
+
+        result = service.getRevenue(targetCooperativeId, startDate, endDate);
+        
+        return ResponseEntity.ok(result);
+    }
+
+
+
+        @GetMapping("/stock")
+        public ResponseEntity<List<StockByMaterialDTO>> getStockByMaterial(
+                @RequestParam(required = false) Long cooperativeId) {    
+       
+        Long targetCooperativeId;
+        
+        if (authenticatedUser.isWorker()) {
+            // Workers kan KUN se deres egen productivity
+            targetCooperativeId = authenticatedUser.getCooperativeId();
+            
+        } else if (authenticatedUser.isManager()) {
+            // Manager kan se alle workers i egen cooperative
+            targetCooperativeId = authenticatedUser.getCooperativeId();
+            
+        } else {
+        // Admin SKAL specificere cooperativeId
+        if (cooperativeId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
+                "Admin must specify cooperativeId parameter");
+        }
+        targetCooperativeId = cooperativeId;
+        }
+
+        List<StockByMaterialDTO> result;
+
+            result = service.getStockByMaterial(targetCooperativeId);
+            
             return ResponseEntity.ok(result);
     }
 

@@ -80,6 +80,19 @@ public class AnalyticsService {
     //GET - Stock for material and sold
     public List<StockByMaterialDTO>  getStockByMaterial(Long cooperativeId){
         
+        // Workers cannot see ALL workers
+        if (authenticatedUser.isWorker()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                "Workers can only view their own productivity");
+        }
+        
+        // Managers can only see own cooperative
+        if (!authenticatedUser.isAdmin() && 
+            !cooperativeId.equals(authenticatedUser.getCooperativeId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                "You can only access your own cooperative's data");
+        }
+
         List<Object[]> stock = repository.getStockByMaterial(cooperativeId);
 
         return stock.stream()    
@@ -97,9 +110,21 @@ public class AnalyticsService {
     public List<RevenueDTO> getRevenue(
         Long cooperativeId, LocalDateTime startDate, LocalDateTime endDate){
             
+        // Workers cannot see ALL workers
+        if (authenticatedUser.isWorker()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                "Workers can only view their own productivity");
+        }
+        
+        // Managers can only see own cooperative
+        if (!authenticatedUser.isAdmin() && 
+            !cooperativeId.equals(authenticatedUser.getCooperativeId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                "You can only access your own cooperative's data");
+        }
+
         List<Object[]> revenue = repository.findRevenueRaw(cooperativeId, startDate, endDate);
 
-        
         return revenue.stream()    
             .map(row -> new RevenueDTO(
             ((Number) row[0]).doubleValue(),  // total_revenue
