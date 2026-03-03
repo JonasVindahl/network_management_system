@@ -92,12 +92,14 @@ public class AnalyticsController {
             targetWorkerId = workerId; 
             
         } else {
-            //skal nok ændres
-            targetCooperativeId = cooperativeId != null 
-                ? cooperativeId 
-                : authenticatedUser.getCooperativeId();
-            targetWorkerId = workerId;
+        // Admin SKAL specificere cooperativeId
+        if (cooperativeId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
+                "Admin must specify cooperativeId parameter");
         }
+        targetCooperativeId = cooperativeId;
+        targetWorkerId = workerId; // Optional - kan være null (alle workers)
+    }
         
         // Til at hente data 
 
@@ -116,38 +118,6 @@ public class AnalyticsController {
         return ResponseEntity.ok(result);
     }
 
-
-     //GET - Specific worker productivity
-    @GetMapping("/workers/{workerId}/productivity")
-    public ResponseEntity<List<WorkerProductivityDTO>> getWorkerProductivity(
-            @PathVariable Long cooperativeId,
-            @PathVariable Long workerId,
-                 @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
-    
-        // Sæt defaults hvis null
-            if (startDate == null) {
-                startDate = LocalDateTime.now().minusMonths(1); // f.eks. sidste måned
-            }
-            if (endDate == null) {
-                endDate = LocalDateTime.now();
-            }
-        List<WorkerProductivityDTO> result = service.getWorkerProductivity(
-            cooperativeId, workerId, startDate, endDate
-        );
-        return ResponseEntity.ok(result);
-    }
-
-
-    //GET - Coopertiv stock - Sold, Material, colleted...
-    @GetMapping("/stock")
-    public ResponseEntity<List<StockByMaterialDTO>> getStockByMaterial(
-            @PathVariable Long cooperativeId
-    ){
-
-        List<StockByMaterialDTO> result = service.getStockByMaterial(cooperativeId);
-        return ResponseEntity.ok(result);
-    }
 
     // GET cooperative revenue and sales + averge priceperkg
     //<FX> curl -X GET "http://127.0.0.1:8080/api/cooperative/analytics/1/revenue?startDate=2025-11-01T00:00:00&endDate=2025-11-30T23:59:59"
