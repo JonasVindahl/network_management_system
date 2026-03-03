@@ -23,6 +23,36 @@ public class AnalyticsService {
             this.authenticatedUser = authenticatedUser;
         }
 
+        
+
+    public List<CooperativePerformanceDTO> getCooperativePerformance(Long cooperativeId){
+        
+        if (authenticatedUser.isWorker()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                "Workers cannot access cooperative performance data");
+        }
+        
+        if (!authenticatedUser.isAdmin() && 
+            !cooperativeId.equals(authenticatedUser.getCooperativeId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                "You can only access your own cooperative's data");
+        }
+        
+        //hent data fra repository
+        List<Object[]> results = repository.findCooperativePerformanceRaw(cooperativeId);
+
+        return results.stream()
+            .map(row -> new CooperativePerformanceDTO(
+                ((Number) row[0]).doubleValue(),  // total_collected
+                ((Number) row[1]).doubleValue(),  // total_sold
+                ((Number) row[2]).doubleValue(),  // current_stock
+                ((Number) row[3]).intValue()     // active_workers
+            ))
+            .collect(Collectors.toList());
+
+            }
+
+
 
     // GET - ALL Worker productivity
     public List<WorkerProductivityDTO> getAllWorkerProductivity(
@@ -135,40 +165,4 @@ public class AnalyticsService {
         }
 
 
-    public CooperativePerformanceDTO getCooperativePerformance(Long cooperativeId){
-        
-        if (authenticatedUser.isWorker()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
-                "Workers cannot access cooperative performance data");
-        }
-        
-        if (!authenticatedUser.isAdmin() && 
-            !cooperativeId.equals(authenticatedUser.getCooperativeId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
-                "You can only access your own cooperative's data");
-        }
-        
-        //hent data fra repository
-        List<Object[]> results = repository.findCooperativePerformanceRaw(cooperativeId);
-        
-        //håndtere null
-        if (results == null || results.isEmpty()) {
-            return new CooperativePerformanceDTO(0.0, 0.0, 0.0, 0);
-        }
-        
-        // hent første række
-        Object[] raw = results.get(0);
-        
-        Double totalCollected = raw[0] != null ? ((Number) raw[0]).doubleValue() : 0.0;
-        Double totalSold = raw[1] != null ? ((Number) raw[1]).doubleValue() : 0.0;
-        Double currentStock = raw[2] != null ? ((Number) raw[2]).doubleValue() : 0.0;
-        Integer activeWorkers = raw[3] != null ? ((Number) raw[3]).intValue() : 0;
-        
-        return new CooperativePerformanceDTO(
-            totalCollected,
-            totalSold,
-            currentStock,
-            activeWorkers
-        ); 
-    }
 }

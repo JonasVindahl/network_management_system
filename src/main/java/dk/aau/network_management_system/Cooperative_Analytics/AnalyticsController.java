@@ -31,29 +31,32 @@ public class AnalyticsController {
 
     //opdateret for presmission
     @GetMapping("/performance")
-    public ResponseEntity<CooperativePerformanceDTO> getPerformance(
+    public ResponseEntity<List<CooperativePerformanceDTO>> getPerformance(
             @RequestParam(required = false) Long cooperativeId) {
         
-        // Workers kan ikke tilgå cooperative performance
-        if (authenticatedUser.isWorker()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
-                "Workers cannot access cooperative performance data");
-        }
-        
-        // Bestem hvilken cooperative der skal hentes data for
         Long targetCooperativeId;
-        
-        if (authenticatedUser.isAdmin()) {
-            // Skal ændres - admins er ikke bundet til cooperative
-            targetCooperativeId = cooperativeId != null 
-                ? cooperativeId 
-                : authenticatedUser.getCooperativeId();
-        } else {
-            // Manager kan KUN se egen cooperative (ignorer cooperativeId param)
+
+        if (authenticatedUser.isWorker()) {
+            // Workers kan KUN se deres egen productivity
             targetCooperativeId = authenticatedUser.getCooperativeId();
+            
+        } else if (authenticatedUser.isManager()) {
+            // Manager kan se alle workers i egen cooperative
+            targetCooperativeId = authenticatedUser.getCooperativeId();
+            
+        } else {
+        // Admin SKAL specificere cooperativeId
+        if (cooperativeId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
+                "Admin must specify cooperativeId parameter");
         }
+        targetCooperativeId = cooperativeId;
+    }
+
+        List<CooperativePerformanceDTO> result;
+
+        result = service.getCooperativePerformance(targetCooperativeId);
         
-        CooperativePerformanceDTO result = service.getCooperativePerformance(targetCooperativeId);
         return ResponseEntity.ok(result);
     }
 
