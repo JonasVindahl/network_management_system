@@ -37,6 +37,7 @@ public interface AnalyticsRepository extends JpaRepository<CooperativeEntity, Lo
         FROM workers w
         LEFT JOIN measurements m ON w.worker_id = m.wastepicker
         WHERE w.cooperative = :cooperativeId
+          AND user_type = 'W'
           AND (m.time_stamp IS NULL OR m.time_stamp >= :startDate)
           AND (m.time_stamp IS NULL OR m.time_stamp <= :endDate)
         GROUP BY w.worker_id, w.worker_name
@@ -60,6 +61,7 @@ public interface AnalyticsRepository extends JpaRepository<CooperativeEntity, Lo
         LEFT JOIN measurements m ON w.worker_id = m.wastepicker
         WHERE w.cooperative = :cooperativeId
         AND w.worker_id = :workerid
+        AND user_type = 'W'
         AND (m.time_stamp IS NULL OR m.time_stamp >= :startDate)
         AND (m.time_stamp IS NULL OR m.time_stamp <= :endDate)
         GROUP BY w.worker_id, w.worker_name
