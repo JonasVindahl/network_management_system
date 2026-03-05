@@ -104,7 +104,7 @@ public class LeaderboardController {
         // Looper igennem alle workers og beregner den endelige XP. xp = raw_xp * randomMultiplier (den ugentlige tilfældige multiplier)
         for (Map<String, Object> worker : result) {
             double rawXp = ((Number) worker.get("raw_xp")).doubleValue();
-            worker.put("xp", rawXp * randomMultiplier);got
+            worker.put("xp", rawXp * randomMultiplier);
         }
 
         result.sort((a, b) -> Double.compare(((Number) b.get("xp")).doubleValue(), ((Number) a.get("xp")).doubleValue()));
