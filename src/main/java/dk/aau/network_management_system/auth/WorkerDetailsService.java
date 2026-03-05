@@ -63,6 +63,7 @@ public class WorkerDetailsService implements UserDetailsService {
                 //eventuelt ændre til objekt så der ikke er warning
                 cpf.getBytes(java.nio.charset.StandardCharsets.UTF_8));
         
+            //retunere info
         return new WorkerInfo(
             ((Number) row.get("worker_id")).longValue(),
             ((Number) row.get("cooperative")).longValue(),
