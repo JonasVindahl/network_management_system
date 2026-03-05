@@ -43,7 +43,7 @@ public class WorkerDetailsService implements UserDetailsService {
                 .roles(userType.trim())
                 .build();
     }
-}
+
         public WorkerInfo getWorkerInfo(String cpf) {
         String sql = "SELECT worker_id, cooperative, user_type FROM public.workers WHERE cpf = ?";
         
@@ -57,3 +57,4 @@ public class WorkerDetailsService implements UserDetailsService {
             ((String) row.get("user_type")).trim()
         );
     }
+}
