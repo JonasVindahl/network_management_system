@@ -209,6 +209,23 @@ CREATE TABLE IF NOT EXISTS public.worker_contributions
     FOREIGN KEY (material) REFERENCES public.materials(material_id),
     FOREIGN KEY (cooperative) REFERENCES public.cooperative(cooperative_id)
 );
+CREATE TABLE IF NOT EXISTS public.material_bag_state
+(
+    bag_state_id   bigserial PRIMARY KEY,
+    cooperative_id bigint NOT NULL REFERENCES public.cooperative(cooperative_id),
+    material_id    bigint NOT NULL REFERENCES public.materials(material_id),
+
+    -- state
+    is_begun       boolean NOT NULL DEFAULT false,
+    current_kg     numeric(10,2) NOT NULL DEFAULT 0,  -- hvor meget der ligger i posen nu
+    last_updated   timestamp NOT NULL DEFAULT now(),
+
+    -- sikrer 1 "pose-status" pr (cooperative, material)
+    UNIQUE (cooperative_id, material_id),
+
+    -- simple sanity
+    CHECK (current_kg >= 0)
+);
 
 END;
 
