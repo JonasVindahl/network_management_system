@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
@@ -27,21 +28,27 @@ public class NoticeController {
         this.noticeService = noticeService;
     }
 
-    // GET all active global notices
-    @GetMapping("/all")
-    public ResponseEntity<List<Notice>> getAllActiveNotices() {
-        List<Notice> notices = noticeService.getAllActiveNotices();
-        return ResponseEntity.ok(notices);
+    // GET all active global notices + notices for the logged in users cooperative
+    @GetMapping
+    public ResponseEntity<List<Notice>> getNotices(@RequestParam(required = false) Long cooperativeId) {
+        return ResponseEntity.ok(noticeService.getNotices(cooperativeId));
     }
 
     // GET notices for a specific cooperative (includes global notices)
-    @GetMapping("/cooperative/{cooperativeId}")
-    public ResponseEntity<List<Notice>> getNoticesForCooperative(@PathVariable Long cooperativeId) {
-        List<Notice> notices = noticeService.getNoticesForCooperative(cooperativeId);
-        return ResponseEntity.ok(notices);
+    // @GetMapping("/cooperative/{cooperativeId}")
+    // public ResponseEntity<List<Notice>> getNoticesForCooperative(@PathVariable Long cooperativeId) {
+    //   List<Notice> notices = noticeService.getNoticesForCooperative(cooperativeId);
+    //   return ResponseEntity.ok(notices);
+    // }
+
+
+
+    // GET all active global notices. Only Admin
+    @GetMapping("{/global}")
+    public ResponseEntity<List<Notice>> getGlobalNotices() {
+        return ResponseEntity.ok(noticeService.getAllActiveNotices());
     }
 
-    // GET single notice by ID
     @GetMapping("/{noticeId}")
     public ResponseEntity<Notice> getNoticeById(@PathVariable Long noticeId) {
         return noticeService.getNoticeById(noticeId)
@@ -52,10 +59,11 @@ public class NoticeController {
  
     
      // GET notices filtered by priority
-    @GetMapping("/filter/{priority}")
-    public ResponseEntity<List<Notice>> getNoticesByPriority(@PathVariable int priority) {
-        List<Notice> notices = noticeService.getNoticesByPriority(priority);
-        return ResponseEntity.ok(notices);
+    @GetMapping("/filter/")
+    public ResponseEntity<List<Notice>> getNoticesByPriority(
+            @RequestParam int priority,
+            @RequestParam(required = false) Long cooperativeId) {
+        return ResponseEntity.ok(noticeService.getNoticesByPriority(priority, cooperativeId));
     } 
 /* 
     // GET notices filtered by priority (e.g. /api/notices/filter?priority=High)
@@ -69,8 +77,7 @@ public ResponseEntity<List<Notice>> getNoticesByPriority(@RequestParam int prior
     // POST - create a new notice (Manager only)
     @PostMapping
     public ResponseEntity<Notice> createNotice(@Valid @RequestBody NoticeDTO dto) {
-        Notice created = noticeService.createNotice(dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        return ResponseEntity.status(HttpStatus.CREATED).body(noticeService.createNotice(dto));
     }
 
     // PUT - update a notice (Manager only)
@@ -87,7 +94,8 @@ public ResponseEntity<List<Notice>> getNoticesByPriority(@RequestParam int prior
     // DELETE - remove a notice (Manager only)
     @DeleteMapping("/{noticeId}")
     public ResponseEntity<Void> deleteNotice(@PathVariable Long noticeId) {
-        boolean deleted = noticeService.deleteNotice(noticeId);
-        return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
+        return noticeService.deleteNotice(noticeId)
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.notFound().build();
     }
 }
