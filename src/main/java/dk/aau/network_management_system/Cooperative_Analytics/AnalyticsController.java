@@ -37,9 +37,9 @@ public class AnalyticsController {
         Long targetCooperativeId;
 
         if (authenticatedUser.isWorker()) {
-            // Workers kan KUN se deres egen productivity
-            targetCooperativeId = authenticatedUser.getCooperativeId();
-            
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                    "Workers cannot access cooperative performance data");   
+                             
         } else if (authenticatedUser.isManager()) {
             // Manager kan se alle workers i egen cooperative
             targetCooperativeId = authenticatedUser.getCooperativeId();
@@ -112,6 +112,12 @@ public class AnalyticsController {
                 targetCooperativeId, targetWorkerId, startDate, endDate);
         } else {
             // All workers in cooperative
+
+            if (authenticatedUser.isWorker()) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                    "Workers can only view their own productivity");
+            }
+
             result = service.getAllWorkerProductivity(
                 targetCooperativeId, startDate, endDate);
         }
@@ -140,8 +146,8 @@ public class AnalyticsController {
         Long targetCooperativeId;
         
         if (authenticatedUser.isWorker()) {
-            // Workers kan KUN se deres egen productivity
-            targetCooperativeId = authenticatedUser.getCooperativeId();
+              throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                "Workers cannot access revenue data");
             
         } else if (authenticatedUser.isManager()) {
             // Manager kan se alle workers i egen cooperative
@@ -173,7 +179,8 @@ public class AnalyticsController {
         
         if (authenticatedUser.isWorker()) {
             // Workers kan KUN se deres egen productivity
-            targetCooperativeId = authenticatedUser.getCooperativeId();
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                "Workers cannot access stock data");
             
         } else if (authenticatedUser.isManager()) {
             // Manager kan se alle workers i egen cooperative
