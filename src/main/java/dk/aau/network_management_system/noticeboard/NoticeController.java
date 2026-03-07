@@ -36,8 +36,6 @@ public class NoticeController {
     }
 
 
- // ----- Giver nok ikke mening at have man kan bare udvide /all så admin kan sætte forskellige coops ----
-
     // GET - All active notices in coop 
     // Admin can specify
     @GetMapping
@@ -46,7 +44,6 @@ public class NoticeController {
         List<Notice> notices = noticeService.getNotices(cooperativeId);
         return ResponseEntity.ok(notices);
     }
-
 
 
     // GET single notice by ID
@@ -60,7 +57,7 @@ public class NoticeController {
  
     
      // GET notices filtered by priority
- // GET - Notices filtered by priority
+    // GET - Notices filtered by priority
     @GetMapping("/priority/{priority}")
     public ResponseEntity<List<Notice>> getNoticesByPriority(
             @PathVariable int priority,
