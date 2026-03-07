@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
@@ -27,19 +28,26 @@ public class NoticeController {
         this.noticeService = noticeService;
     }
 
-    // GET all active global notices
-    @GetMapping("/all")
+  // GET all global notices (Admin only)
+    @GetMapping("/global")
     public ResponseEntity<List<Notice>> getAllActiveNotices() {
         List<Notice> notices = noticeService.getAllActiveNotices();
         return ResponseEntity.ok(notices);
     }
 
-    // GET notices for a specific cooperative (includes global notices)
-    @GetMapping("/cooperative/{cooperativeId}")
-    public ResponseEntity<List<Notice>> getNoticesForCooperative(@PathVariable Long cooperativeId) {
-        List<Notice> notices = noticeService.getNoticesForCooperative(cooperativeId);
+
+ // ----- Giver nok ikke mening at have man kan bare udvide /all så admin kan sætte forskellige coops ----
+
+    // GET - All active notices in coop 
+    // Admin can specify
+    @GetMapping
+    public ResponseEntity<List<Notice>> getNotices(
+            @RequestParam(required = false) Long cooperativeId) {
+        List<Notice> notices = noticeService.getNotices(cooperativeId);
         return ResponseEntity.ok(notices);
     }
+
+
 
     // GET single notice by ID
     @GetMapping("/{noticeId}")
@@ -52,11 +60,14 @@ public class NoticeController {
  
     
      // GET notices filtered by priority
-    @GetMapping("/filter/{priority}")
-    public ResponseEntity<List<Notice>> getNoticesByPriority(@PathVariable int priority) {
-        List<Notice> notices = noticeService.getNoticesByPriority(priority);
+ // GET - Notices filtered by priority
+    @GetMapping("/priority/{priority}")
+    public ResponseEntity<List<Notice>> getNoticesByPriority(
+            @PathVariable int priority,
+            @RequestParam(required = false) Long cooperativeId) {
+        List<Notice> notices = noticeService.getNoticesByPriority(priority, cooperativeId);
         return ResponseEntity.ok(notices);
-    } 
+    }
 /* 
     // GET notices filtered by priority (e.g. /api/notices/filter?priority=High)
    @GetMapping("/filter")
