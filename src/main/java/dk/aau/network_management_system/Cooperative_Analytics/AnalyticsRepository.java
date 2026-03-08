@@ -110,4 +110,26 @@ public interface AnalyticsRepository extends JpaRepository<CooperativeEntity, Lo
         @Param("endDate") LocalDateTime endDate
     );
 
+    //last5sales for cooperative
+    @Query(value = """
+            SELECT
+                s.material,
+                s.weight,
+                s.price_kg,
+                s.date
+            FROM sales s
+            JOIN workers w ON s.responsible = w.worker_id
+            WHERE s.material = ?
+              AND w.cooperative = ?
+            ORDER BY s.date DESC
+            LIMIT 5
+            """, nativeQuery = true)
+    List<Object[]> LastSalesCooperativeRaw(
+        @Param("cooperativeId") Long cooperativeId,
+        @Param("materialId") Long materialId
+        //@Param("startDate") LocalDateTime startDate,
+        //@Param("endDate") LocalDateTime endDate
+    );
+
+
 }

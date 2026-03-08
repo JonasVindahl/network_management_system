@@ -166,4 +166,34 @@ public class AnalyticsService {
         }
 
 
+
+    //GET - revenue for cooperative and sales + average kg price 
+    public List<Last5SalesDTO> findLastSalesForCooperative(
+        Long cooperativeId, Long materialId){
+            
+        // Workers cannot see ALL workers
+        if (authenticatedUser.isWorker()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                "Workers can only view their own productivity");
+        }
+        
+        // Managers can only see own cooperative
+        if (!authenticatedUser.isAdmin() && 
+            !cooperativeId.equals(authenticatedUser.getCooperativeId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                "You can only access your own cooperative's data");
+        }
+
+        List<Object[]> raw = repository.LastSalesCooperativeRaw(cooperativeId, materialId);
+
+        return raw.stream()
+            .map(row -> new Last5SalesDTO(
+                ((Number) row[0]).longValue(),   // material
+                ((Number) row[1]).doubleValue(), // weight
+                ((Number) row[2]).doubleValue(), // price_kg
+                ((java.sql.Date) row[3]).toLocalDate() // date
+            ))
+            .collect(Collectors.toList());
+        }
+
 }

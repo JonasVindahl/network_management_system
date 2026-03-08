@@ -170,6 +170,33 @@ public class AnalyticsController {
     }
 
 
+    @GetMapping("/cooperative/lastsales")
+    public ResponseEntity<List<Last5SalesDTO>> findLastSalesForCooperative(
+            @RequestParam(required = false) Long cooperativeId,
+            @RequestParam Long materialId) {
+
+        Long targetCooperativeId;
+
+        if (authenticatedUser.isWorker()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                "Workers cannot access sales data");
+            
+        } else if (authenticatedUser.isManager()) {
+            targetCooperativeId = authenticatedUser.getCooperativeId();
+            
+        } else {
+            // Admin skal specificere cooperativeId
+            if (cooperativeId == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
+                    "Admin must specify cooperativeId parameter");
+            }
+            targetCooperativeId = cooperativeId;
+        }
+
+        List<Last5SalesDTO> result = service.findLastSalesForCooperative(targetCooperativeId, materialId);
+        return ResponseEntity.ok(result);
+    }
+
 
     @GetMapping("/stock")
     public ResponseEntity<List<StockByMaterialDTO>> getStockByMaterial(
