@@ -1,4 +1,5 @@
 package dk.aau.network_management_system.Cooperative_Analytics;
+import dk.aau.network_management_system.Cooperative_Analytics.AnalyticsService;
 
 import java.time.LocalDateTime;
 import java.util.List;
