@@ -110,7 +110,7 @@ public interface AnalyticsRepository extends JpaRepository<CooperativeEntity, Lo
         @Param("endDate") LocalDateTime endDate
     );
 
-    //revenue for cooperative
+    //last5sales for cooperative
     @Query(value = """
             SELECT
                 s.material,
