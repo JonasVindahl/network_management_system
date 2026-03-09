@@ -26,7 +26,7 @@ public class Last5SalesController   {
     }
 
     // /getLast5Sales?materialId=1
-    @GetMapping("/getLast5Sales")
+    @GetMapping("/api/getLast5Sales")
     public List<Map<String, Object>> getLast5Sales(@RequestParam long materialId) {
 
         if (authenticatedUser.isWorker()) {
