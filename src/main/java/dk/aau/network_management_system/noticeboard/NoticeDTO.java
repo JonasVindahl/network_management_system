@@ -19,10 +19,7 @@ public class NoticeDTO {
     @NotNull(message = "Priority is required")
     @Min(value = 1, message = "Priority must be between 1 and 3")
     @Max(value = 3, message = "Priority must be between 1 and 3")
-    private Integer priority;  // Ændret til Integer
-
-    // @NotNull(message = "Creator ID is required")
-    // private Long createdBy; - fjernet, da det kan hentes fra sikkerhedskonteksten i controlleren
+    private Integer priority;
 
     @NotNull(message = "Expiry time is required")
     @Future(message = "Expiry time must be in the future")
@@ -42,16 +39,9 @@ public class NoticeDTO {
     public Integer getPriority() { return priority; }
     public void setPriority(Integer priority) { this.priority = priority; }
 
-    // public Long getCreatedBy() { return createdBy; }
-    // public void setCreatedBy(Long createdBy) { this.createdBy = createdBy; } - fjernet, da det kan hentes fra sikkerhedskonteksten i controlleren
-
     public Instant getExpiresAt() { return expiresAt; }
     public void setExpiresAt(Instant expiresAt) { this.expiresAt = expiresAt; }
 
     public Long getCooperativeId() { return cooperativeId; }
     public void setCooperativeId(Long cooperativeId) { this.cooperativeId = cooperativeId; }
 }
-
-
-//Deleted createdBy as it can automatically be obtained by JWT in NoticeService instead of being got automatically from request body.
-//The user now can't have the opportunity to set createdBy to another user, which is a security risk.

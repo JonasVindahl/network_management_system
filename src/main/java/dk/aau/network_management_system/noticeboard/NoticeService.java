@@ -22,19 +22,12 @@ public class NoticeService {
         this.authenticatedUser = authenticatedUser;
     }
 
-    // Public API
-
     // GET - get all active notices (non-expired)
     public List<Notice> getNotices(Long cooperativeId) {
         return noticeRepository.findActiveNoticesForCooperative(
             resolveCooperativeId(cooperativeId), Instant.now()
         );
     }
-
-    // GET - get all active notices for a specific cooperative
-    // public List<Notice> getNoticesForCooperative(Long cooperativeId) { - fjernet, da det kan håndteres i getNotices() ved at sende cooperativeId som parameter
-        // return noticeRepository.findActiveNoticesForCooperative(cooperativeId, Instant.now());
-    // }
 
     // GET - get all active global notices + noticed for users own cooperative
     public List<Notice> getAllActiveNotices() {
@@ -54,16 +47,6 @@ public class NoticeService {
         return noticeRepository.findByPriorityAndCooperativeId(priority, resolveCooperativeId(cooperativeId), Instant.now());
     }
 
-    // GET updates
-    // - getNotices() replaces getNoticesForCooperative() - the cooperativeId resolves via JWT instead of request param
-    // - getAllActiveNotices() has gotten requireAdmin() check, only Admins can see global notices
-    // - getNoticeById() has gotten requireReadAccess() - worker manager kan se egen cooperative eller globale notices, admin kan se alle notices
-    // - getNoticesByPriority() uses findByPriorityAndCooperativeId() which is cooperatve-scoped, instead of the oldfindByPriority() which returned notices from all cooperatives, which was a security risk.
-
-
-     // Helper methods
-    // POST - create a new notice. Only Managers and Admins.
-
     public Notice createNotice(NoticeDTO dto) {
         requireManagerOrAdmin(); //Workers kan nu ikke oprette notices
             Notice notice = new Notice(
@@ -76,18 +59,6 @@ public class NoticeService {
             );
             return noticeRepository.save(notice);
     }
-
-
-    /* // PUT - modify an existing notice. Only Manager (for own cooperative) and Admin (for all notices)
-
-    public Optional<Notice> modifyNotice(Long noticeId, String title, String content) {
-        return noticeRepository.findById(noticeId).map(notice -> {
-            if (title != null && !title.isBlank()) notice.setTitle(title);
-            if (content != null && !content.isBlank()) notice.setContent(content);
-            notice.setLastUpdated(Instant.now());
-            return noticeRepository.save(notice);
-        });
-    } */
 
       public Optional<Notice> modifyNotice(Long noticeId, NoticeDTO dto) {
         requireManagerOrAdmin();
@@ -109,9 +80,7 @@ public class NoticeService {
         }).orElse(false);
     }
 
-// ---------------------------------------------------------------------------------------
-// Private helpers: permission checks
-// ---------------------------------------------------------------------------------------
+
 
 // Throws FORBIDDEN if the user is a Worker
 private void requireManagerOrAdmin(){
@@ -157,11 +126,6 @@ private void requireWriteAccess(Notice notice){
     }
 }
 
-
-// ----------------------------------------------------------------------------------
-// Private helper
-// ----------------------------------------------------------------------------------
-
 // Used for GET: Worker/Managers come to JWT-cooperative, Admin can give parameter cooperativeId or leave it out to get global notices
 private Long resolveCooperativeId(Long requestedCooperativeId){
     if (!authenticatedUser.isAdmin()){
@@ -182,10 +146,6 @@ private Long resolveCooperativeIdForWrite(Long dtoCooperativeId){
     return dtoCooperativeId; // Admin can set cooperativeId or leave it null for global notice
 }
 
-// ---------------------------------------------------------------------------------------
-// Private helpers: field updates
-// ---------------------------------------------------------------------------------------
-
 //Update only the fields that are present in the DTO (non-null)
 // Managers can not change cooperativeId - only Admin
 private void applyUpdates(Notice notice, NoticeDTO dto){
@@ -203,16 +163,3 @@ private void applyUpdates(Notice notice, NoticeDTO dto){
     }
     
 }
-
-
-// NoticeService changes Dwaj:
-// - Added AuthenticatedUser injection to enable permission checks
-// - getNotices() replaces getNoticesForCooperative() - cooperativeId now resolved via JWT instead of request param
-// - getAllActiveNotices() restricted to Admin only via requireAdmin()
-// - getNoticeById() now checks read access via requireReadAccess() - Workers/Managers can only see own cooperative or global notices
-// - getNoticesByPriority() now uses cooperative-scoped query findByPriorityAndCooperativeId() instead of old findByPriority() which had no scope
-// - createNotice() restricted to Manager/Admin via requireManagerOrAdmin(), createdBy now fetched from JWT instead of request body
-// - modifyNotice() restricted to Manager/Admin, Managers can only modify own cooperative notices via requireWriteAccess()
-// - deleteNotice() restricted to Manager/Admin, Managers can only delete own cooperative notices via requireWriteAccess()
-// - Added private helpers: requireManagerOrAdmin(), requireAdmin(), requireReadAccess(), requireWriteAccess()
-// - Added private helpers: resolveCooperativeId(), resolveCooperativeIdForWrite(), applyUpdates()
