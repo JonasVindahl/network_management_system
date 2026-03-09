@@ -44,7 +44,7 @@ public class NoticeController {
 
 
     // GET all active global notices. Only Admin
-    @GetMapping("{/global}")
+    @GetMapping("/global")
     public ResponseEntity<List<Notice>> getGlobalNotices() {
         return ResponseEntity.ok(noticeService.getAllActiveNotices());
     }
@@ -99,3 +99,14 @@ public ResponseEntity<List<Notice>> getNoticesByPriority(@RequestParam int prior
                 : ResponseEntity.notFound().build();
     }
 }
+
+
+// Updates - Dwaj
+// GET /api/notices -> changes the old /all and /cooperative/{id} endpoints. All permission logic is now deleted from the controller and is moved to the service
+// GET /api/notices/global -> new endpoint only for Admin to see global notices
+// GET /api/notices/{noticeId} -> unchanged but permissions get checked in service instead of controller
+// GET /api/notices/filter -> uses ?priority= query param in stead of /filter/{priority} path variable, also taks ?cooperativeId= as a parameter
+// POST /api/notices -> isn't changed but createdBy doesn't need to be sent in the request body, as it can be obtained from the JWT in the service layer, which is more secure
+// PUT /api/notices/{noticeId} -> old commented method woth title and content that were seperated is deleted, only the new DTO-version is kept
+// DELET /api/notices/{noticeId} -> unchanged but permissions get checked in service instead of controller
+// The controller is focusing on HTTP routing - ingen if/else på roller, det ligger i NoticeService

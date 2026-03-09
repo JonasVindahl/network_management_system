@@ -61,11 +61,6 @@ public class NoticeService {
     // - getNoticesByPriority() uses findByPriorityAndCooperativeId() which is cooperatve-scoped, instead of the oldfindByPriority() which returned notices from all cooperatives, which was a security risk.
 
 
-
-
-
-
-
      // Helper methods
     // POST - create a new notice. Only Managers and Admins.
 
@@ -113,10 +108,6 @@ public class NoticeService {
             return true;
         }).orElse(false);
     }
-
-
-
-
 
 // ---------------------------------------------------------------------------------------
 // Private helpers: permission checks
