@@ -19,15 +19,13 @@ public class NoticeDTO {
     @NotNull(message = "Priority is required")
     @Min(value = 1, message = "Priority must be between 1 and 3")
     @Max(value = 3, message = "Priority must be between 1 and 3")
-    private Integer priority;  // Ændret til Integer
-
-    @NotNull(message = "Creator ID is required")
-    private Long createdBy;
+    private Integer priority;
 
     @NotNull(message = "Expiry time is required")
     @Future(message = "Expiry time must be in the future")
     private Instant expiresAt;
 
+    //Kun relevant for Admin - Manager får cooperativeId fra JWT
     private Long cooperativeId;
 
     public NoticeDTO() {}
@@ -40,9 +38,6 @@ public class NoticeDTO {
 
     public Integer getPriority() { return priority; }
     public void setPriority(Integer priority) { this.priority = priority; }
-
-    public Long getCreatedBy() { return createdBy; }
-    public void setCreatedBy(Long createdBy) { this.createdBy = createdBy; }
 
     public Instant getExpiresAt() { return expiresAt; }
     public void setExpiresAt(Instant expiresAt) { this.expiresAt = expiresAt; }

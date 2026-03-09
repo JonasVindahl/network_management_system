@@ -4,84 +4,162 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import dk.aau.network_management_system.auth.AuthenticatedUser;
 
 @Service
 public class NoticeService {
 
     private final NoticeRepository noticeRepository;
+    private final AuthenticatedUser authenticatedUser;
 
     @Autowired
-    public NoticeService(NoticeRepository noticeRepository) {
+    public NoticeService(NoticeRepository noticeRepository, AuthenticatedUser authenticatedUser) {
         this.noticeRepository = noticeRepository;
+        this.authenticatedUser = authenticatedUser;
     }
 
     // GET - get all active notices (non-expired)
-    public List<Notice> getAllNotices() {
-        return noticeRepository.findAll().stream()
-                .filter(n -> !n.isExpired())
-                .toList();
+    public List<Notice> getNotices(Long cooperativeId) {
+        return noticeRepository.findActiveNoticesForCooperative(
+            resolveCooperativeId(cooperativeId), Instant.now()
+        );
     }
 
-    // GET - get all active notices for a specific cooperative
-    public List<Notice> getNoticesForCooperative(Long cooperativeId) {
-        return noticeRepository.findActiveNoticesForCooperative(cooperativeId, Instant.now());
-    }
-
-    // GET - get all active global notices
+    // GET - get all active global notices + noticed for users own cooperative
     public List<Notice> getAllActiveNotices() {
+        requireAdmin();
         return noticeRepository.findActiveGlobalNotices(Instant.now());
     }
 
-    // GET - get single notice by ID
+    // GET - get single notice by ID - this can be used by both Workers and Managers, but they can only access notices from their own cooperative or global notices
     public Optional<Notice> getNoticeById(Long noticeId) {
-        return noticeRepository.findById(noticeId);
+        Optional<Notice> notice = noticeRepository.findById(noticeId);
+        notice.ifPresent(n -> requireReadAccess(n));
+        return notice;
     }
 
     // GET - get notices filtered by priority
-    public List<Notice> getNoticesByPriority(int priority) {
-        return noticeRepository.findByPriority(priority);  // Kun én parameter
-    }
-
-    // POST - create a new notice
-    public Notice createNotice(String title, String content, int priority, Long createdBy, Instant expiresAt, Long cooperativeId) {
-        Notice notice = new Notice(title, content, priority, createdBy, expiresAt, cooperativeId);
-        return noticeRepository.save(notice);
+    public List<Notice> getNoticesByPriority(int priority, Long cooperativeId) {
+        return noticeRepository.findByPriorityAndCooperativeId(priority, resolveCooperativeId(cooperativeId), Instant.now());
     }
 
     public Notice createNotice(NoticeDTO dto) {
-        return createNotice(dto.getTitle(), dto.getContent(), dto.getPriority(), dto.getCreatedBy(), dto.getExpiresAt(), dto.getCooperativeId());
+        requireManagerOrAdmin(); //Workers kan nu ikke oprette notices
+            Notice notice = new Notice(
+                dto.getTitle(),
+                dto.getContent(),
+                dto.getPriority(),
+                authenticatedUser.getWorkerId(), // Hent createdBy fra JWT - i stedet for request body - forhindrer bruger u at udgive sig for at være en anden bruger
+                dto.getExpiresAt(),
+                resolveCooperativeIdForWrite(dto.getCooperativeId()) // Manager låses automatisk til egen cooperative fra JWT, Admin kan selv sætte cooperativId eller sende null for global notice
+            );
+            return noticeRepository.save(notice);
     }
 
-
-    /* // PUT - modify an existing notice
-    public Optional<Notice> modifyNotice(Long noticeId, String title, String content) {
-        return noticeRepository.findById(noticeId).map(notice -> {
-            if (title != null && !title.isBlank()) notice.setTitle(title);
-            if (content != null && !content.isBlank()) notice.setContent(content);
-            notice.setLastUpdated(Instant.now());
-            return noticeRepository.save(notice);
-        });
-    } */
-
       public Optional<Notice> modifyNotice(Long noticeId, NoticeDTO dto) {
-    return noticeRepository.findById(noticeId).map(notice -> {
-        if (dto.getTitle() != null && !dto.getTitle().isBlank()) notice.setTitle(dto.getTitle());
-        if (dto.getContent() != null && !dto.getContent().isBlank()) notice.setContent(dto.getContent());
-        if (dto.getPriority() != null) notice.setPriority(dto.getPriority());
-        if (dto.getExpiresAt() != null) notice.setExpiresAt(dto.getExpiresAt());
-        if (dto.getCooperativeId() != null) notice.setCooperativeId(dto.getCooperativeId());
-        notice.setLastUpdated(Instant.now());
-        return noticeRepository.save(notice);
-    });
+        requireManagerOrAdmin();
+        return noticeRepository.findById(noticeId).map(notice -> {
+           requireWriteAccess(notice);
+           applyUpdates(notice, dto);
+           notice.setLastUpdated(Instant.now());
+           return noticeRepository.save(notice);
+        });
 } 
 
     // DELETE - remove a notice
     public boolean deleteNotice(Long noticeId) {
-        if (noticeRepository.existsById(noticeId)) {
+        requireManagerOrAdmin();
+        return noticeRepository.findById(noticeId).map(notice -> {
+            requireWriteAccess(notice);
             noticeRepository.deleteById(noticeId);
             return true;
-        }
-        return false;
+        }).orElse(false);
     }
+
+
+
+// Throws FORBIDDEN if the user is a Worker
+private void requireManagerOrAdmin(){
+    if (authenticatedUser.isWorker()){
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+            "Workers can't perform this action");
+        
+    }
+}
+
+// Throws FORBIDDEN if the user is not an Admin
+private void requireAdmin(){
+    if (!authenticatedUser.isAdmin()){
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+            "Only Admins can perform this action");
+    }
+}
+
+// Throws FORBIDDEN if the Worker/Manager tries to read a notice out of their own cooperative (but they can read global notices)
+private void requireReadAccess(Notice notice){
+    if(authenticatedUser.isAdmin()) return;
+    Long myCoopId = authenticatedUser.getCooperativeId();
+    boolean isGlobal = notice.getCooperativeId() == null;
+    boolean isOwnCoop = myCoopId.equals(notice.getCooperativeId());
+    if(!isGlobal && !isOwnCoop){
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+            "You don't have access to this notice - you can only see notices from your own cooperative or global notices");
+    }
+}
+
+
+
+// Throws FORBIDDEN if the manager tries to modify a notice out of their own cooperative, Admins can modify all notices
+// Managers may not change global notices (cooperativeId = null) as this would affect all cooperatives, only Admins can create and modify global notices
+private void requireWriteAccess(Notice notice){
+    if (authenticatedUser.isAdmin()) return;
+    Long myCoopId = authenticatedUser.getCooperativeId();
+    boolean isGlobal = notice.getCooperativeId() == null;
+    boolean isOwnCoop = myCoopId.equals(notice.getCooperativeId());
+    if(isGlobal || !isOwnCoop){
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+            "You don't have access to modify this notice - you can only modify notices from your own cooperative, and you can't modify global notices");
+    }
+}
+
+// Used for GET: Worker/Managers come to JWT-cooperative, Admin can give parameter cooperativeId or leave it out to get global notices
+private Long resolveCooperativeId(Long requestedCooperativeId){
+    if (!authenticatedUser.isAdmin()){
+        return authenticatedUser.getCooperativeId();
+    }
+    if (requestedCooperativeId == null){
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+            "Admin has to give a cooperativeId as a parameter");
+    }
+    return requestedCooperativeId;
+}
+
+// Used for POST/PUT : Managers come to JWT-cooperative, Admin uses DTO-value (null means global notice)
+private Long resolveCooperativeIdForWrite(Long dtoCooperativeId){
+    if (authenticatedUser.isManager()){
+        return authenticatedUser.getCooperativeId();
+    }
+    return dtoCooperativeId; // Admin can set cooperativeId or leave it null for global notice
+}
+
+//Update only the fields that are present in the DTO (non-null)
+// Managers can not change cooperativeId - only Admin
+private void applyUpdates(Notice notice, NoticeDTO dto){
+    if (dto.getTitle() != null && !dto.getTitle().isBlank())
+        notice.setTitle(dto.getTitle());
+    if (dto.getContent() != null && !dto.getContent().isBlank())
+        notice.setContent(dto.getContent());
+    if (dto.getPriority() != null)
+        notice.setPriority(dto.getPriority());
+    if (dto.getExpiresAt() != null)
+        notice.setExpiresAt(dto.getExpiresAt());
+    if (authenticatedUser.isAdmin() && dto.getCooperativeId() != null) // Only Admin can change cooperativeId, and it can be set to null for global notice
+        notice.setCooperativeId(dto.getCooperativeId());
+
+    }
+    
 }
