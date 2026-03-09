@@ -1,19 +1,20 @@
 package dk.aau.network_management_system;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.ArrayList;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import dk.aau.network_management_system.auth.AuthenticatedUser;
 
-// Markerer klassen som en REST API controller
 @RestController
 public class LeaderboardController {
 
@@ -30,14 +31,14 @@ public class LeaderboardController {
     public List<Map<String, Object>> getTop3(
             @RequestParam(required = false) Long cooperativeId) {
 
-        // Bestem hvilken cooperative der skal hentes data for
         Long targetCooperativeId;
         if (authenticatedUser.isAdmin()) {
-            targetCooperativeId = cooperativeId != null
-                    ? cooperativeId
-                    : authenticatedUser.getCooperativeId();
+            if (cooperativeId == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Admin skal angive cooperativeId");
+            }
+            targetCooperativeId = cooperativeId;
         } else {
-            // Manager kan KUN se egen cooperative (ignorer cooperativeId param)
             targetCooperativeId = authenticatedUser.getCooperativeId();
         }
 
