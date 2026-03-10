@@ -9,8 +9,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-@Entity //database
-@Table(name = "Cooperative_material_multiplier", schema = "public") //tabel fra database
+@Entity 
+@Table(name = "Cooperative_material_multiplier", schema = "public")
 public class CooperativeMaterialMultiplier {
     
 
@@ -21,8 +21,7 @@ public class CooperativeMaterialMultiplier {
     private UUID id;
     
 
-    // alle de forskellige kolonner i tebellen for "Cooperative_material_multiplier"
-    // nullable kan vi bruge til at sætte om kolonnen må være tom/NULL
+    // Tabel for "Cooperative_material_multiplier"
     @Column(name = "cooperative_id", nullable = false)
     private Long cooperativeId;
     
@@ -32,13 +31,10 @@ public class CooperativeMaterialMultiplier {
     @Column(name = "multiplier_value", nullable = false)
     private Double multiplierValue;
     
-    // denne kolonne opdatere databsen selv
     @Column(name = "last_updated", insertable = false, updatable = false)
     private LocalDateTime lastUpdated;
 
     // https://www.baeldung.com/java-why-getters-setters
-    // dette er getters and setters uden dem kan spring ikke Konvertere objektet til JSON(som er standart for rest api)
-    // opretter metoder der kan tilgå de private "felter"
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
     public Long getCooperativeId() { return cooperativeId; }

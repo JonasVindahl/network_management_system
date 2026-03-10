@@ -2,7 +2,6 @@ package dk.aau.network_management_system.multiplier;
 
 
 // skal ændres til kun at være material og muliplier 
-// cooperative id skal vi gerne have fra man logger ind
 public class MultiplierDTO {
     private Long cooperativeId;
     private Long materialId;

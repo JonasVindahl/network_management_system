@@ -17,17 +17,14 @@ public class CooperativeMaterialMultiplierService {
     public CooperativeMaterialMultiplier saveOrUpdateMultiplier(
             Long cooperativeId, Long materialId, Double multiplierValue) {
         
-        // tjekker om multiplieren allerde eksistere
         Optional<CooperativeMaterialMultiplier> existing = 
             repository.findByCooperativeIdAndMaterialId(cooperativeId, materialId);
         
-        // hvis den eksistere skal den ændres
         if (existing.isPresent()) {
             CooperativeMaterialMultiplier multiplier = existing.get();
             multiplier.setMultiplierValue(multiplierValue);
             return repository.save(multiplier);
 
-        //hvis den ikke eksistere skal der oprettes en ny multiplier
         } else {
             CooperativeMaterialMultiplier multiplier = new CooperativeMaterialMultiplier();
             multiplier.setCooperativeId(cooperativeId);
@@ -37,7 +34,6 @@ public class CooperativeMaterialMultiplierService {
         }
     }
     
-    // hvis man gerne vil hente en multiplier
     public Optional<CooperativeMaterialMultiplier> getMultiplier(
             Long cooperativeId, Long materialId) {
         return repository.findByCooperativeIdAndMaterialId(cooperativeId, materialId);
