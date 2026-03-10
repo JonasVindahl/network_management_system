@@ -34,8 +34,10 @@ public class CooperativeMaterialMultiplierService {
         }
     }
     
+
+
     public Optional<CooperativeMaterialMultiplier> getMultiplier(
-            Long cooperativeId, Long materialId) {
+            Long cooperativeId, Long materialId) {                
         return repository.findByCooperativeIdAndMaterialId(cooperativeId, materialId);
     }
 }

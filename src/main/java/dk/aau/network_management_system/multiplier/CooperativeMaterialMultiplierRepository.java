@@ -14,8 +14,7 @@ import org.springframework.stereotype.Repository;
 //sætter entity typen for interfacet
 public interface CooperativeMaterialMultiplierRepository extends JpaRepository<CooperativeMaterialMultiplier, UUID> {
     
-    // container der indeholder værdi eller er tom
     Optional<CooperativeMaterialMultiplier> findByCooperativeIdAndMaterialId(Long cooperativeId, Long materialId);
-    // list der indholder coop id 
     List<CooperativeMaterialMultiplier> findByCooperativeId(Long cooperativeId);
+
 }
