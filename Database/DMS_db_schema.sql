@@ -95,11 +95,12 @@ CREATE TABLE IF NOT EXISTS public.collective_sale
 (
     collective_sale_id bigserial NOT NULL,
     created_at         timestamp DEFAULT now(),
-    sold_at            timestamp NOT NULL,
+    sold_at            timestamp,
     buyer_id           bigint NOT NULL,
     material_id        bigint NOT NULL,
     total_weight       numeric(10, 2) NOT NULL,
     price_kg           numeric(10, 2) NOT NULL,
+    expected_sale_date date,
     PRIMARY KEY (collective_sale_id),
     FOREIGN KEY (material_id) REFERENCES public.materials(material_id),
     FOREIGN KEY (buyer_id) REFERENCES public.buyers(buyer_id)
@@ -149,13 +150,16 @@ CREATE TABLE IF NOT EXISTS public.cooperative_random_multiplier
 CREATE TABLE IF NOT EXISTS public.sales
 (
     sale_id     bigserial NOT NULL,
-    date        date NOT NULL,
+    date        date,
     material    bigint NOT NULL,
     weight      numeric(10, 2) NOT NULL,
     price_kg    numeric(10, 2) NOT NULL,
     buyer       bigint NOT NULL,
     responsible bigint NOT NULL,   -- the worker responsible for the sale
+    cooperative_id bigint NOT NULL,    
+    expected_sale_date date,
     PRIMARY KEY (sale_id),
+    FOREIGN KEY (cooperative_id) REFERENCES public.cooperative(cooperative_id),
     FOREIGN KEY (material) REFERENCES public.materials(material_id),
     FOREIGN KEY (buyer) REFERENCES public.buyers(buyer_id),
     FOREIGN KEY (responsible) REFERENCES public.workers(worker_id)
