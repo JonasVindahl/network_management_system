@@ -10,40 +10,57 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import dk.aau.network_management_system.auth.PermissionHelper;
 import jakarta.validation.Valid;
 
-
-
-// Selve REST API delen
 @RestController
 @RequestMapping("/api")
 public class CooperativeMaterialMultiplierController {
     
-    @Autowired
-    private CooperativeMaterialMultiplierService service;
+    private final CooperativeMaterialMultiplierService service;
+    private final PermissionHelper permissionHelper;
     
+    @Autowired
+    public CooperativeMaterialMultiplierController(
+            CooperativeMaterialMultiplierService service,
+            PermissionHelper permissionHelper) {
+        this.service = service;
+        this.permissionHelper = permissionHelper;
+    }
 
+  
     @PostMapping("/multipliers")
     public ResponseEntity<CooperativeMaterialMultiplier> saveOrUpdateMultiplier(
             @Valid @RequestBody MultiplierDTO dto) {
+        
+        permissionHelper.requireManagerOrAdmin();
+        
+        // target cooperative
+        Long targetCooperativeId = permissionHelper.determineTargetCooperativeForWrite(
+            dto.getCooperativeId()
+        );
+        
         CooperativeMaterialMultiplier result = service.saveOrUpdateMultiplier(
-            dto.getCooperativeId(), 
+            targetCooperativeId, 
             dto.getMaterialId(), 
             dto.getMultiplierValue()
         );
+        
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
-
     }
     
-    // her er en get request til at hente data 
     @GetMapping("/multipliers")
     public ResponseEntity<CooperativeMaterialMultiplier> getMultiplier(
             @RequestParam(required = false) Long cooperativeId,
-            @RequestParam Long  materialId) {
-        return service.getMultiplier(cooperativeId, materialId)
+            @RequestParam Long materialId) {
+        
+        permissionHelper.requireManagerOrAdmin();
+        
+        // target cooperative
+        Long targetCooperativeId = permissionHelper.determineTargetCooperative(cooperativeId);
+        
+        return service.getMultiplier(targetCooperativeId, materialId)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
-    
-    
-        }
+    }
 }
