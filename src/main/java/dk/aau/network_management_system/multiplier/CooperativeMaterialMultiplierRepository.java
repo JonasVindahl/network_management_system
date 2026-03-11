@@ -10,7 +10,6 @@ import org.springframework.stereotype.Repository;
 
 //https://www.geeksforgeeks.org/springboot/spring-boot-jparepository-with-example/
 @Repository
-//sætter entity typen for interfacet
 public interface CooperativeMaterialMultiplierRepository extends JpaRepository<CooperativeMaterialMultiplier, UUID> {
     
     Optional<CooperativeMaterialMultiplier> findByCooperativeIdAndMaterialId(Long cooperativeId, Long materialId);
