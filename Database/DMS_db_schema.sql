@@ -150,7 +150,7 @@ CREATE TABLE IF NOT EXISTS public.cooperative_random_multiplier
 CREATE TABLE IF NOT EXISTS public.sales
 (
     sale_id     bigserial NOT NULL,
-    date        date,
+    created_at  timestamp DEFAULT now(),
     material    bigint NOT NULL,
     weight      numeric(10, 2) NOT NULL,
     price_kg    numeric(10, 2) NOT NULL,
@@ -158,6 +158,7 @@ CREATE TABLE IF NOT EXISTS public.sales
     responsible bigint NOT NULL,   -- the worker responsible for the sale
     cooperative_id bigint NOT NULL,    
     expected_sale_date date,
+    sold_at     timestamp,
     PRIMARY KEY (sale_id),
     FOREIGN KEY (cooperative_id) REFERENCES public.cooperative(cooperative_id),
     FOREIGN KEY (material) REFERENCES public.materials(material_id),
