@@ -1,50 +1,66 @@
 package dk.aau.network_management_system.multiplier;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import org.springframework.http.HttpStatus;
+import dk.aau.network_management_system.auth.PermissionHelper;
 import jakarta.validation.Valid;
-import org.springframework.web.bind.annotation.*;
 
-
-
-// Selve REST API delen
 @RestController
-@RequestMapping("/api/cooperative-material-multipliers")
+@RequestMapping("/api")
 public class CooperativeMaterialMultiplierController {
     
-    @Autowired
-    private CooperativeMaterialMultiplierService service;
+    private final CooperativeMaterialMultiplierService service;
+    private final PermissionHelper permissionHelper;
     
-    // bruges til at oprette/opdatere data
-    @PostMapping
+    @Autowired
+    public CooperativeMaterialMultiplierController(
+            CooperativeMaterialMultiplierService service,
+            PermissionHelper permissionHelper) {
+        this.service = service;
+        this.permissionHelper = permissionHelper;
+    }
+
+  
+    @PostMapping("/multipliers")
     public ResponseEntity<CooperativeMaterialMultiplier> saveOrUpdateMultiplier(
             @Valid @RequestBody MultiplierDTO dto) {
-        // når der modtages et post requesten konvertes det til dto objekt 
+        
+        permissionHelper.requireManagerOrAdmin();
+        
+        // target cooperative
+        Long targetCooperativeId = permissionHelper.determineTargetCooperativeForWrite(
+            dto.getCooperativeId()
+        );
+        
         CooperativeMaterialMultiplier result = service.saveOrUpdateMultiplier(
-            dto.getCooperativeId(), 
+            targetCooperativeId, 
             dto.getMaterialId(), 
             dto.getMultiplierValue()
         );
+        
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
-
     }
     
-    // her er en get request til at hente data 
-    @GetMapping("/cooperative/{cooperativeId}/material/{materialId}")
+    @GetMapping("/multipliers")
     public ResponseEntity<CooperativeMaterialMultiplier> getMultiplier(
-            @PathVariable Long cooperativeId,
-            @PathVariable Long materialId) {
-        return service.getMultiplier(cooperativeId, materialId)
+            @RequestParam(required = false) Long cooperativeId,
+            @RequestParam Long materialId) {
+        
+        permissionHelper.requireManagerOrAdmin();
+        
+        // target cooperative
+        Long targetCooperativeId = permissionHelper.determineTargetCooperative(cooperativeId);
+        
+        return service.getMultiplier(targetCooperativeId, materialId)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
-    
-    
-        }
+    }
 }
