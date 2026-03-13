@@ -1,6 +1,6 @@
 package dk.aau.network_management_system.Cooperative_Analytics;
 
-import java.time.LocalDateTim;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
