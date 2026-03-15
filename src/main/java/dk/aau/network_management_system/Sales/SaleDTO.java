@@ -1,4 +1,4 @@
-package dk.aau.network_management_system.Cooperative_Analytics;
+package dk.aau.network_management_system.Sales;
 
 import java.time.Instant;
 
@@ -22,7 +22,7 @@ public class SaleDTO {
     
     public SaleDTO() {}
     
-    // Normal sale constructor
+    // normal sale constructor
     public SaleDTO(Long saleId, String saleType, Instant createdAt, Instant soldAt,
                    Instant expectedSaleDate, String materialName, Double weight, 
                    Double pricePerKg, String buyerName) {
