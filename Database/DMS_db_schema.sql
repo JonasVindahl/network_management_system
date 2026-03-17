@@ -100,7 +100,7 @@ CREATE TABLE IF NOT EXISTS public.collective_sale
     material_id        bigint NOT NULL,
     total_weight       numeric(10, 2) NOT NULL,
     price_kg           numeric(10, 2) NOT NULL,
-    expected_sale_date timestamp,
+    expected_sale_date timestamp NOT NULL,
     PRIMARY KEY (collective_sale_id),
     FOREIGN KEY (material_id) REFERENCES public.materials(material_id),
     FOREIGN KEY (buyer_id) REFERENCES public.buyers(buyer_id)
@@ -158,7 +158,7 @@ CREATE TABLE IF NOT EXISTS public.sales
     buyer       bigint NOT NULL,
     responsible bigint NOT NULL,   -- the worker responsible for the sale
     cooperative_id bigint NOT NULL,    
-    expected_sale_date timestamp,
+    expected_sale_date timestamp NOT NULL,
     PRIMARY KEY (sale_id),
     FOREIGN KEY (cooperative_id) REFERENCES public.cooperative(cooperative_id),
     FOREIGN KEY (material) REFERENCES public.materials(material_id),
