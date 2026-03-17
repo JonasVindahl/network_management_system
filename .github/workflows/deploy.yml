@@ -1,0 +1,35 @@
+name: Build and Deploy
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-test:
+    runs-on: [self-hosted, proxmox]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build only (test)
+        run: docker compose build
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+
+  deploy:
+    needs: build-test
+    if: github.event_name == 'push'
+    runs-on: [self-hosted, proxmox]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy
+        run: |
+          docker compose build
+          docker compose up -d
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
