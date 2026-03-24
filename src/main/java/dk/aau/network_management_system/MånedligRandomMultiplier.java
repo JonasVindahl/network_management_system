@@ -12,15 +12,15 @@ import org.springframework.stereotype.Component;
 
 @EnableScheduling
 @Component
-public class UgentligRandomMultiplier {
+public class MånedligRandomMultiplier {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
     public final  Random random = new Random();
 
-    @Scheduled(cron = "10 04 13 * * THU")
-    public void weeklyMultiplier() {
+    @Scheduled(cron = "0 0 0 1 * *")
+    public void monthlyMultiplier() {
         String sql = """
                 SELECT cooperative_id
                 FROM cooperative

@@ -1,0 +1,143 @@
+@startuml
+title Hovedstrucktur
+
+enum Role {
+    Worker
+    Manager
+    Admin
+}
+
+enum PriorityLevel {
+    Low
+    Medium
+    High
+}
+
+enum SaleTypes {
+    Collective
+    Local
+    All
+}
+
+enum SaleStatus {
+    Active
+    Completed
+    Cancelled
+}
+
+class Cooperative {
+    - cooperativeId : long
+    - name : String
+    - inventory : List<InventoryItem>
+    - members : List<User>
+    - currentRevenue : double
+    + listOfMembers() : List<User>
+     + createCollectiveSale(buyerId : long) : CollectiveSale
+    + addSale(buyerID : long, materialId : long, weight : double, priceKg : double) : boolean
+    + contributeToCollectiveSale(materialId : long, weight : double, collectiveSaleId : long) : boolean
+    + listActiveSales(SaleType : SaleTypes) : List<activeSales>
+    + listSaleHistory(SaleType : SaleTypes) : List<saleHistory>
+}
+
+class User {
+    - userId : long
+    - name : String
+    - role : Role
+    - userXp : double
+    + getUserXp() : double
+}
+
+class InventoryItem {
+    - materialId : long
+    - weight : double
+    - lastUpdated : DateTime
+    + addWeight(weight : double) : boolean
+    + removeWeight(weight : double) : boolean
+    + getWeight() : double
+}
+
+class Material {
+    - materialId : long
+    - xpMultiplier : double
+    + changeMaterialMultiplier(newMultiplier : double) : boolean
+}
+
+class Notice {
+    - noticeId : Long
+    - titel : String
+    - message : String
+    - dateAdded : DateTime
+    - modifiedDate : DateTime
+    - priority : PriorityLevel
+    - senderID : long
+    - timeAlive : DateTime
+}
+
+class NoticeService {
+    + createNotice(titel, message, priority, timeAlive) : Notice
+    + deleteNotice(noticeId : long) : boolean
+    + modifyNotice(noticeId : long, titel, message) : boolean
+    + getNotice(noticeId : long) : Notice
+}
+
+interface NoticeRepository {
+    + save(notice : Notice) : Notice
+    + findById(noticeId : long) : Notice
+    + delete(noticeId : long)
+}
+
+class CollectiveSale {
+    - collectiveSaleId : long
+    - saleDate : DateTime
+    - totalRevenue : double
+    - buyerId : long
+    - status : SaleStatus
+    - contributions : List<SaleContribution>
+    - createdAt : long
+    + generateReport() : SaleReport
+}
+
+class SaleContribution {
+    - contributionId : long
+    - cooperativeId : long
+    - materialId : long
+    - weight : double
+    - priceKg : double
+    - revenueShare : double
+    + calculateRevenueShare() : double
+}
+
+class SaleReport {
+    - reportId : long
+    - generatedDate : DateTime
+    - totalWeight : double
+    - totalRevenue : double
+}
+
+' Cooperative relations
+Cooperative "1" o-- "many" User : Members
+Cooperative "1" o-- "many" InventoryItem : inventory
+Cooperative "1" --> "many" Notice : Owns
+Cooperative "1" o-- "0..*" CollectiveSale : saleHistory
+Cooperative "1" --> "many" SaleContribution : contributes
+
+' User relations
+User "Uses" ..> Role
+User "1" ..> "many" Notice : <<creates>>
+
+' InventoryItem relations
+InventoryItem "many" --> "1" Material
+
+' CollectiveSale relations
+CollectiveSale "1" o-- "1..*" SaleContribution : contributions
+CollectiveSale "1" --> "1" SaleReport : generates
+
+' SaleContribution relations
+SaleContribution "many" --> "1" Material
+
+' Notice relations
+NoticeService --> NoticeRepository
+NoticeService --> Notice
+Notice "Uses" ..> PriorityLevel
+
+@enduml
