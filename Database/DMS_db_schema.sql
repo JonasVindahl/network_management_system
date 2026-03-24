@@ -142,7 +142,7 @@ CREATE TABLE IF NOT EXISTS public.cooperative_random_multiplier
     multiplier_value                   double precision NOT NULL DEFAULT 1,
     last_updated                       timestamp DEFAULT now(),
     PRIMARY KEY (cooperative_random_multiplier_id),
-    FOREIGN KEY (cooperative_id) REFERENCES public.cooperative(cooperative_id)
+    FOREIGN KEY (cooperative_id) REFERENCES public.cooperative(cooperative_id),
     UNIQUE (cooperative_id)
 );
 
@@ -231,5 +231,150 @@ CREATE TABLE IF NOT EXISTS public.material_bag_state
     -- simple sanity
     CHECK (current_kg >= 0)
 );
+
+-- GAMIFICATION TABLES
+
+-- 15. Depends on: "none" - hardcoded achivement definitions
+-- Manager kan kun ændre xp_reward via achievement_xp_override, ikke oprette nye rækker
+
+CREATE TABLE IF NOT EXISTS public.achievement_definition
+(
+    achievement_id bigserial NOT NULL,
+    achievement_key text NOT NULL UNIQUE, -- 'WEIGHT_100KG' or 'DAYS_5'
+    achievement_name text NOT NULL, 
+    description text NOT NULL,
+    category text NOT NULL, -- 'WEIGHT' , 'DAYS_WORKED'
+    threshold_value numeric(15,2) NOT NULL, -- 50 (kg), 5 (days), 10 (achievements)
+    base_xp_reward int NOT NULL DEFAULT 100,
+    difficulty text NOT NULL DEFAULT 'MEDIUM', -- 'EASY', 'MEDIUM', 'HARD'
+    PRIMARY KEY (achievement_id)
+);
+
+-- 16. Depends on: cooperative, achievement_definition, workers
+-- Manager kan kun overskrive XP-belønning per achievement per kooperativ
+CREATE TABLE IF NOT EXISTS public.achievement_xp_override
+(
+    override_id bigserial NOT NULL,
+    cooperative_id bigint NOT NULL,
+    achievement_id bigint NOT NULL,
+    xp_reward_override int NOT NULL,
+    updated_by bigint NOT NULL, 
+    updated_at timestamp DEFAULT now(),
+    PRIMARY KEY (override_id),
+    UNIQUE (cooperative_id, achievement_id),
+    FOREIGN KEY (cooperative_id) REFERENCES public.cooperative(cooperative_id),
+    FOREIGN KEY (achievement_id) REFERENCES public.achievement_definition(achievement_id),
+    FOREIGN KEY (updated_by) REFERENCES public.workers(worker_id)
+);
+
+-- 17. Depends on: workers, achievement_definition, cooperative
+-- Månedlig achievement-progess per worker (nulstiller ikke - ny række per måned?)
+CREATE TABLE IF NOT EXISTS public.worker_achievement
+(
+    worker_achievement_id bigserial NOT NULL,
+    worker_id bigint NOT NULL,
+    achievement_id bigint NOT NULL,
+    cooperative_id bigint NOT NULL,
+    year_month char(7) NOT NULL, -- 'YYYY-MM'
+    unlocked_at timestamp, -- NULL - hvis ikke 'achievement' er opnået endnu
+    progress_value numeric(15,2) NOT NULL DEFAULT 0,
+    PRIMARY KEY(worker_achievement_id),
+    UNIQUE (worker_id, achievement_id, cooperative_id, year_month),
+    FOREIGN KEY(worker_id) REFERENCES public.workers(worker_id),
+    FOREIGN KEY(achievement_id) REFERENCES public.achievement_definition(achievement_id),
+    FOREIGN KEY(cooperative_id) REFERENCES public.cooperative(cooperative_id)
+);
+
+-- 18. Depends on: cooperative, workers
+-- Manager markerer en dag som understaffed - workers som bejer den dag får XP
+CREATE TABLE IF NOT EXISTS public.understaffed_day
+(
+    understaffed_id bigserial NOT NULL,
+    cooperative_id bigint NOT NULL,
+    work_date date NOT NULL,
+    xp_reward int NOT NULL DEFAULT 50,
+    created_by bigint NOT NULL,
+    created_at timestamp DEFAULT now(),
+    PRIMARY KEY (understaffed_id),
+    UNIQUE (cooperative_id, work_date),
+    FOREIGN KEY (cooperative_id) REFERENCES public.cooperative(cooperative_id),
+    FOREIGN KEY (created_by) REFERENCES public.workers(worker_id)
+);
+
+-- 19. Depends on: workers, understaffed_day
+-- Hvem har modtaget XP for en understaffed dag
+CREATE TABLE IF NOT EXISTS public.understaffed_day_xp_earned
+(
+    earned_id bigserial NOT NULL,
+    worker_id bigint NOT NULL,
+    understaffed_id bigint NOT NULL,
+    earned_at timestamp DEFAULT now(),
+    PRIMARY KEY (earned_id),
+    UNIQUE (worker_id, understaffed_id),
+    FOREIGN KEY (worker_id) REFERENCES public.workers(worker_id),
+    FOREIGN KEY (understaffed_id) REFERENCES public.understaffed_day(understaffed_id)
+        ON DELETE CASCADE -- hvis en understaffed dag slettes, slettes de "extra" XP-earnings også
+);
+
+-- 20. Depends on: cooperative
+-- Pre-beregnede leaderboard rækker (opdateres hver 7. dag via scheduler)
+CREATE TABLE IF NOT EXISTS public.leaderboard_snapshot
+(
+    snapshot_id bigserial NOT NULL,
+    cooperative_id bigint NOT NULL,
+    year_month char(7) NOT NULL,
+    week_number int NOT NULL,
+    computed_at timestamp DEFAULT now(),
+    PRIMARY KEY (snapshot_id),
+    UNIQUE (cooperative_id, year_month, week_number),
+    FOREIGN KEY (cooperative_id) REFERENCES public.cooperative(cooperative_id)
+);
+
+-- 21. Depends on: leaderboard_snapshot, workers
+CREATE TABLE IF NOT EXISTS public.leaderboard_entry
+(
+    entry_id bigserial NOT NULL,
+    snapshot_id bigint NOT NULL,
+    rank_position int NOT NULL, -- 1, 2, 3
+    worker_id bigint NOT NULL,
+    worker_name text NOT NULL,
+    raw_xp numeric(15,2) NOT NULL, -- XP before multiplier
+    final_xp numeric(15,2) NOT NULL, -- XP after multiplier -> raw_xp * random_multiplier
+    random_mult double precision NOT NULL,
+    PRIMARY KEY (entry_id),
+    FOREIGN KEY (snapshot_id) REFERENCES public.leaderboard_snapshot(snapshot_id)
+        ON DELETE CASCADE, -- hvis snapshot slettes, slettes de tilhørende leaderboard entries også
+    FOREIGN KEY (worker_id) REFERENCES public.workers(worker_id)
+);
+
+
+-- SEED: Hardcoded achievements (må ikke slettes/ændres - kun xp via achievement_xp_override)
+
+INSERT INTO public.achievement_definition
+    (achievement_key, achievement_name, description, category, threshold_value, base_xp_reward, difficulty)
+VALUES
+    -- Weight-milestones (kg collected in a month)
+    ('WEIGHT_50KG', 'Beginner', 'Collect 50 kg of materials in a month', 'WEIGHT', 50, 100, 'EASY'),
+    ('WEIGHT_100KG', 'Amateur', 'Collect 100 kg of materials in a month', 'WEIGHT', 100, 200, 'EASY'),
+    ('WEIGHT_250KG', 'Professional', 'Collect 250 kg of materials in a month', 'WEIGHT', 250, 400, 'MEDIUM'),
+    ('WEIGHT_500KG', 'Master Collector', 'Collect 500 kg of materials in a month', 'WEIGHT', 500, 750, 'HARD'),
+    ('WEIGHT_1000KG', 'Legendary Collector', 'Collect 1000 kg of materials in a month', 'WEIGHT', 1000, 1500, 'HARD'),
+
+    -- Days-worked milestones (in a month) -> our new implementations of the so-called "streak" proposed
+    ('DAYS_5', 'Getting Started', 'Work at least 5 days in a month', 'DAYS_WORKED', 5, 75, 'EASY'),
+    ('DAYS_10', 'On a Roll', 'Work at least 10 days in a month', 'DAYS_WORKED', 10, 150, 'MEDIUM'),
+    ('DAYS_15', 'Committed Worker', 'Work at least 15 days in a month', 'DAYS_WORKED', 15, 250, 'HARD'),
+    ('DAYS_20', 'Dedicated Worker', 'Work at least 20 days in a month', 'DAYS_WORKED', 20, 400, 'HARD'),
+    ('DAYS_25', 'Unstoppable Worker', 'Work at least 25 days in a month', 'DAYS_WORKED', 25, 600, 'HARD'),
+
+    -- All-achievement milestones
+    ('ACHIEVEMENTS_COUNT_3', 'Rising Star', 'Unlock 3 different achievements in a month', 'ACHIEVEMENTS_COUNT', 3, 125, 'MEDIUM'),
+    ('ACHIEVEMENTS_COUNT_5', 'Shining Star', 'Unlock 5 different achievements in a month', 'ACHIEVEMENTS_COUNT', 5, 300, 'HARD'),
+    ('ACHIEVEMENTS_COUNT_8', 'Superstar', 'Unlock 8 different achievements in a month', 'ACHIEVEMENTS_COUNT', 8, 500, 'HARD'),
+    ('ACHIEVEMENTS_COUNT_10', 'Legendary Superstar', 'Unlock 10 different achievements in a month', 'ACHIEVEMENTS_COUNT', 10, 750, 'HARD')
+
+    -- Note fra Dwaj -> Vi har ikke nok achievements endnu til at fylde 10 forskellige i ACHIEVEMENTS_COUNT (skal tilføje mere achievements)
+
+    ON CONFLICT (achievement_key) DO NOTHING; -- sikrer at vi ikke får duplikater hvis vi kører seed flere gange
 
 END;
