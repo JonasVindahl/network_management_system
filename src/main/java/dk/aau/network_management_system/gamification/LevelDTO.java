@@ -22,8 +22,8 @@ public class LevelDTO {
     public void setXpToNext(int v) {this.xpToNext = v;}
     public Long getWorkerId() {return workerId;}
     public void setWorkerId(Long v) {this.workerId = v;}
-    public int getTotalXP() {return totalXP;}
-    public void setTotalXP(int v) {this.totalXP = v;}
+    public int getTotalXp() {return totalXP;}
+    public void setTotalXp(int v) {this.totalXP = v;}
     public boolean isCurrentLevel() {return isCurrentLevel;}
     public void setCurrentLevel(boolean v) {this.isCurrentLevel = v;}
     
