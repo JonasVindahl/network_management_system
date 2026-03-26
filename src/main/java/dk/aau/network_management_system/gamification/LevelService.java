@@ -96,7 +96,7 @@ public class LevelService {
         Integer totalXp = jdbc.queryForObject("""
                 SELECT COALESCE(SUM(COALESCE(axo.xp_reward_override, ad.base_xp_reward)), 0)
                 FROM worker_achievement wa
-                JOIN achievement_defintion ad ON ad.achievement_id = wa.achievement_id
+                JOIN achievement_definition ad ON ad.achievement_id = wa.achievement_id
                 LEFT JOIN achievement_xp_override axo
                     ON axo.achievement_id = wa.achievement_id
                     AND axo.cooperative_id = ?

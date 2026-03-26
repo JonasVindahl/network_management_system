@@ -329,6 +329,7 @@ CREATE TABLE IF NOT EXISTS public.level_definition
 
 -- Seed: Hardcoded level definitions
 INSERT INTO public.level_definition (level_number, level_name, xp_required)
+VALUES
     (1,  'Beginner',     100),
     (2,  'Amateur',      167),
     (3,  'Apprentice',   278),
@@ -343,18 +344,18 @@ ON CONFLICT (level_number) DO NOTHING; -- sikrer at vi ikke får duplikater hvis
 
 -- 21. Depends on: workers
 -- Tracks workers global XP and level (nulstilles aldrig)
-CREATE TABLE IF NOT EXISTS public.worker_xp
+CREATE TABLE IF NOT EXISTS public.worker_level
 (
     worker_id bigint NOT NULL,
     total_xp int NOT NULL DEFAULT 0,
     current_level int NOT NULL DEFAULT 1,
+    last_updated timestamp DEFAULT now(),
     PRIMARY KEY (worker_id),
     FOREIGN KEY (worker_id) REFERENCES public.workers(worker_id),
     FOREIGN KEY (current_level) REFERENCES public.level_definition(level_number)
 );
 
 -- SEED: Hardcoded achievements (må ikke slettes/ændres - kun xp via achievement_xp_override)
-
 INSERT INTO public.achievement_definition
     (achievement_key, achievement_name, description, category, threshold_value, base_xp_reward, difficulty)
 VALUES
@@ -378,8 +379,8 @@ VALUES
     ('ACHIEVEMENTS_COUNT_8', 'Superstar', 'Unlock 8 different achievements in a month', 'ACHIEVEMENTS_COUNT', 8, 500, 'HARD'),
     ('ACHIEVEMENTS_COUNT_10', 'Legendary Superstar', 'Unlock 10 different achievements in a month', 'ACHIEVEMENTS_COUNT', 10, 750, 'HARD')
 
-    -- Note fra Dwaj -> Vi har ikke nok achievements endnu til at fylde 10 forskellige i ACHIEVEMENTS_COUNT (skal tilføje mere achievements)
-
     ON CONFLICT (achievement_key) DO NOTHING; -- sikrer at vi ikke får duplikater hvis vi kører seed flere gange
+
+    -- Note fra Dwaj -> Vi har ikke nok achievements endnu til at fylde 10 forskellige i ACHIEVEMENTS_COUNT (skal tilføje mere achievements)
 
 END;
