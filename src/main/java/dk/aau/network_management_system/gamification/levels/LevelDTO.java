@@ -1,4 +1,4 @@
-package dk.aau.network_management_system.gamification;
+package dk.aau.network_management_system.gamification.levels;
 
 public class LevelDTO {
     

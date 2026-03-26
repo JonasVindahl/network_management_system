@@ -1,4 +1,4 @@
-package dk.aau.network_management_system.gamification;
+package dk.aau.network_management_system.gamification.levels;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -24,6 +24,26 @@ public class AchievementEvaluationScheduler {
     private final LevelService levelService;
 
     public AchievementEvaluationScheduler(
-        
-    )
+        JdbcTemplate jdbc,
+        AchievementService achievementService,
+        LevelService levelService) {
+    
+    this.jdbc = jdbc;
+    this.achievementService = achievementService;
+    this.levelService = levelService;
+        }
+
+    @Scheduled(cron = "0 0 2 * * *")
+    public void evaluateCurrentMonth() {
+        String yearMonth = YearMonth.now().format(DateTimeFormatter.ofPattern("yyyy-MM"));
+
+        List<Map<String, Object>> cooperatives = jdbc.queryForList(
+            "SELECT cooperative_id FROM cooperative");
+
+        for (Map<String, Object> coop : cooperatives) {
+            long cooperativeId = ((Number) coop.get("cooperative_id"))
+        }
+    }
+
+
 }
