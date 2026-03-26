@@ -1,4 +1,4 @@
-package dk.aau.network_management_system.gamification;
+package dk.aau.network_management_system.gamification.leaderboard;
 
 import java.time.Instant;
 import java.util.List;
