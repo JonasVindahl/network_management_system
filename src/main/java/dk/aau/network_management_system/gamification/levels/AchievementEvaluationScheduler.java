@@ -20,16 +20,16 @@ import java.util.Map;
 public class AchievementEvaluationScheduler {
 
     private final JdbcTemplate jdbc;
-    private final AchievementService achievementService;
+    // private final AchievementService achievementService;
     private final LevelService levelService;
 
     public AchievementEvaluationScheduler(
         JdbcTemplate jdbc,
-        AchievementService achievementService,
+        // AchievementService achievementService,
         LevelService levelService) {
     
     this.jdbc = jdbc;
-    this.achievementService = achievementService;
+    // this.achievementService = achievementService;
     this.levelService = levelService;
         }
 
@@ -41,7 +41,23 @@ public class AchievementEvaluationScheduler {
             "SELECT cooperative_id FROM cooperative");
 
         for (Map<String, Object> coop : cooperatives) {
-            long cooperativeId = ((Number) coop.get("cooperative_id"))
+            long cooperativeId = ((Number) coop.get("cooperative_id")).longValue();
+
+            // 1. Evaluate achievements for alle workers i dette kooperativ
+            // achievementService.evaluateAchievementsForCooperative(cooperativeId, yearMonth);
+
+            // 2. Genberegn level for alle aktive workers i dette kooperativ
+            List<Map<String, Object>> workers = jdbc.queryForList(
+                "SELECT worker_id FROM workers WHERE cooperative = ? and exit_date IS NULL",
+                cooperativeId);
+
+            
+            for (Map<String, Object> worker : workers) {
+                long workerId = ((Number) worker.get("worker_id")).longValue();
+                levelService.recalculateWorkerLevel(workerId, cooperativeId);
+            }
+
+
         }
     }
 
