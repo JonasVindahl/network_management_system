@@ -4,7 +4,10 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +18,8 @@ import dk.aau.network_management_system.auth.AuthenticatedUser;
 @Service
 public class CooperativeMaterialMultiplierService {
     
+    private static final Logger log = LoggerFactory.getLogger(CooperativeMaterialMultiplierService.class);
+
     private final CooperativeMaterialMultiplierRepository repository;
     private final AuthenticatedUser authenticatedUser;
     
@@ -31,7 +36,14 @@ public class CooperativeMaterialMultiplierService {
         
         validateCooperativeOwnership(cooperativeId);
         
-        return repository.findByCooperativeIdAndMaterialId(cooperativeId, materialId);
+        try {
+            return repository.findByCooperativeIdAndMaterialId(cooperativeId, materialId);
+        } catch (DataAccessException e) {
+            log.error("Database error while fetching multiplier for cooperative {} and material {}",
+                    cooperativeId, materialId, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Error retrieving multiplier");
+        }
     }
     
     @Transactional
@@ -49,24 +61,32 @@ public class CooperativeMaterialMultiplierService {
                 "Multiplier value must be positive");
         }
         
-        Optional<CooperativeMaterialMultiplier> existing = 
-            repository.findByCooperativeIdAndMaterialId(cooperativeId, materialId);
-        
-        CooperativeMaterialMultiplier entity;
-        
-        if (existing.isPresent()) {
-            entity = existing.get();
-            entity.setMultiplierValue(multiplierValue);
-            entity.setLastUpdated(Instant.now());
-        } else {
-            entity = new CooperativeMaterialMultiplier(
-                cooperativeId,
-                materialId,
-                multiplierValue
-            );
+        try {
+            Optional<CooperativeMaterialMultiplier> existing = 
+                repository.findByCooperativeIdAndMaterialId(cooperativeId, materialId);
+            
+            CooperativeMaterialMultiplier entity;
+            
+            if (existing.isPresent()) {
+                entity = existing.get();
+                entity.setMultiplierValue(multiplierValue);
+                entity.setLastUpdated(Instant.now());
+            } else {
+                entity = new CooperativeMaterialMultiplier(
+                    cooperativeId,
+                    materialId,
+                    multiplierValue
+                );
+            }
+            
+            return repository.save(entity);
+            
+        } catch (DataAccessException e) {
+            log.error("Database error while saving multiplier for cooperative {} and material {}",
+                    cooperativeId, materialId, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Error saving multiplier");
         }
-        
-        return repository.save(entity);
     }
     
     private void validateCooperativeOwnership(Long cooperativeId) {
