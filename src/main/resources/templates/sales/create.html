@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Sale - DMS System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
+          rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/dashboard">DMS System</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/web/sales/list">Back to Sales</a>
+                <a class="nav-link" href="/logout">Logout</a>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Create New Sale</h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="createSaleForm">
+                            <div class="mb-3">
+                                <label class="form-label">Material *</label>
+                                <select name="materialId" class="form-select" required>
+                                    <option value="">Select material...</option>
+                                    <option value="1">Plastic</option>
+                                    <option value="2">Metal</option>
+                                    <option value="3">Paper</option>
+                                    <option value="4">Glass</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Buyer *</label>
+                                <select name="buyerId" class="form-select" required>
+                                    <option value="">Select buyer...</option>
+                                    <option value="1">RecycleCorp</option>
+                                    <option value="2">MetalBuyers Inc</option>
+                                </select>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Weight (kg) *</label>
+                                    <input type="number" name="weight" class="form-control" 
+                                           step="0.01" min="0.01" required>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Price per kg *</label>
+                                    <input type="number" name="pricePerKg" class="form-control" 
+                                           step="0.01" min="0.01" required>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Expected Sale Date *</label>
+                                <input type="date" name="expectedSaleDate" class="form-control" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Notes</label>
+                                <textarea name="notes" class="form-control" rows="3"></textarea>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary">Create Sale</button>
+                                <a href="/web/sales/list" class="btn btn-secondary">Cancel</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('createSaleForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = {
+                materialId: parseInt(formData.get('materialId')),
+                buyerId: parseInt(formData.get('buyerId')),
+                weight: parseFloat(formData.get('weight')),
+                pricePerKg: parseFloat(formData.get('pricePerKg')),
+                expectedSaleDate: formData.get('expectedSaleDate') + 'T00:00:00Z',
+                notes: formData.get('notes')
+            };
+            
+            try {
+                const response = await fetch('/api/sales/regular', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    alert('Sale created successfully!');
+                    window.location.href = '/web/sales/list';
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + (error.message || 'Could not create sale'));
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>
