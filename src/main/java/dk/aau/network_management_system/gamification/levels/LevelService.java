@@ -13,12 +13,14 @@ public class LevelService {
 
     private final JdbcTemplate jdbc;
     private final AuthenticatedUser authenticatedUser;
+    private final PermissionHelper permissionHelper;
 
     public LevelService(JdbcTemplate jdbc,
         AuthenticatedUser authenticatedUser,
         PermissionHelper permissionHelper) {
             this.jdbc = jdbc;
             this.authenticatedUser = authenticatedUser;
+            this.permissionHelper = permissionHelper;
         }
 
 
@@ -109,7 +111,7 @@ public class LevelService {
         // Find korrekte level baseret på total XP
         Integer newLevel = jdbc.queryForObject("""
                 SELECT COALESCE(MAX(level_number), 1)
-                FROM level_defintion
+                FROM level_definition
                 where xp_required <= ?
                 """, Integer.class, totalXp);
 

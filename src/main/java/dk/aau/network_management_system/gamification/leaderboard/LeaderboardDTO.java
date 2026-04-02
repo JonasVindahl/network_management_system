@@ -25,7 +25,7 @@ public class LeaderboardDTO {
         private Long workerId;
         private String workerName;
         private double rawXP;
-        public double finalXP;
+        private double finalXP;
         private double randomMultiplier;
 
         public int getRankPosition() {return rankPosition;}

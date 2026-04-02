@@ -24,7 +24,7 @@ public class AchievementDTO {
     public String getAchievementName() {return achievementName;}
     public void setAchievementName(String v) {this.achievementName = v;}
     public String getDescription() {return description;}
-    public void SetDescription(String v) {this.description = v;}
+    public void setDescription(String v) {this.description = v;}
     public String getCategory() {return category;}
     public void setCategory(String v) {this.category = v;}
     public double getThresholdValue() {return thresholdValue;}
