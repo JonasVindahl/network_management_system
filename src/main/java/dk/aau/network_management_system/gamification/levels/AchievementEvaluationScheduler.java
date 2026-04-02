@@ -1,14 +1,15 @@
 package dk.aau.network_management_system.gamification.levels;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Map;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.time.YearMonth;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Map;
+import dk.aau.network_management_system.gamification.achievements.AchievementService;
 
 // Kører hver nat kl.2:00
 // 1. Evaluerer achievement-progress for alle workers i alle kooperativer
@@ -20,16 +21,16 @@ import java.util.Map;
 public class AchievementEvaluationScheduler {
 
     private final JdbcTemplate jdbc;
-    // private final AchievementService achievementService;
+    private final AchievementService achievementService;
     private final LevelService levelService;
 
     public AchievementEvaluationScheduler(
         JdbcTemplate jdbc,
-        // AchievementService achievementService,
+        AchievementService achievementService,
         LevelService levelService) {
     
     this.jdbc = jdbc;
-    // this.achievementService = achievementService;
+    this.achievementService = achievementService;
     this.levelService = levelService;
         }
 
@@ -44,7 +45,7 @@ public class AchievementEvaluationScheduler {
             long cooperativeId = ((Number) coop.get("cooperative_id")).longValue();
 
             // 1. Evaluate achievements for alle workers i dette kooperativ
-            // achievementService.evaluateAchievementsForCooperative(cooperativeId, yearMonth);
+            achievementService.evaluateAchievementsForCooperative(cooperativeId, yearMonth);
 
             // 2. Genberegn level for alle aktive workers i dette kooperativ
             List<Map<String, Object>> workers = jdbc.queryForList(
