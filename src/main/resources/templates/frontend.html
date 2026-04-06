@@ -553,7 +553,7 @@ async function createNotice() {
   try {
     await api('/api/notices', {
       method: 'POST',
-      body: JSON.stringify({ title, content, priority, expiresAt: expires + 'T23:59:59' })
+      body: JSON.stringify({ title, content, priority, expiresAt: expires + 'T23:59:59Z' })
     });
     document.getElementById('noticeTitle').value = '';
     document.getElementById('noticeContent').value = '';
@@ -621,7 +621,46 @@ async function saveMultiplier() {
     closeModal();
     loadMultipliers();
   } catch (e) { alert('Could not save: ' + e.message); }
+
+
+//Sikkerhed
+const TIMEOUT_MS = 30 * 60 * 1000;
+let inactivityTimer;
+
+function resetTimer() {
+  clearTimeout(inactivityTimer);
+  inactivityTimer = setTimeout(doLogout, TIMEOUT_MS);
 }
+
+['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(evt => {
+  document.addEventListener(evt, resetTimer, { passive: true });
+});
+
+// Gem tidspunkt når siden lukkes/skjules
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    localStorage.setItem('lastSeen', Date.now());
+  } else {
+    // Bruger vender tilbage — tjek om der er gået mere end 30 min
+    const lastSeen = parseInt(localStorage.getItem('lastSeen') || '0');
+    if (lastSeen && Date.now() - lastSeen > TIMEOUT_MS) {
+      doLogout();
+    } else {
+      resetTimer();
+    }
+  }
+});
+
+// Start timer
+resetTimer();
+
+
+}
+
+
+
+
+
 
 initDates();
 loadDashboard();
