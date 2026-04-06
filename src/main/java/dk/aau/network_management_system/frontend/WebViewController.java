@@ -12,7 +12,7 @@ public class WebViewController {
     
     @GetMapping("/")
     public String index() {
-        return "redirect:/dashboard";
+        return "redirect:/frontend";
     }
     
     @GetMapping("/login")
@@ -20,8 +20,8 @@ public class WebViewController {
         return "login";
     }
     
-    @GetMapping("/dashboard")
-    public String dashboard() {
-        return "dashboard";
+    @GetMapping("/frontend")
+    public String frontend() {
+        return "frontend";
     }
 }

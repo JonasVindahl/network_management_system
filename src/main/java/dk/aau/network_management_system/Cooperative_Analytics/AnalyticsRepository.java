@@ -10,9 +10,8 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface AnalyticsRepository extends JpaRepository<CooperativeEntity, Long> {
-    
 
-    //Cooperatives overview info
+    // Cooperatives overview info
     @Query(value = """
         SELECT 
             COALESCE(SUM(s.total_collected_kg), 0) as total_collected,
@@ -26,7 +25,7 @@ public interface AnalyticsRepository extends JpaRepository<CooperativeEntity, Lo
         @Param("cooperativeId") Long cooperativeId);
 
 
-    //All Worker productivity
+    // All Worker productivity
     @Query(value = """
         SELECT 
             w.worker_id,
@@ -49,7 +48,7 @@ public interface AnalyticsRepository extends JpaRepository<CooperativeEntity, Lo
         @Param("endDate") LocalDateTime endDate
     );
 
-    //Specific worker productivity
+    // Specific worker productivity
     @Query(value = """
         SELECT 
             w.worker_id,
@@ -60,10 +59,10 @@ public interface AnalyticsRepository extends JpaRepository<CooperativeEntity, Lo
         FROM workers w
         LEFT JOIN measurements m ON w.worker_id = m.wastepicker
         WHERE w.cooperative = :cooperativeId
-        AND w.worker_id = :workerid
-        AND user_type = 'W'
-        AND (m.time_stamp IS NULL OR m.time_stamp >= :startDate)
-        AND (m.time_stamp IS NULL OR m.time_stamp <= :endDate)
+          AND w.worker_id = :workerid
+          AND user_type = 'W'
+          AND (m.time_stamp IS NULL OR m.time_stamp >= :startDate)
+          AND (m.time_stamp IS NULL OR m.time_stamp <= :endDate)
         GROUP BY w.worker_id, w.worker_name
         ORDER BY total_collected_kg DESC
         """, nativeQuery = true)
@@ -74,14 +73,15 @@ public interface AnalyticsRepository extends JpaRepository<CooperativeEntity, Lo
         @Param("endDate") LocalDateTime endDate
     );
 
-    
-    //Stock per material/ sold pr material 
+
+    // Stock per material — FIX: added mat.material_id
     @Query(value = """
         SELECT 
-            mat.material_name as materialName,
-            s.total_collected_kg as totalCollected,
-            s.total_sold_kg as totalSold,
-            s.current_stock_kg as currentStock
+            mat.material_name,
+            s.total_collected_kg,
+            s.total_sold_kg,
+            s.current_stock_kg,
+            mat.material_id
         FROM stock s
         JOIN materials mat ON s.material = mat.material_id
         WHERE s.cooperative = :cooperativeId
@@ -90,46 +90,44 @@ public interface AnalyticsRepository extends JpaRepository<CooperativeEntity, Lo
     List<Object[]> getStockByMaterial(
         @Param("cooperativeId") Long cooperativeId
     );
- 
 
-    //revenue for cooperative
+
+    // Revenue — FIX: was sa.date, correct column is sa.sold_at
     @Query(value = """
-    SELECT 
-        COALESCE(SUM(sa.weight * sa.price_kg), 0) as totalRevenue,
-        COUNT(sa.sale_id) as totalSales,
-        COALESCE(AVG(sa.price_kg), 0) as avgPricePerKg
-    FROM sales sa
-    JOIN workers w ON sa.responsible = w.worker_id
-    WHERE w.cooperative = :cooperativeId
-      AND sa.date >= CAST(:startDate AS date)
-      AND sa.date <= CAST(:endDate AS date)
-    """, nativeQuery = true)
+        SELECT 
+            COALESCE(SUM(sa.weight * sa.price_kg), 0) as totalRevenue,
+            COUNT(sa.sale_id) as totalSales,
+            COALESCE(AVG(sa.price_kg), 0) as avgPricePerKg
+        FROM sales sa
+        JOIN workers w ON sa.responsible = w.worker_id
+        WHERE w.cooperative = :cooperativeId
+          AND sa.sold_at BETWEEN :startDate AND :endDate
+        """, nativeQuery = true)
     List<Object[]> findRevenueRaw(
         @Param("cooperativeId") Long cooperativeId,
         @Param("startDate") LocalDateTime startDate,
         @Param("endDate") LocalDateTime endDate
     );
 
-    //last5sales for cooperative
+
+    // Last 5 sales — FIX: use named params, correct param order, sold_at instead of date
     @Query(value = """
-            SELECT
-                s.material,
-                s.weight,
-                s.price_kg,
-                s.date
-            FROM sales s
-            JOIN workers w ON s.responsible = w.worker_id
-            WHERE s.material = ?
-              AND w.cooperative = ?
-            ORDER BY s.date DESC
-            LIMIT 5
-            """, nativeQuery = true)
+        SELECT
+            s.material,
+            s.weight,
+            s.price_kg,
+            s.sold_at
+        FROM sales s
+        JOIN workers w ON s.responsible = w.worker_id
+        WHERE s.material = :materialId
+        AND w.cooperative = :cooperativeId
+        AND s.sold_at IS NOT NULL
+        ORDER BY s.sold_at DESC
+        LIMIT 5
+        """, nativeQuery = true)
     List<Object[]> LastSalesCooperativeRaw(
         @Param("cooperativeId") Long cooperativeId,
         @Param("materialId") Long materialId
-        //@Param("startDate") LocalDateTime startDate,
-        //@Param("endDate") LocalDateTime endDate
     );
-
 
 }

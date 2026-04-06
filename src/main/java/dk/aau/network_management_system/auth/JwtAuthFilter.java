@@ -29,40 +29,53 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
    @Override
     protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
-            throws ServletException, IOException {
+                                HttpServletResponse response,
+                                FilterChain filterChain)
+        throws ServletException, IOException {
 
-        String authHeader = request.getHeader("Authorization");
+    String token = null;
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
-            return;
+    // Prøv Authorization header først (API-flow)
+    String authHeader = request.getHeader("Authorization");
+    if (authHeader != null && authHeader.startsWith("Bearer ")) {
+        token = authHeader.substring(7);
+    }
+
+    // Prøv cookie som fallback (browser-flow)
+    if (token == null && request.getCookies() != null) {
+        for (jakarta.servlet.http.Cookie cookie : request.getCookies()) {
+            if ("jwt".equals(cookie.getName())) {
+                token = cookie.getValue();
+                break;
+            }
         }
+    }
 
-        String token = authHeader.substring(7);
-        currentToken.set(token);
+    if (token == null) {
+        filterChain.doFilter(request, response);
+        return;
+    }
 
-        if (jwtUtil.isTokenValid(token)) {
-            String cpf = jwtUtil.extractCpf(token);
-            UserDetails userDetails = workerDetailsService.loadUserByUsername(cpf);
+    currentToken.set(token);
 
-            UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(
-                            userDetails, null, userDetails.getAuthorities());
+    if (jwtUtil.isTokenValid(token)) {
+        String cpf = jwtUtil.extractCpf(token);
+        UserDetails userDetails = workerDetailsService.loadUserByUsername(cpf);
+        UsernamePasswordAuthenticationToken auth =
+                new UsernamePasswordAuthenticationToken(
+                        userDetails, null, userDetails.getAuthorities());
+        auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+        SecurityContextHolder.getContext().setAuthentication(auth);
+    }
 
-            auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-            SecurityContextHolder.getContext().setAuthentication(auth);
-        }
-
-        try {
+    try {
             filterChain.doFilter(request, response);
         } finally {
-            currentToken.remove(); 
+            currentToken.remove();
         }
     }
-    
-    public static String getCurrentToken() {
-        return currentToken.get();
+
+        public static String getCurrentToken() {
+            return currentToken.get();
+        }
     }
-}

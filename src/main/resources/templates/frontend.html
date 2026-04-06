@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DMS Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f4f6f8; --surface: #ffffff; --accent: #1a5f7a; --accent-light: #e8f4f8;
+    --text-primary: #1a2332; --text-secondary: #6b7a8d; --text-muted: #9aa5b4;
+    --border: #e8edf2; --border-light: #f0f4f7;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06); --radius: 10px; --radius-sm: 6px;
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text-primary); display: flex; min-height: 100vh; font-size: 14px; }
+  .sidebar { width: 200px; min-height: 100vh; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; }
+  .sidebar-logo { padding: 22px 20px 18px; font-size: 17px; font-weight: 600; color: var(--accent); letter-spacing: -0.3px; border-bottom: 1px solid var(--border-light); }
+  .sidebar-nav { padding: 12px 10px; flex: 1; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: var(--radius-sm); cursor: pointer; color: var(--text-secondary); font-size: 13.5px; font-weight: 500; transition: all 0.15s; margin-bottom: 2px; user-select: none; }
+  .nav-item:hover { background: var(--bg); color: var(--text-primary); }
+  .nav-item.active { background: var(--accent); color: white; }
+  .nav-item svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+  .main { margin-left: 200px; flex: 1; display: flex; flex-direction: column; }
+  .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 32px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+  .topbar-title { font-size: 14px; font-weight: 500; color: var(--text-secondary); }
+  .logout-btn { display: flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: 13.5px; font-weight: 500; cursor: pointer; padding: 6px 10px; border-radius: var(--radius-sm); border: none; background: none; }
+  .logout-btn:hover { background: var(--bg); }
+  .logout-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .content { padding: 32px; flex: 1; }
+  .page { display: none; }
+  .page.active { display: block; animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  .page-title { font-size: 24px; font-weight: 600; margin-bottom: 24px; letter-spacing: -0.4px; }
+  .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; }
+  .stat-label { font-size: 12px; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .stat-value { font-size: 26px; font-weight: 600; font-family: 'DM Mono', monospace; }
+  .period-selector { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-secondary); }
+  .period-selector input { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 13px; font-family: 'DM Mono', monospace; color: var(--text-primary); background: var(--surface); outline: none; }
+  .period-selector input:focus { border-color: var(--accent); }
+  .period-btn { background: var(--accent); color: white; border: none; padding: 6px 14px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 20px; }
+  .table-card-header { padding: 16px 24px; border-bottom: 1px solid var(--border-light); font-weight: 600; font-size: 15px; display: flex; align-items: center; justify-content: space-between; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { text-align: left; padding: 11px 24px; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; background: var(--bg); border-bottom: 1px solid var(--border); }
+  tbody td { padding: 13px 24px; font-size: 13.5px; border-bottom: 1px solid var(--border-light); }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--accent-light); }
+  .mono { font-family: 'DM Mono', monospace; font-size: 13px; }
+  .leaderboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+  .leader-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px 20px; text-align: center; }
+  .trophy-icon { font-size: 36px; margin-bottom: 12px; display: block; }
+  .leader-name { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+  .leader-xp { font-size: 20px; font-weight: 600; color: var(--accent); font-family: 'DM Mono', monospace; margin-bottom: 4px; }
+  .leader-kg { font-size: 12px; color: var(--text-muted); }
+  .rank-badge { font-family: 'DM Mono', monospace; font-weight: 500; color: var(--text-muted); }
+  .btn-sm { background: var(--accent); color: white; border: none; padding: 6px 14px; border-radius: var(--radius-sm); font-size: 12.5px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .btn-sm:hover { background: #154d64; }
+  .notice-layout { display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start; }
+  .section-label { font-size: 14px; font-weight: 600; color: var(--text-secondary); margin-bottom: 14px; }
+  .notice-item { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 18px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+  .notice-item.high { border-color: #f5c6cb; background: #fff5f5; }
+  .notice-item.medium { border-color: #ffeeba; background: #fffbf0; }
+  .notice-item.low { border-color: #dee2e6; background: #f8f9fa; }
+  .notice-left { display: flex; flex-direction: column; gap: 4px; }
+  .notice-top { display: flex; align-items: center; gap: 10px; }
+  .priority-badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; }
+  .priority-badge.high { background: #f5c6cb; color: #721c24; }
+  .priority-badge.medium { background: #ffeeba; color: #856404; }
+  .priority-badge.low { background: #dee2e6; color: #495057; }
+  .notice-title { font-size: 14px; font-weight: 500; }
+  .notice-expires { font-size: 12px; color: var(--text-muted); }
+  .notice-form { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
+  .form-title { font-size: 16px; font-weight: 600; margin-bottom: 20px; }
+  .form-group { margin-bottom: 16px; }
+  .form-label { display: block; font-size: 12.5px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.3px; }
+  .form-control { width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 9px 12px; font-size: 13.5px; font-family: 'DM Sans', sans-serif; color: var(--text-primary); background: var(--surface); outline: none; }
+  .form-control:focus { border-color: var(--accent); }
+  textarea.form-control { resize: vertical; min-height: 100px; }
+  .btn-create { width: 100%; background: var(--accent); color: white; border: none; padding: 11px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .btn-create:hover { background: #154d64; }
+  .info-box { background: var(--accent-light); border: 1px solid #b8dce8; border-radius: var(--radius-sm); padding: 14px 18px; display: flex; gap: 10px; margin-bottom: 24px; font-size: 13.5px; line-height: 1.5; }
+  .info-box svg { width: 16px; height: 16px; stroke: var(--accent); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; margin-top: 1px; }
+  .loading { text-align: center; padding: 32px; color: var(--text-muted); font-size: 13px; }
+  .error-msg { background: #fff5f5; border: 1px solid #f5c6cb; border-radius: var(--radius-sm); padding: 12px 16px; color: #721c24; font-size: 13px; margin-bottom: 16px; }
+  .last-sales-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--border-light); }
+  .last-sales-header span { font-weight: 600; font-size: 15px; }
+  .last-sales-header select { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 5px 10px; font-size: 13px; color: var(--text-primary); background: var(--surface); outline: none; font-family: 'DM Sans', sans-serif; cursor: pointer; }
+  .stock-bold { font-weight: 700; font-family: 'DM Mono', monospace; }
+  #editModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; }
+  #editModal.open { display: flex; }
+  .modal-box { background: white; border-radius: var(--radius); padding: 28px; width: 340px; }
+  .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 20px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 8px; }
+  .btn-cancel { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 11px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .info-note { background: #fffbf0; border: 1px solid #ffeeba; border-radius: var(--radius-sm); padding: 12px 16px; color: #856404; font-size: 13px; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">DMS Manager</div>
+  <nav class="sidebar-nav">
+    <div class="nav-item active" onclick="navigate('dashboard',this)">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard
+    </div>
+    <div class="nav-item" onclick="navigate('workers',this)">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Workers
+    </div>
+    <div class="nav-item" onclick="navigate('inventory',this)">
+      <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>Inventory
+    </div>
+    <div class="nav-item" onclick="navigate('noticeboard',this)">
+      <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Notice Board
+    </div>
+    <div class="nav-item" onclick="navigate('multipliers',this)">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>Multipliers
+    </div>
+  </nav>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <span class="topbar-title">DMS System</span>
+    <button class="logout-btn" onclick="doLogout()">
+      <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Logout
+    </button>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div id="page-dashboard" class="page active">
+      <div class="page-header">
+        <h1 class="page-title" style="margin-bottom:0">Dashboard</h1>
+        <div class="period-selector">
+          Period:
+          <input type="date" id="dashFrom">
+          to
+          <input type="date" id="dashTo">
+          <button class="period-btn" onclick="loadDashboard()">Apply</button>
+        </div>
+      </div>
+      <div id="dashError"></div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label">Total kg Collected</div><div class="stat-value" id="statKg">—</div></div>
+        <div class="stat-card"><div class="stat-label">Total Sold (kg)</div><div class="stat-value" id="statSold">—</div></div>
+        <div class="stat-card"><div class="stat-label">Current Stock (kg)</div><div class="stat-value" id="statStock">—</div></div>
+        <div class="stat-card"><div class="stat-label">Active Workers</div><div class="stat-value" id="statWorkers">—</div></div>
+      </div>
+      <div class="two-col">
+        <div class="table-card">
+          <div class="table-card-header">Worker Productivity</div>
+          <table>
+            <thead><tr><th>Worker Name</th><th>Total kg</th><th>Weighings</th><th>Avg kg/weighing</th></tr></thead>
+            <tbody id="productivityTable"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
+          </table>
+        </div>
+        <div class="table-card">
+          <div class="table-card-header">Revenue</div>
+          <table>
+            <thead><tr><th>Total Revenue</th><th>Total Sales</th><th>Avg Price/kg</th></tr></thead>
+            <tbody id="revenueTable"><tr><td colspan="3" class="loading">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- WORKERS -->
+    <div id="page-workers" class="page">
+      <div class="page-header">
+        <h1 class="page-title" style="margin-bottom:0">Workers</h1>
+        <div class="period-selector">
+          Period:
+          <input type="date" id="workersFrom">
+          to
+          <input type="date" id="workersTo">
+          <button class="period-btn" onclick="loadWorkers()">Apply</button>
+        </div>
+      </div>
+      <div id="workersError"></div>
+      <div id="leaderboardCards" class="leaderboard"></div>
+      <div class="table-card">
+        <div class="table-card-header">Worker Productivity</div>
+        <table>
+          <thead><tr><th>Rank</th><th>Worker Name</th><th>Total kg</th><th>Weighings</th><th>Avg kg/weighing</th></tr></thead>
+          <tbody id="leaderboardTable"><tr><td colspan="5" class="loading">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- INVENTORY -->
+    <div id="page-inventory" class="page">
+      <h1 class="page-title">Inventory</h1>
+      <div class="table-card">
+        <div class="table-card-header">Stock per Material</div>
+        <table>
+          <thead><tr><th>Material</th><th>Total Collected (kg)</th><th>Total Sold (kg)</th><th>Current Stock (kg)</th></tr></thead>
+          <tbody id="stockTable"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
+        </table>
+      </div>
+      <div class="table-card">
+        <div class="last-sales-header">
+          <span>Last 5 Sales</span>
+          <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)">
+            Material:
+            <select id="last5MaterialSelect" onchange="loadLast5Sales()">
+              <option value="">Select material...</option>
+            </select>
+          </div>
+        </div>
+        <table>
+          <thead><tr><th>Date</th><th>Material ID</th><th>Weight (kg)</th><th>Price/kg</th></tr></thead>
+          <tbody id="last5Table">
+            <tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted)">Select a material to view sales</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- NOTICE BOARD -->
+    <div id="page-noticeboard" class="page">
+      <h1 class="page-title">Notice Board</h1>
+      <div class="notice-layout">
+        <div>
+          <div class="section-label">Active Notices</div>
+          <div id="noticeList"><div class="loading">Loading...</div></div>
+        </div>
+        <div class="notice-form">
+          <div class="form-title">New Notice</div>
+          <div id="noticeFormError"></div>
+          <div class="form-group"><label class="form-label">Title</label><input type="text" class="form-control" id="noticeTitle" placeholder="Enter notice title"></div>
+          <div class="form-group"><label class="form-label">Content</label><textarea class="form-control" id="noticeContent" placeholder="Enter notice content"></textarea></div>
+          <div class="form-group">
+            <label class="form-label">Priority</label>
+            <select class="form-control" id="noticePriority">
+              <option value="1">Low (1)</option>
+              <option value="2">Medium (2)</option>
+              <option value="3">High (3)</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label">Expires</label><input type="date" class="form-control" id="noticeExpires"></div>
+          <button class="btn-create" onclick="createNotice()">Create Notice</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MULTIPLIERS -->
+    <div id="page-multipliers" class="page">
+      <h1 class="page-title">Multipliers</h1>
+      <div class="info-box">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span><strong>Note:</strong> Multipliers affect workers' points and gamification in the mobile app. Higher multipliers mean workers earn more XP points for collecting that material.</span>
+      </div>
+      <div class="table-card" style="max-width:700px">
+        <div class="table-card-header">Material Multipliers</div>
+        <table>
+          <thead><tr><th>Material</th><th>Current Multiplier</th><th style="text-align:right">Action</th></tr></thead>
+          <tbody id="multipliersTable"><tr><td colspan="3" class="loading">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- EDIT MULTIPLIER MODAL -->
+<div id="editModal">
+  <div class="modal-box">
+    <div class="modal-title">Edit Multiplier</div>
+    <div class="form-group">
+      <label class="form-label">Material</label>
+      <input type="text" class="form-control" id="editMaterialName" readonly style="background:var(--bg)">
+      <input type="hidden" id="editMaterialId">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Multiplier</label>
+      <input type="number" class="form-control" id="editMultiplierValue" step="0.1" min="0.1">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-create" onclick="saveMultiplier()">Save</button>
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── HELPERS ──────────────────────────────────────────────────
+function getToken() {
+  const m = document.cookie.match(/(?:^|;\s*)jwt=([^;]+)/);
+  return m ? m[1] : null;
+}
+
+async function api(path, opts = {}) {
+  const token = getToken();
+  const res = await fetch(path, {
+    ...opts,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': 'Bearer ' + token } : {}),
+      ...(opts.headers || {})
+    }
+  });
+  if (res.status === 401) { window.location.href = '/login'; throw new Error('Unauthorized'); }
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+function fmt(n, dec = 0) {
+  if (n == null) return '—';
+  return Number(n).toLocaleString('pt-BR', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+
+function fmtDate(s) {
+  if (!s) return '—';
+  return String(s).split('T')[0];
+}
+
+function defaultFrom() {
+  const d = new Date();
+  d.setMonth(d.getMonth() - 1);
+  d.setDate(1);
+  return d.toISOString().split('T')[0];
+}
+
+function defaultTo() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function plabel(p) { return p >= 3 ? 'high' : p >= 2 ? 'medium' : 'low'; }
+function ptext(p)  { return p >= 3 ? 'High' : p >= 2 ? 'Medium' : 'Low'; }
+
+function initDates() {
+  const from = defaultFrom();
+  const to = defaultTo();
+  document.getElementById('dashFrom').value = from;
+  document.getElementById('dashTo').value = to;
+  document.getElementById('workersFrom').value = from;
+  document.getElementById('workersTo').value = to;
+}
+
+// ── NAVIGATION ───────────────────────────────────────────────
+const loaders = {
+  dashboard: loadDashboard,
+  workers: loadWorkers,
+  inventory: loadInventory,
+  noticeboard: loadNotices,
+  multipliers: loadMultipliers
+};
+
+function navigate(page, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  el.classList.add('active');
+  if (loaders[page]) loaders[page]();
+}
+
+function doLogout() {
+  document.cookie = 'jwt=; path=/; max-age=0';
+  window.location.href = '/login';
+}
+
+// ── DASHBOARD ────────────────────────────────────────────────
+async function loadDashboard() {
+  const from = (document.getElementById('dashFrom').value || defaultFrom()) + 'T00:00:00';
+  const to   = (document.getElementById('dashTo').value   || defaultTo())   + 'T23:59:59';
+  document.getElementById('dashError').innerHTML = '';
+
+  try {
+    const [perf, productivity, revenue] = await Promise.all([
+      api('/api/performance'),
+      api(`/api/productivity?startDate=${from}&endDate=${to}`),
+      api(`/api/revenue?startDate=${from}&endDate=${to}`)
+    ]);
+
+    const perfList = Array.isArray(perf) ? perf : [];
+    if (perfList.length > 0) {
+      const p = perfList[0];
+      document.getElementById('statKg').textContent      = fmt(p.totalCollected);
+      document.getElementById('statSold').textContent    = fmt(p.totalSold);
+      document.getElementById('statStock').textContent   = fmt(p.currentStock);
+      document.getElementById('statWorkers').textContent = fmt(p.activeWorkers);
+    }
+
+    const prodList = Array.isArray(productivity) ? productivity : [];
+    document.getElementById('productivityTable').innerHTML = prodList.length
+      ? prodList.map(w => `<tr>
+          <td>${w.workerName ?? '—'}</td>
+          <td class="mono">${fmt(w.totalCollectedKg)}</td>
+          <td class="mono">${fmt(w.numberOfWeighings)}</td>
+          <td class="mono">${fmt(w.avgWeightPerWeighing, 1)}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="4" class="loading">No data for selected period</td></tr>';
+
+    const revList = Array.isArray(revenue) ? revenue : [];
+    document.getElementById('revenueTable').innerHTML = revList.length
+      ? revList.map(r => `<tr>
+          <td class="mono">R$ ${fmt(r.totalRevenue, 2)}</td>
+          <td class="mono">${fmt(r.totalSales)}</td>
+          <td class="mono">R$ ${fmt(r.avgPricePerKg, 2)}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="3" class="loading">No data for selected period</td></tr>';
+
+  } catch (e) {
+    console.error(e);
+    document.getElementById('dashError').innerHTML =
+      `<div class="error-msg">Could not load dashboard: ${e.message}</div>`;
+  }
+}
+
+async function loadWorkers() {
+  const from = (document.getElementById('workersFrom').value || defaultFrom()) + 'T00:00:00';
+  const to   = (document.getElementById('workersTo').value   || defaultTo())   + 'T23:59:59';
+  document.getElementById('workersError').innerHTML = '';
+
+  try {
+    const data = await api(`/api/productivity?startDate=${from}&endDate=${to}`);
+    const list = Array.isArray(data) ? data : [];
+
+    list.sort((a, b) => (b.totalCollectedKg ?? 0) - (a.totalCollectedKg ?? 0));
+
+    const trophies = ['🏆', '🥈', '🥉'];
+    document.getElementById('leaderboardCards').innerHTML = list.slice(0, 3).map((w, i) => `
+      <div class="leader-card">
+        <span class="trophy-icon">${trophies[i]}</span>
+        <div class="leader-name">${w.workerName ?? '—'}</div>
+        <div class="leader-xp">${fmt(w.totalCollectedKg)} kg</div>
+        <div class="leader-kg">${fmt(w.numberOfWeighings)} weighings</div>
+      </div>`).join('');
+
+    if (list.length === 0) {
+      document.getElementById('leaderboardCards').innerHTML =
+        '<div class="info-note" style="grid-column:1/-1">No measurements found for selected period. Try a wider date range.</div>';
+    }
+
+    document.getElementById('leaderboardTable').innerHTML = list.length
+      ? list.map((w, i) => `<tr>
+          <td class="rank-badge">#${i + 1}</td>
+          <td>${w.workerName ?? '—'}</td>
+          <td class="mono">${fmt(w.totalCollectedKg)}</td>
+          <td class="mono">${fmt(w.numberOfWeighings)}</td>
+          <td class="mono">${fmt(w.avgWeightPerWeighing, 1)}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="5" class="loading">No data for selected period</td></tr>';
+
+  } catch (e) {
+    document.getElementById('workersError').innerHTML =
+      `<div class="error-msg">Error: ${e.message}</div>`;
+    document.getElementById('leaderboardTable').innerHTML =
+      `<tr><td colspan="5" class="loading">—</td></tr>`;
+  }
+}
+
+
+
+let stockList = [];
+
+async function loadInventory() {
+  try {
+    const stock = await api('/api/stock');
+    stockList = Array.isArray(stock) ? stock : [];
+
+    document.getElementById('stockTable').innerHTML = stockList.length
+      ? stockList.map(s => `<tr>
+          <td>${s.materialName ?? '—'}</td>
+          <td class="mono">${fmt(s.totalCollected)}</td>
+          <td class="mono">${fmt(s.totalSold)}</td>
+          <td class="stock-bold">${fmt(s.currentStock)}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="4" class="loading">No data</td></tr>';
+
+    const sel = document.getElementById('last5MaterialSelect');
+    sel.innerHTML = '<option value="">Select material...</option>' +
+      stockList
+        .filter(s => s.materialId != null)
+        .map(s => `<option value="${s.materialId}">${s.materialName}</option>`).join('');
+
+  } catch (e) {
+    document.getElementById('stockTable').innerHTML =
+      `<tr><td colspan="4" class="error-msg">Error: ${e.message}</td></tr>`;
+  }
+}
+
+async function loadLast5Sales() {
+  const matId = document.getElementById('last5MaterialSelect').value;
+  if (!matId) {
+    document.getElementById('last5Table').innerHTML =
+      '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted)">Select a material</td></tr>';
+    return;
+  }
+  try {
+    const data = await api(`/api/cooperative/lastsales?materialId=${matId}`);
+    const list = Array.isArray(data) ? data : [];
+    document.getElementById('last5Table').innerHTML = list.length
+      ? list.map(s => `<tr>
+          <td class="mono">${fmtDate(s.date)}</td>
+          <td class="mono">${s.material ?? '—'}</td>
+          <td class="mono">${fmt(s.weight)}</td>
+          <td class="mono">R$ ${fmt(s.priceKg, 2)}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="4" class="loading">No sales found</td></tr>';
+  } catch (e) {
+    document.getElementById('last5Table').innerHTML =
+      `<tr><td colspan="4" class="error-msg">Error: ${e.message}</td></tr>`;
+  }
+}
+
+
+async function loadNotices() {
+  try {
+    const data = await api('/api/notices');
+    const list = Array.isArray(data) ? data : [];
+    const container = document.getElementById('noticeList');
+    container.innerHTML = list.length
+      ? list.map(n => {
+          const id = n.noticeId ?? n.id;
+          const pl = plabel(n.priority);
+          const expires = n.expiresAt ?? n.expireDate ?? n.expires ?? n.expirationDate;
+          return `<div class="notice-item ${pl}">
+            <div class="notice-left">
+              <div class="notice-top">
+                <span class="priority-badge ${pl}">${ptext(n.priority)}</span>
+                <span class="notice-title">${n.title ?? '—'}</span>
+              </div>
+              <span class="notice-expires">Expires: ${fmtDate(expires)}</span>
+            </div>
+            <button onclick="deleteNotice(${id})"
+                    style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:20px;line-height:1;padding:0 4px"
+                    title="Delete">×</button>
+          </div>`;
+        }).join('')
+      : '<div class="loading">No active notices</div>';
+  } catch (e) {
+    document.getElementById('noticeList').innerHTML = `<div class="error-msg">Error: ${e.message}</div>`;
+  }
+}
+
+async function createNotice() {
+  const title    = document.getElementById('noticeTitle').value.trim();
+  const content  = document.getElementById('noticeContent').value.trim();
+  const priority = parseInt(document.getElementById('noticePriority').value);
+  const expires  = document.getElementById('noticeExpires').value;
+  if (!title || !content || !expires) {
+    document.getElementById('noticeFormError').innerHTML = '<div class="error-msg">Please fill in all fields.</div>';
+    return;
+  }
+  document.getElementById('noticeFormError').innerHTML = '';
+  try {
+    await api('/api/notices', {
+      method: 'POST',
+      body: JSON.stringify({ title, content, priority, expiresAt: expires + 'T23:59:59' })
+    });
+    document.getElementById('noticeTitle').value = '';
+    document.getElementById('noticeContent').value = '';
+    document.getElementById('noticeExpires').value = '';
+    loadNotices();
+  } catch (e) {
+    document.getElementById('noticeFormError').innerHTML = `<div class="error-msg">Error: ${e.message}</div>`;
+  }
+}
+
+async function deleteNotice(id) {
+  if (!confirm('Delete this notice?')) return;
+  try {
+    await fetch('/api/notices/' + id, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + getToken() }
+    });
+    loadNotices();
+  } catch (e) { alert('Could not delete: ' + e.message); }
+}
+
+
+
+async function loadMultipliers() {
+  try {
+    const data = await api('/api/multipliers');
+    const list = Array.isArray(data) ? data : [];
+    document.getElementById('multipliersTable').innerHTML = list.length
+      ? list.map(m => {
+          const id   = m.materialId ?? '—';
+          const val  = m.multiplierValue ?? '—';
+          const name = m.materialName ?? `Material #${m.materialId}`;
+          return `<tr>
+            <td>${name}</td>
+            <td class="mono" style="color:var(--accent);font-weight:600">${val}x</td>
+            <td style="text-align:right">
+              <button class="btn-sm" onclick="openEditModal(${id},'${name}',${val})">Edit</button>
+            </td>
+          </tr>`;
+        }).join('')
+      : '<tr><td colspan="3" class="loading">No multipliers found</td></tr>';
+  } catch (e) {
+    document.getElementById('multipliersTable').innerHTML =
+      `<tr><td colspan="3" class="error-msg">Error: ${e.message}</td></tr>`;
+  }
+}
+
+function openEditModal(id, name, value) {
+  document.getElementById('editMaterialId').value = id;
+  document.getElementById('editMaterialName').value = name;
+  document.getElementById('editMultiplierValue').value = value;
+  document.getElementById('editModal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('editModal').classList.remove('open'); }
+
+async function saveMultiplier() {
+  const materialId = parseInt(document.getElementById('editMaterialId').value);
+  const multiplierValue = parseFloat(document.getElementById('editMultiplierValue').value);
+  try {
+    await api('/api/multipliers', {
+      method: 'POST',
+      body: JSON.stringify({ materialId, multiplierValue })
+    });
+    closeModal();
+    loadMultipliers();
+  } catch (e) { alert('Could not save: ' + e.message); }
+}
+
+initDates();
+loadDashboard();
+</script>
+</body>
+</html>

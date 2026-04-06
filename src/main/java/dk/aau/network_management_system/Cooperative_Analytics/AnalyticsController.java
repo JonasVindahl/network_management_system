@@ -75,7 +75,7 @@ public class AnalyticsController {
         }
              
         if (startDate == null) {
-            startDate = endDate.minusDays(120);
+            startDate = endDate.minusDays(1000);
         }
         // Auth
 
@@ -140,7 +140,7 @@ public class AnalyticsController {
         }
              
         if (startDate == null) {
-            startDate = endDate.minusDays(365);
+            startDate = endDate.minusDays(1000);
         }
 
         Long targetCooperativeId;

@@ -1,6 +1,7 @@
 package dk.aau.network_management_system.multiplier;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -14,10 +15,10 @@ import dk.aau.network_management_system.auth.AuthenticatedUser;
 
 @Service
 public class CooperativeMaterialMultiplierService {
-    
+
     private final CooperativeMaterialMultiplierRepository repository;
     private final AuthenticatedUser authenticatedUser;
-    
+
     @Autowired
     public CooperativeMaterialMultiplierService(
             CooperativeMaterialMultiplierRepository repository,
@@ -25,21 +26,26 @@ public class CooperativeMaterialMultiplierService {
         this.repository = repository;
         this.authenticatedUser = authenticatedUser;
     }
-    
+
+    public List<CooperativeMaterialMultiplier> getAllMultipliers(Long cooperativeId) {
+        validateCooperativeOwnership(cooperativeId);
+        return repository.findByCooperativeId(cooperativeId);
+    }
+
     public Optional<CooperativeMaterialMultiplier> getMultiplier(
             Long cooperativeId, Long materialId) {
-        
+
         validateCooperativeOwnership(cooperativeId);
-        
+
         return repository.findByCooperativeIdAndMaterialId(cooperativeId, materialId);
     }
-    
+
     @Transactional
     public CooperativeMaterialMultiplier saveOrUpdateMultiplier(
             Long cooperativeId, Long materialId, Double multiplierValue) {
-        
+
         validateCooperativeOwnership(cooperativeId);
-        
+
         if (materialId == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                 "Material ID is required");
@@ -48,12 +54,12 @@ public class CooperativeMaterialMultiplierService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                 "Multiplier value must be positive");
         }
-        
-        Optional<CooperativeMaterialMultiplier> existing = 
+
+        Optional<CooperativeMaterialMultiplier> existing =
             repository.findByCooperativeIdAndMaterialId(cooperativeId, materialId);
-        
+
         CooperativeMaterialMultiplier entity;
-        
+
         if (existing.isPresent()) {
             entity = existing.get();
             entity.setMultiplierValue(multiplierValue);
@@ -65,22 +71,22 @@ public class CooperativeMaterialMultiplierService {
                 multiplierValue
             );
         }
-        
+
         return repository.save(entity);
     }
-    
+
     private void validateCooperativeOwnership(Long cooperativeId) {
         if (authenticatedUser.isAdmin()) {
             return;
         }
-        
+
         Long userCooperativeId = authenticatedUser.getCooperativeId();
-        
+
         if (cooperativeId == null || userCooperativeId == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                 "Invalid cooperative ID");
         }
-        
+
         if (!Objects.equals(cooperativeId, userCooperativeId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                 "You can only access your own cooperative's data");

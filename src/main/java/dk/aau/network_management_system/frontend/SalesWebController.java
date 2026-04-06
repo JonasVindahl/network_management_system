@@ -49,14 +49,12 @@ public String salesList(
         // Get user's cooperative
         Long cooperativeId = authenticatedUser.getCooperativeId();
         
-        // ====== DEBUG LOGGING ======
         log.info("=== SALES LIST DEBUG ===");
         log.info("cooperativeId: {}", cooperativeId);
         log.info("type: {}", type);
         log.info("status: {}", status);
         log.info("isAdmin: {}", authenticatedUser.isAdmin());
         log.info("workerId: {}", authenticatedUser.getWorkerId());
-        // ============================
         
         if (cooperativeId == null) {
             log.error("User has no cooperative ID");
