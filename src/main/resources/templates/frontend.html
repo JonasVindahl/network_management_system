@@ -61,11 +61,27 @@
   .btn-sm:hover { background: #154d64; }
   .notice-layout { display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start; }
   .section-label { font-size: 14px; font-weight: 600; color: var(--text-secondary); margin-bottom: 14px; }
-  .notice-item { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 18px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
-  .notice-item.high { border-color: #f5c6cb; background: #fff5f5; }
-  .notice-item.medium { border-color: #ffeeba; background: #fffbf0; }
-  .notice-item.low { border-color: #dee2e6; background: #f8f9fa; }
-  .notice-left { display: flex; flex-direction: column; gap: 4px; }
+
+  .notice-item {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 10px;
+    overflow: hidden;
+    cursor: pointer;
+  }
+  .notice-item.high { border-color: #f5c6cb; }
+  .notice-item.medium { border-color: #ffeeba; }
+  .notice-item.low { border-color: #dee2e6; }
+  .notice-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+  }
+  .notice-item.high .notice-header { background: #fff5f5; }
+  .notice-item.medium .notice-header { background: #fffbf0; }
+  .notice-item.low .notice-header { background: #f8f9fa; }
+  .notice-header-left { display: flex; flex-direction: column; gap: 4px; }
   .notice-top { display: flex; align-items: center; gap: 10px; }
   .priority-badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; }
   .priority-badge.high { background: #f5c6cb; color: #721c24; }
@@ -73,6 +89,16 @@
   .priority-badge.low { background: #dee2e6; color: #495057; }
   .notice-title { font-size: 14px; font-weight: 500; }
   .notice-expires { font-size: 12px; color: var(--text-muted); }
+  .notice-chevron { font-size: 18px; color: var(--text-muted); transition: transform 0.2s; flex-shrink: 0; }
+  .notice-body {
+    display: none;
+    padding: 14px 18px;
+    border-top: 1px solid rgba(0,0,0,0.06);
+    background: var(--surface);
+  }
+  .notice-body p { font-size: 13.5px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 14px; }
+  .notice-actions { display: flex; gap: 8px; }
+
   .notice-form { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
   .form-title { font-size: 16px; font-weight: 600; margin-bottom: 20px; }
   .form-group { margin-bottom: 16px; }
@@ -82,21 +108,29 @@
   textarea.form-control { resize: vertical; min-height: 100px; }
   .btn-create { width: 100%; background: var(--accent); color: white; border: none; padding: 11px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; }
   .btn-create:hover { background: #154d64; }
+  .btn-edit { display: flex; align-items: center; gap: 6px; background: var(--accent); color: white; border: none; padding: 7px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .btn-delete { display: flex; align-items: center; gap: 6px; background: #dc3545; color: white; border: none; padding: 7px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+
   .info-box { background: var(--accent-light); border: 1px solid #b8dce8; border-radius: var(--radius-sm); padding: 14px 18px; display: flex; gap: 10px; margin-bottom: 24px; font-size: 13.5px; line-height: 1.5; }
   .info-box svg { width: 16px; height: 16px; stroke: var(--accent); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; margin-top: 1px; }
   .loading { text-align: center; padding: 32px; color: var(--text-muted); font-size: 13px; }
   .error-msg { background: #fff5f5; border: 1px solid #f5c6cb; border-radius: var(--radius-sm); padding: 12px 16px; color: #721c24; font-size: 13px; margin-bottom: 16px; }
+  .info-note { background: #fffbf0; border: 1px solid #ffeeba; border-radius: var(--radius-sm); padding: 12px 16px; color: #856404; font-size: 13px; margin-bottom: 16px; }
   .last-sales-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--border-light); }
   .last-sales-header span { font-weight: 600; font-size: 15px; }
   .last-sales-header select { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 5px 10px; font-size: 13px; color: var(--text-primary); background: var(--surface); outline: none; font-family: 'DM Sans', sans-serif; cursor: pointer; }
   .stock-bold { font-weight: 700; font-family: 'DM Mono', monospace; }
-  #editModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; }
+
+  /* MODALS */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
   #editModal.open { display: flex; }
+  #editModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; }
   .modal-box { background: white; border-radius: var(--radius); padding: 28px; width: 340px; }
+  .modal-box.wide { width: 420px; }
   .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 20px; }
   .modal-actions { display: flex; gap: 10px; margin-top: 8px; }
   .btn-cancel { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 11px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; }
-  .info-note { background: #fffbf0; border: 1px solid #ffeeba; border-radius: var(--radius-sm); padding: 12px 16px; color: #856404; font-size: 13px; margin-bottom: 16px; }
 </style>
 </head>
 <body>
@@ -132,7 +166,6 @@
 
   <div class="content">
 
-    <!-- DASHBOARD -->
     <div id="page-dashboard" class="page active">
       <div class="page-header">
         <h1 class="page-title" style="margin-bottom:0">Dashboard</h1>
@@ -169,7 +202,6 @@
       </div>
     </div>
 
-    <!-- WORKERS -->
     <div id="page-workers" class="page">
       <div class="page-header">
         <h1 class="page-title" style="margin-bottom:0">Workers</h1>
@@ -192,7 +224,6 @@
       </div>
     </div>
 
-    <!-- INVENTORY -->
     <div id="page-inventory" class="page">
       <h1 class="page-title">Inventory</h1>
       <div class="table-card">
@@ -221,7 +252,6 @@
       </div>
     </div>
 
-    <!-- NOTICE BOARD -->
     <div id="page-noticeboard" class="page">
       <h1 class="page-title">Notice Board</h1>
       <div class="notice-layout">
@@ -248,7 +278,6 @@
       </div>
     </div>
 
-    <!-- MULTIPLIERS -->
     <div id="page-multipliers" class="page">
       <h1 class="page-title">Multipliers</h1>
       <div class="info-box">
@@ -267,7 +296,6 @@
   </div>
 </main>
 
-<!-- EDIT MULTIPLIER MODAL -->
 <div id="editModal">
   <div class="modal-box">
     <div class="modal-title">Edit Multiplier</div>
@@ -287,8 +315,29 @@
   </div>
 </div>
 
+<div id="editNoticeModal" class="modal-overlay">
+  <div class="modal-box wide">
+    <div class="modal-title">Edit Notice</div>
+    <input type="hidden" id="editNoticeId">
+    <div class="form-group"><label class="form-label">Title</label><input type="text" class="form-control" id="editNoticeTitle"></div>
+    <div class="form-group"><label class="form-label">Content</label><textarea class="form-control" id="editNoticeContent" style="min-height:80px"></textarea></div>
+    <div class="form-group">
+      <label class="form-label">Priority</label>
+      <select class="form-control" id="editNoticePriority">
+        <option value="1">Low (1)</option>
+        <option value="2">Medium (2)</option>
+        <option value="3">High (3)</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">Expires</label><input type="date" class="form-control" id="editNoticeExpires"></div>
+    <div class="modal-actions">
+      <button class="btn-create" onclick="saveNotice()">Save</button>
+      <button class="btn-cancel" onclick="document.getElementById('editNoticeModal').classList.remove('open')">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <script>
-// ── HELPERS ──────────────────────────────────────────────────
 function getToken() {
   const m = document.cookie.match(/(?:^|;\s*)jwt=([^;]+)/);
   return m ? m[1] : null;
@@ -343,7 +392,6 @@ function initDates() {
   document.getElementById('workersTo').value = to;
 }
 
-// ── NAVIGATION ───────────────────────────────────────────────
 const loaders = {
   dashboard: loadDashboard,
   workers: loadWorkers,
@@ -362,10 +410,10 @@ function navigate(page, el) {
 
 function doLogout() {
   document.cookie = 'jwt=; path=/; max-age=0';
+  localStorage.removeItem('lastSeen');
   window.location.href = '/login';
 }
 
-// ── DASHBOARD ────────────────────────────────────────────────
 async function loadDashboard() {
   const from = (document.getElementById('dashFrom').value || defaultFrom()) + 'T00:00:00';
   const to   = (document.getElementById('dashTo').value   || defaultTo())   + 'T23:59:59';
@@ -421,21 +469,20 @@ async function loadWorkers() {
   try {
     const data = await api(`/api/productivity?startDate=${from}&endDate=${to}`);
     const list = Array.isArray(data) ? data : [];
-
     list.sort((a, b) => (b.totalCollectedKg ?? 0) - (a.totalCollectedKg ?? 0));
 
     const trophies = ['🏆', '🥈', '🥉'];
-    document.getElementById('leaderboardCards').innerHTML = list.slice(0, 3).map((w, i) => `
-      <div class="leader-card">
-        <span class="trophy-icon">${trophies[i]}</span>
-        <div class="leader-name">${w.workerName ?? '—'}</div>
-        <div class="leader-xp">${fmt(w.totalCollectedKg)} kg</div>
-        <div class="leader-kg">${fmt(w.numberOfWeighings)} weighings</div>
-      </div>`).join('');
-
     if (list.length === 0) {
       document.getElementById('leaderboardCards').innerHTML =
         '<div class="info-note" style="grid-column:1/-1">No measurements found for selected period. Try a wider date range.</div>';
+    } else {
+      document.getElementById('leaderboardCards').innerHTML = list.slice(0, 3).map((w, i) => `
+        <div class="leader-card">
+          <span class="trophy-icon">${trophies[i]}</span>
+          <div class="leader-name">${w.workerName ?? '—'}</div>
+          <div class="leader-xp">${fmt(w.totalCollectedKg)} kg</div>
+          <div class="leader-kg">${fmt(w.numberOfWeighings)} weighings</div>
+        </div>`).join('');
     }
 
     document.getElementById('leaderboardTable').innerHTML = list.length
@@ -449,14 +496,10 @@ async function loadWorkers() {
       : '<tr><td colspan="5" class="loading">No data for selected period</td></tr>';
 
   } catch (e) {
-    document.getElementById('workersError').innerHTML =
-      `<div class="error-msg">Error: ${e.message}</div>`;
-    document.getElementById('leaderboardTable').innerHTML =
-      `<tr><td colspan="5" class="loading">—</td></tr>`;
+    document.getElementById('workersError').innerHTML = `<div class="error-msg">Error: ${e.message}</div>`;
+    document.getElementById('leaderboardTable').innerHTML = `<tr><td colspan="5" class="loading">—</td></tr>`;
   }
 }
-
-
 
 let stockList = [];
 
@@ -510,7 +553,6 @@ async function loadLast5Sales() {
   }
 }
 
-
 async function loadNotices() {
   try {
     const data = await api('/api/notices');
@@ -520,24 +562,42 @@ async function loadNotices() {
       ? list.map(n => {
           const id = n.noticeId ?? n.id;
           const pl = plabel(n.priority);
-          const expires = n.expiresAt ?? n.expireDate ?? n.expires ?? n.expirationDate;
-          return `<div class="notice-item ${pl}">
-            <div class="notice-left">
-              <div class="notice-top">
-                <span class="priority-badge ${pl}">${ptext(n.priority)}</span>
-                <span class="notice-title">${n.title ?? '—'}</span>
+          const expires = fmtDate(n.expiresAt ?? n.expireDate ?? n.expires ?? n.expirationDate);
+          const contentEscaped = (n.content ?? '').replace(/`/g, '\\`').replace(/\$/g, '\\$');
+          const titleEscaped = (n.title ?? '').replace(/`/g, '\\`').replace(/\$/g, '\\$');
+          return `
+            <div class="notice-item ${pl}">
+              <div class="notice-header" onclick="toggleNotice(this)">
+                <div class="notice-header-left">
+                  <div class="notice-top">
+                    <span class="priority-badge ${pl}">${ptext(n.priority)}</span>
+                    <span class="notice-title">${n.title ?? '—'}</span>
+                  </div>
+                  <span class="notice-expires">Expires: ${expires}</span>
+                </div>
+                <span class="notice-chevron">⌄</span>
               </div>
-              <span class="notice-expires">Expires: ${fmtDate(expires)}</span>
-            </div>
-            <button onclick="deleteNotice(${id})"
-                    style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:20px;line-height:1;padding:0 4px"
-                    title="Delete">×</button>
-          </div>`;
+              <div class="notice-body">
+                <p>${n.content ?? ''}</p>
+                <div class="notice-actions">
+                  <button class="btn-edit" onclick="editNotice(${id}, \`${titleEscaped}\`, \`${contentEscaped}\`, ${n.priority}, '${expires}')">✏️ Edit</button>
+                  <button class="btn-delete" onclick="deleteNotice(${id})">🗑️ Delete</button>
+                </div>
+              </div>
+            </div>`;
         }).join('')
       : '<div class="loading">No active notices</div>';
   } catch (e) {
     document.getElementById('noticeList').innerHTML = `<div class="error-msg">Error: ${e.message}</div>`;
   }
+}
+
+function toggleNotice(headerEl) {
+  const body = headerEl.nextElementSibling;
+  const chevron = headerEl.querySelector('.notice-chevron');
+  const isOpen = body.style.display === 'block';
+  body.style.display = isOpen ? 'none' : 'block';
+  chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
 }
 
 async function createNotice() {
@@ -564,6 +624,32 @@ async function createNotice() {
   }
 }
 
+function editNotice(id, title, content, priority, expires) {
+  document.getElementById('editNoticeId').value = id;
+  document.getElementById('editNoticeTitle').value = title;
+  document.getElementById('editNoticeContent').value = content;
+  document.getElementById('editNoticePriority').value = priority;
+  document.getElementById('editNoticeExpires').value = expires;
+  document.getElementById('editNoticeModal').classList.add('open');
+}
+
+async function saveNotice() {
+  const id       = document.getElementById('editNoticeId').value;
+  const title    = document.getElementById('editNoticeTitle').value.trim();
+  const content  = document.getElementById('editNoticeContent').value.trim();
+  const priority = parseInt(document.getElementById('editNoticePriority').value);
+  const expires  = document.getElementById('editNoticeExpires').value;
+  if (!title || !content || !expires) return;
+  try {
+    await api('/api/notices/' + id, {
+      method: 'PUT',
+      body: JSON.stringify({ title, content, priority, expiresAt: expires + 'T23:59:59Z' })
+    });
+    document.getElementById('editNoticeModal').classList.remove('open');
+    loadNotices();
+  } catch (e) { alert('Could not save: ' + e.message); }
+}
+
 async function deleteNotice(id) {
   if (!confirm('Delete this notice?')) return;
   try {
@@ -575,17 +661,15 @@ async function deleteNotice(id) {
   } catch (e) { alert('Could not delete: ' + e.message); }
 }
 
-
-
 async function loadMultipliers() {
   try {
     const data = await api('/api/multipliers');
     const list = Array.isArray(data) ? data : [];
     document.getElementById('multipliersTable').innerHTML = list.length
       ? list.map(m => {
-          const id   = m.materialId ?? '—';
-          const val  = m.multiplierValue ?? '—';
+          const id   = m.materialId ?? m.id;
           const name = m.materialName ?? `Material #${m.materialId}`;
+          const val  = m.multiplierValue ?? m.multiplier ?? m.value ?? '—';
           return `<tr>
             <td>${name}</td>
             <td class="mono" style="color:var(--accent);font-weight:600">${val}x</td>
@@ -621,9 +705,8 @@ async function saveMultiplier() {
     closeModal();
     loadMultipliers();
   } catch (e) { alert('Could not save: ' + e.message); }
+}
 
-
-//Sikkerhed
 const TIMEOUT_MS = 30 * 60 * 1000;
 let inactivityTimer;
 
@@ -636,12 +719,10 @@ function resetTimer() {
   document.addEventListener(evt, resetTimer, { passive: true });
 });
 
-// Gem tidspunkt når siden lukkes/skjules
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
     localStorage.setItem('lastSeen', Date.now());
   } else {
-    // Bruger vender tilbage — tjek om der er gået mere end 30 min
     const lastSeen = parseInt(localStorage.getItem('lastSeen') || '0');
     if (lastSeen && Date.now() - lastSeen > TIMEOUT_MS) {
       doLogout();
@@ -651,19 +732,9 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-// Start timer
-resetTimer();
-
-
-}
-
-
-
-
-
-
 initDates();
 loadDashboard();
+resetTimer();
 </script>
 </body>
 </html>
