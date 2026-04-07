@@ -51,14 +51,16 @@ public interface SalesRepository extends JpaRepository<CooperativeEntity, Long> 
             csc.contributed_weight,
             cs.price_kg,
             b.buyer_name,
-            (SELECT COUNT(*) FROM collective_sale_contribution 
-             WHERE collective_sale_id = cs.collective_sale_id) as coop_count
+            (SELECT COUNT(*) FROM collective_sale_contribution
+             WHERE collective_sale_id = cs.collective_sale_id
+               AND status = 'ACCEPTED') as coop_count
         FROM collective_sale cs
         JOIN collective_sale_contribution csc 
           ON cs.collective_sale_id = csc.collective_sale_id
         JOIN materials m ON cs.material_id = m.material_id
         JOIN buyers b ON cs.buyer_id = b.buyer_id
         WHERE csc.cooperative_id = :cooperativeId
+          AND csc.status = 'ACCEPTED'
           AND cs.sold_at IS NOT NULL
           AND cs.sold_at >= :startDate
           AND cs.sold_at <= :endDate
@@ -103,14 +105,16 @@ public interface SalesRepository extends JpaRepository<CooperativeEntity, Long> 
             csc.contributed_weight,
             cs.price_kg,
             b.buyer_name,
-            (SELECT COUNT(*) FROM collective_sale_contribution 
-             WHERE collective_sale_id = cs.collective_sale_id) as coop_count
+            (SELECT COUNT(*) FROM collective_sale_contribution
+             WHERE collective_sale_id = cs.collective_sale_id
+               AND status = 'ACCEPTED') as coop_count
         FROM collective_sale cs
         JOIN collective_sale_contribution csc 
           ON cs.collective_sale_id = csc.collective_sale_id
         JOIN materials m ON cs.material_id = m.material_id
         JOIN buyers b ON cs.buyer_id = b.buyer_id
         WHERE csc.cooperative_id = :cooperativeId
+          AND csc.status = 'ACCEPTED'
           AND cs.sold_at IS NULL
         ORDER BY cs.created_at DESC
         """, nativeQuery = true)
