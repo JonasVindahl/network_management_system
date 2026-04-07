@@ -1,5 +1,7 @@
 package dk.aau.network_management_system.Cooperative_Analytics;
 
+import java.sql.Date;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -210,14 +212,14 @@ public class AnalyticsService {
         validateCooperativeOwnership(cooperativeId);
         
         try {
-            List<Object[]> raw = repository.LastSalesCooperativeRaw(cooperativeId, materialId);
+            List<Object[]> raw = repository.lastSalesCooperativeRaw(cooperativeId, materialId);
             
             return raw.stream()
                 .map(row -> new Last5SalesDTO(
                     ((Number) row[0]).longValue(),         // material
                     ((Number) row[1]).doubleValue(),       // weight
                     ((Number) row[2]).doubleValue(),       // price_kg
-                    ((java.sql.Date) row[3]).toLocalDate() // date
+                    toLocalDate(row[3])                    // sold_at
                 ))
                 .collect(Collectors.toList());
                 
@@ -243,6 +245,16 @@ public class AnalyticsService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
                 "Workers cannot access this data");
         }
+    }
+
+    private java.time.LocalDate toLocalDate(Object value) {
+        if (value instanceof Date date) {
+            return date.toLocalDate();
+        }
+        if (value instanceof Timestamp timestamp) {
+            return timestamp.toLocalDateTime().toLocalDate();
+        }
+        throw new ClassCastException("Unsupported date value type: " + value);
     }
     
     private void validateCooperativeOwnership(Long cooperativeId) {
