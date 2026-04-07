@@ -32,13 +32,12 @@ public class ReportsService {
 
 
     public CollectiveSaleReportDTO getCollectiveSaleReport(Long saleId, Long cooperativeId) {
-
-        validateReportAccess(saleId, cooperativeId);
-
         try {
             if(!repository.collectiveSaleExists((saleId))){
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Collective sale not found");
             }
+
+            validateReportAccess(saleId, cooperativeId);
 
             List<Object[]> rawData = repository.findCollectiveSaleReport(saleId);
 
