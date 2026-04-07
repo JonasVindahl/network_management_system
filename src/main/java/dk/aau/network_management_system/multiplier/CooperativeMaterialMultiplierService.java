@@ -27,7 +27,7 @@ public class CooperativeMaterialMultiplierService {
         this.authenticatedUser = authenticatedUser;
     }
 
-  public List<MultiplierDTO> getAllMultipliers(Long cooperativeId) {
+    public List<MultiplierDTO> getAllMultipliers(Long cooperativeId) {
     validateCooperativeOwnership(cooperativeId);
     return repository.findMultipliersWithMaterialName(cooperativeId)
         .stream()
