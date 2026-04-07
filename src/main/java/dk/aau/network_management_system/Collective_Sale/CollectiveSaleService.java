@@ -3,6 +3,7 @@ package dk.aau.network_management_system.Collective_Sale;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -32,7 +33,7 @@ public class CollectiveSaleService {
     }
 
     public List<CollectiveSaleInvitationDTO> getPendingInvitations() {
-        Long cooperativeId = authenticatedUser.getCooperativeId();
+        Long cooperativeId = requireAuthenticatedCooperativeId();
 
         try {
             return repository.findPendingInvitations(cooperativeId).stream()
@@ -51,14 +52,20 @@ public class CollectiveSaleService {
             log.error("Database error while fetching invitations for cooperative {}", cooperativeId, e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                 "Error retrieving invitations");
+        } catch (ClassCastException | NullPointerException e) {
+            log.error("Data mapping error while fetching invitations for cooperative {}", cooperativeId, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                "Error processing invitations");
         }
     }
 
     @Transactional
     public Long createCollectiveSale(CreateCollectiveSaleDTO dto) {
-        Long cooperativeId = authenticatedUser.getCooperativeId();
+        Long cooperativeId = requireAuthenticatedCooperativeId();
 
         try {
+            validateExpectedSaleDate(dto.getExpectedSaleDate());
+
             CollectiveSaleEntity sale = new CollectiveSaleEntity(
                 dto.getMaterialId(),
                 dto.getBuyerId(),
@@ -82,7 +89,7 @@ public class CollectiveSaleService {
 
     @Transactional
     public void inviteCooperative(Long saleId, InviteCooperativeDTO dto) {
-        Long callerCooperativeId = authenticatedUser.getCooperativeId();
+        Long callerCooperativeId = requireAuthenticatedCooperativeId();
 
         try {
             Long creatorId = repository.findActiveSaleCreator(saleId)
@@ -117,7 +124,7 @@ public class CollectiveSaleService {
 
     @Transactional
     public void joinCollectiveSale(Long saleId) {
-        Long cooperativeId = authenticatedUser.getCooperativeId();
+        Long cooperativeId = requireAuthenticatedCooperativeId();
 
         try {
             repository.findActiveSaleCreator(saleId)
@@ -137,7 +144,11 @@ public class CollectiveSaleService {
                     "You have already left this collective sale and cannot rejoin");
             }
 
-            repository.updateContributionStatus(saleId, cooperativeId, "ACCEPTED");
+            int updated = repository.updateContributionStatus(saleId, cooperativeId, "ACCEPTED");
+            if (updated == 0) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Collective sale invitation could not be accepted");
+            }
 
         } catch (ResponseStatusException e) {
             throw e;
@@ -150,7 +161,7 @@ public class CollectiveSaleService {
 
     @Transactional
     public void leaveCollectiveSale(Long saleId) {
-        Long cooperativeId = authenticatedUser.getCooperativeId();
+        Long cooperativeId = requireAuthenticatedCooperativeId();
 
         try {
             Long creatorId = repository.findActiveSaleCreator(saleId)
@@ -171,7 +182,11 @@ public class CollectiveSaleService {
                     "You have already left this collective sale");
             }
 
-            repository.updateContributionStatus(saleId, cooperativeId, "LEFT");
+            int updated = repository.updateContributionStatus(saleId, cooperativeId, "LEFT");
+            if (updated == 0) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Collective sale participation could not be updated");
+            }
 
         } catch (ResponseStatusException e) {
             throw e;
@@ -184,7 +199,7 @@ public class CollectiveSaleService {
 
     @Transactional
     public void updateContribution(Long saleId, UpdateContributionDTO dto) {
-        Long cooperativeId = authenticatedUser.getCooperativeId();
+        Long cooperativeId = requireAuthenticatedCooperativeId();
 
         try {
             repository.findActiveSaleCreator(saleId)
@@ -215,12 +230,16 @@ public class CollectiveSaleService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "Collective sale not found or already completed"));
 
-            if (!authenticatedUser.isAdmin() && !creatorId.equals(cooperativeId)) {
+            if (!authenticatedUser.isAdmin() && !Objects.equals(creatorId, requireAuthenticatedCooperativeId())) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "Only the creator cooperative can update the sale material");
             }
 
-            repository.updateSaleMaterial(saleId, dto.getMaterialId());
+            int updated = repository.updateSaleMaterial(saleId, dto.getMaterialId());
+            if (updated == 0) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Collective sale material could not be updated");
+            }
 
         } catch (ResponseStatusException e) {
             throw e;
@@ -228,6 +247,22 @@ public class CollectiveSaleService {
             log.error("Database error while updating material for sale {}", saleId, e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                 "Error updating sale material");
+        }
+    }
+
+    private Long requireAuthenticatedCooperativeId() {
+        Long cooperativeId = authenticatedUser.getCooperativeId();
+        if (cooperativeId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Authenticated user is not associated with a cooperative");
+        }
+        return cooperativeId;
+    }
+
+    private void validateExpectedSaleDate(java.time.Instant expectedSaleDate) {
+        if (expectedSaleDate != null && !expectedSaleDate.isAfter(java.time.Instant.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Expected sale date must be in the future");
         }
     }
 }
