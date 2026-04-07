@@ -1,0 +1,21 @@
+package dk.aau.network_management_system.Collective_Sale;
+
+import java.math.BigDecimal;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+
+public class UpdateContributionDTO {
+
+    @NotNull(message = "Weight is required")
+    @Positive(message = "Weight must be positive")
+    private BigDecimal weight;
+
+    public UpdateContributionDTO() {}
+
+    public UpdateContributionDTO(BigDecimal weight) {
+        this.weight = weight;
+    }
+
+    public BigDecimal getWeight() { return weight; }
+    public void setWeight(BigDecimal weight) { this.weight = weight; }
+}
