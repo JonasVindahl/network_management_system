@@ -50,6 +50,16 @@ public class CooperativeMaterialMultiplierController {
     }
 
     @GetMapping("/multipliers")
+    public ResponseEntity<List<MultiplierDTO>> getAllMultipliers(
+            @RequestParam(required = false) Long cooperativeId) {
+        permissionHelper.requireManagerOrAdmin();
+        Long targetCooperativeId = permissionHelper.determineTargetCooperative(cooperativeId);
+        return ResponseEntity.ok(service.getAllMultipliers(targetCooperativeId));
+    }
+
+
+    /* 
+    @GetMapping("/multipliers")
     public ResponseEntity<List<CooperativeMaterialMultiplier>> getAllMultipliers(
             @RequestParam(required = false) Long cooperativeId) {
 
@@ -60,6 +70,8 @@ public class CooperativeMaterialMultiplierController {
         List<CooperativeMaterialMultiplier> result = service.getAllMultipliers(targetCooperativeId);
         return ResponseEntity.ok(result);
     }
+
+    */
 
     @GetMapping("/multipliers/single")
     public ResponseEntity<CooperativeMaterialMultiplier> getMultiplier(

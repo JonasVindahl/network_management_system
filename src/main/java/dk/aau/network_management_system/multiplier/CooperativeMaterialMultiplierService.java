@@ -27,10 +27,18 @@ public class CooperativeMaterialMultiplierService {
         this.authenticatedUser = authenticatedUser;
     }
 
-    public List<CooperativeMaterialMultiplier> getAllMultipliers(Long cooperativeId) {
-        validateCooperativeOwnership(cooperativeId);
-        return repository.findByCooperativeId(cooperativeId);
-    }
+  public List<MultiplierDTO> getAllMultipliers(Long cooperativeId) {
+    validateCooperativeOwnership(cooperativeId);
+    return repository.findMultipliersWithMaterialName(cooperativeId)
+        .stream()
+        .map(row -> new MultiplierDTO(
+            ((Number) row[3]).longValue(),  // cooperativeId
+            ((Number) row[0]).longValue(),  // materialId
+            (String) row[1],               // materialName
+            ((Number) row[2]).doubleValue() // multiplierValue
+        ))
+        .collect(java.util.stream.Collectors.toList());
+}
 
     public Optional<CooperativeMaterialMultiplier> getMultiplier(
             Long cooperativeId, Long materialId) {
