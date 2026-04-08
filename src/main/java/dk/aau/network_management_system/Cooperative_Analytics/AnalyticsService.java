@@ -48,7 +48,6 @@ public class AnalyticsService {
             .collect(Collectors.toList());
     }
 
-    // GET - ALL Worker productivity
     public List<WorkerProductivityDTO> getAllWorkerProductivity(
             Long cooperativeId, LocalDateTime startDate, LocalDateTime endDate) {
 
@@ -78,7 +77,6 @@ public class AnalyticsService {
             .collect(Collectors.toList());
     }
 
-    // GET - Worker productivity
     public List<WorkerProductivityDTO> getWorkerProductivity(
             Long cooperativeId, Long workerId, LocalDateTime startDate, LocalDateTime endDate) {
 
@@ -97,8 +95,7 @@ public class AnalyticsService {
             .collect(Collectors.toList());
     }
 
-    // GET - Stock for material and sold
-    // FIX: added row[4] for materialId
+    // tilføjet row[4] for materialId - skal bruges til frontend
     public List<StockByMaterialDTO> getStockByMaterial(Long cooperativeId) {
 
         if (authenticatedUser.isWorker()) {
@@ -120,12 +117,12 @@ public class AnalyticsService {
                 ((Number) row[1]).doubleValue(),  // total_collected_kg
                 ((Number) row[2]).doubleValue(),  // total_sold_kg
                 ((Number) row[3]).doubleValue(),  // current_stock_kg
-                ((Number) row[4]).longValue()     // material_id  ← FIX
+                ((Number) row[4]).longValue()     // material_id
             ))
             .collect(Collectors.toList());
     }
 
-    // GET - Revenue for cooperative
+
     public List<RevenueDTO> getRevenue(
             Long cooperativeId, LocalDateTime startDate, LocalDateTime endDate) {
 
@@ -151,8 +148,7 @@ public class AnalyticsService {
             .collect(Collectors.toList());
     }
 
-    // GET - Last 5 sales for cooperative
-    // FIX: sold_at returns Timestamp not java.sql.Date
+    // sold_at til at returnere timestamp
     public List<Last5SalesDTO> findLastSalesForCooperative(
             Long cooperativeId, Long materialId) {
 
@@ -174,7 +170,7 @@ public class AnalyticsService {
                 ((Number) row[0]).longValue(),    // material
                 ((Number) row[1]).doubleValue(),  // weight
                 ((Number) row[2]).doubleValue(),  // price_kg
-                // FIX: sold_at is Timestamp, not java.sql.Date
+                // sold_at til Timestamp
                 row[3] instanceof java.sql.Timestamp ts
                     ? ts.toLocalDateTime().toLocalDate()
                     : ((java.sql.Date) row[3]).toLocalDate()
