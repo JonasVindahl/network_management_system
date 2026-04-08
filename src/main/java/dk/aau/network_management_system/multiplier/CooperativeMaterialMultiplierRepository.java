@@ -14,16 +14,21 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface CooperativeMaterialMultiplierRepository extends JpaRepository<CooperativeMaterialMultiplier, UUID> {
     
-    @Query(value = """
-        SELECT cmm.material_id, mat.material_name, cmm.multiplier_value, cmm.cooperative_id
-        FROM cooperative_material_multiplier cmm
-        JOIN materials mat ON cmm.material_id = mat.material_id
-        WHERE cmm.cooperative_id = :cooperativeId
-        ORDER BY mat.material_name
-        """, nativeQuery = true)
-    List<Object[]> findMultipliersWithMaterialName(
-        @Param("cooperativeId") Long cooperativeId
-    );
+   @Query(value = """
+    SELECT 
+        mat.material_id,
+        mat.material_name,
+        COALESCE(cmm.multiplier_value, 1.0) as multiplier_value,
+        :cooperativeId as cooperative_id
+    FROM materials mat
+    LEFT JOIN cooperative_material_multiplier cmm 
+        ON mat.material_id = cmm.material_id 
+        AND cmm.cooperative_id = :cooperativeId
+    ORDER BY mat.material_name
+    """, nativeQuery = true)
+List<Object[]> findMultipliersWithMaterialName(
+    @Param("cooperativeId") Long cooperativeId
+);
 
 
     Optional<CooperativeMaterialMultiplier> findByCooperativeIdAndMaterialId(Long cooperativeId, Long materialId);
