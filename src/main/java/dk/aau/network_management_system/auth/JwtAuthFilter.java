@@ -35,13 +35,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     String token = null;
 
-    // Prøv Authorization header først (API-flow)
     String authHeader = request.getHeader("Authorization");
     if (authHeader != null && authHeader.startsWith("Bearer ")) {
         token = authHeader.substring(7);
     }
 
-    // Prøv cookie som fallback (browser-flow)
+    // cookie som fallback
     if (token == null && request.getCookies() != null) {
         for (jakarta.servlet.http.Cookie cookie : request.getCookies()) {
             if ("jwt".equals(cookie.getName())) {
