@@ -11,7 +11,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface AnalyticsRepository extends JpaRepository<CooperativeEntity, Long> {
 
-    // Cooperatives overview info
     @Query(value = """
         SELECT 
             COALESCE(SUM(s.total_collected_kg), 0) as total_collected,
@@ -25,7 +24,6 @@ public interface AnalyticsRepository extends JpaRepository<CooperativeEntity, Lo
         @Param("cooperativeId") Long cooperativeId);
 
 
-    // All Worker productivity
     @Query(value = """
         SELECT 
             w.worker_id,
@@ -48,7 +46,6 @@ public interface AnalyticsRepository extends JpaRepository<CooperativeEntity, Lo
         @Param("endDate") LocalDateTime endDate
     );
 
-    // Specific worker productivity
     @Query(value = """
         SELECT 
             w.worker_id,
@@ -74,7 +71,6 @@ public interface AnalyticsRepository extends JpaRepository<CooperativeEntity, Lo
     );
 
 
-    // Stock per material — FIX: added mat.material_id
     @Query(value = """
         SELECT 
             mat.material_name,
@@ -92,7 +88,6 @@ public interface AnalyticsRepository extends JpaRepository<CooperativeEntity, Lo
     );
 
 
-    // Revenue — FIX: was sa.date, correct column is sa.sold_at
     @Query(value = """
         SELECT 
             COALESCE(SUM(sa.weight * sa.price_kg), 0) as totalRevenue,
@@ -109,8 +104,7 @@ public interface AnalyticsRepository extends JpaRepository<CooperativeEntity, Lo
         @Param("endDate") LocalDateTime endDate
     );
 
-
-    // Last 5 sales — FIX: use named params, correct param order, sold_at instead of date
+    //sidste 5 salg (ny)
     @Query(value = """
         SELECT
             s.material,
