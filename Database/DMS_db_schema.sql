@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS public.notice_board
     created_at     timestamp DEFAULT now(),
     last_updated   timestamp DEFAULT now(),
     created_by     bigint NOT NULL,
-    priority       smallint DEFAULT 1,
+    priority       integer DEFAULT 1,
     expires_at     timestamp,
     title          text NOT NULL,
     content        text NOT NULL,
