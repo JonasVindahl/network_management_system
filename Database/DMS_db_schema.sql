@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS public.notice_board
     created_at     timestamp DEFAULT now(),
     last_updated   timestamp DEFAULT now(),
     created_by     bigint NOT NULL,
-    priority       smallint DEFAULT 1,
+    priority       integer DEFAULT 1,
     expires_at     timestamp,
     title          text NOT NULL,
     content        text NOT NULL,
@@ -90,31 +90,34 @@ CREATE TABLE IF NOT EXISTS public.notice_board
     FOREIGN KEY (created_by) REFERENCES public.workers(worker_id)
 );
 
--- 8. Depends on: materials, buyers
+-- 8. Depends on: materials, buyers, cooperative
 CREATE TABLE IF NOT EXISTS public.collective_sale
 (
-    collective_sale_id bigserial NOT NULL,
-    created_at         timestamp DEFAULT now(),
-    sold_at            timestamp,
-    buyer_id           bigint NOT NULL,
-    material_id        bigint NOT NULL,
-    total_weight       numeric(10, 2) NOT NULL,
-    price_kg           numeric(10, 2) NOT NULL,
-    expected_sale_date timestamp NOT NULL,
+    collective_sale_id       bigserial NOT NULL,
+    created_at               timestamp DEFAULT now(),
+    sold_at                  timestamp,
+    buyer_id                 bigint NOT NULL,
+    material_id              bigint NOT NULL,
+    total_weight             numeric(10, 2),
+    price_kg                 numeric(10, 2) NOT NULL,
+    expected_sale_date       timestamp NOT NULL,
+    creator_cooperative_id   bigint NOT NULL,
     PRIMARY KEY (collective_sale_id),
     FOREIGN KEY (material_id) REFERENCES public.materials(material_id),
-    FOREIGN KEY (buyer_id) REFERENCES public.buyers(buyer_id)
+    FOREIGN KEY (buyer_id) REFERENCES public.buyers(buyer_id),
+    FOREIGN KEY (creator_cooperative_id) REFERENCES public.cooperative(cooperative_id)
 );
 
 -- 9. Depends on: collective_sale, cooperative
--- Tracks each cooperative's contribution to a collective sale
+-- status: INVITED | ACCEPTED | LEFT
 CREATE TABLE IF NOT EXISTS public.collective_sale_contribution
 (
     contribution_id    bigserial NOT NULL,
     collective_sale_id bigint NOT NULL,
     cooperative_id     bigint NOT NULL,
-    contributed_weight numeric(10, 2) NOT NULL,
+    contributed_weight numeric(10, 2),
     revenue_share      numeric(10, 2),
+    status             varchar(20) NOT NULL DEFAULT 'ACCEPTED',
     PRIMARY KEY (contribution_id),
     FOREIGN KEY (collective_sale_id) REFERENCES public.collective_sale(collective_sale_id),
     FOREIGN KEY (cooperative_id) REFERENCES public.cooperative(cooperative_id),
@@ -142,7 +145,7 @@ CREATE TABLE IF NOT EXISTS public.cooperative_random_multiplier
     multiplier_value                   double precision NOT NULL DEFAULT 1,
     last_updated                       timestamp DEFAULT now(),
     PRIMARY KEY (cooperative_random_multiplier_id),
-    FOREIGN KEY (cooperative_id) REFERENCES public.cooperative(cooperative_id)
+    FOREIGN KEY (cooperative_id) REFERENCES public.cooperative(cooperative_id),
     UNIQUE (cooperative_id)
 );
 
@@ -152,6 +155,7 @@ CREATE TABLE IF NOT EXISTS public.sales
     sale_id     bigserial NOT NULL,
     created_at  timestamp DEFAULT now(),
     sold_at     timestamp,
+    cancelled_at timestamp,
     material    bigint NOT NULL,
     weight      numeric(10, 2) NOT NULL,
     price_kg    numeric(10, 2) NOT NULL,
@@ -231,5 +235,156 @@ CREATE TABLE IF NOT EXISTS public.material_bag_state
     -- simple sanity
     CHECK (current_kg >= 0)
 );
+
+-- GAMIFICATION TABLES
+
+-- 15. Depends on: "none" - hardcoded achivement definitions
+-- Manager kan kun ændre xp_reward via achievement_xp_override, ikke oprette nye rækker
+
+CREATE TABLE IF NOT EXISTS public.achievement_definition
+(
+    achievement_id bigserial NOT NULL,
+    achievement_key text NOT NULL UNIQUE, -- 'WEIGHT_100KG' or 'DAYS_5'
+    achievement_name text NOT NULL, 
+    description text NOT NULL,
+    category text NOT NULL, -- 'WEIGHT' , 'DAYS_WORKED'
+    threshold_value numeric(15,2) NOT NULL, -- 50 (kg), 5 (days), 10 (achievements)
+    base_xp_reward int NOT NULL DEFAULT 100,
+    difficulty text NOT NULL DEFAULT 'MEDIUM', -- 'EASY', 'MEDIUM', 'HARD'
+    PRIMARY KEY (achievement_id)
+);
+
+-- 16. Depends on: cooperative, achievement_definition, workers
+-- Manager kan kun overskrive XP-belønning per achievement per kooperativ
+CREATE TABLE IF NOT EXISTS public.achievement_xp_override
+(
+    override_id bigserial NOT NULL,
+    cooperative_id bigint NOT NULL,
+    achievement_id bigint NOT NULL,
+    xp_reward_override int NOT NULL,
+    updated_by bigint NOT NULL, 
+    updated_at timestamp DEFAULT now(),
+    PRIMARY KEY (override_id),
+    UNIQUE (cooperative_id, achievement_id),
+    FOREIGN KEY (cooperative_id) REFERENCES public.cooperative(cooperative_id),
+    FOREIGN KEY (achievement_id) REFERENCES public.achievement_definition(achievement_id),
+    FOREIGN KEY (updated_by) REFERENCES public.workers(worker_id)
+);
+
+-- 17. Depends on: workers, achievement_definition, cooperative
+-- Månedlig achievement-progess per worker (nulstiller ikke - ny række per måned?)
+CREATE TABLE IF NOT EXISTS public.worker_achievement
+(
+    worker_achievement_id bigserial NOT NULL,
+    worker_id bigint NOT NULL,
+    achievement_id bigint NOT NULL,
+    cooperative_id bigint NOT NULL,
+    year_month char(7) NOT NULL, -- 'YYYY-MM'
+    unlocked_at timestamp, -- NULL - hvis ikke 'achievement' er opnået endnu
+    progress_value numeric(15,2) NOT NULL DEFAULT 0,
+    PRIMARY KEY(worker_achievement_id),
+    UNIQUE (worker_id, achievement_id, cooperative_id, year_month),
+    FOREIGN KEY(worker_id) REFERENCES public.workers(worker_id),
+    FOREIGN KEY(achievement_id) REFERENCES public.achievement_definition(achievement_id),
+    FOREIGN KEY(cooperative_id) REFERENCES public.cooperative(cooperative_id)
+);
+
+
+-- 18. Depends on: cooperative
+-- Pre-beregnede leaderboard rækker (opdateres hver 7. dag via scheduler)
+CREATE TABLE IF NOT EXISTS public.leaderboard_snapshot
+(
+    snapshot_id bigserial NOT NULL,
+    cooperative_id bigint NOT NULL,
+    year_month char(7) NOT NULL,
+    week_number int NOT NULL,
+    computed_at timestamp DEFAULT now(),
+    PRIMARY KEY (snapshot_id),
+    UNIQUE (cooperative_id, year_month, week_number),
+    FOREIGN KEY (cooperative_id) REFERENCES public.cooperative(cooperative_id)
+);
+
+-- 19. Depends on: leaderboard_snapshot, workers
+CREATE TABLE IF NOT EXISTS public.leaderboard_entry
+(
+    entry_id bigserial NOT NULL,
+    snapshot_id bigint NOT NULL,
+    rank_position int NOT NULL, -- 1, 2, 3
+    worker_id bigint NOT NULL,
+    worker_name text NOT NULL,
+    raw_xp numeric(15,2) NOT NULL, -- XP before multiplier
+    final_xp numeric(15,2) NOT NULL, -- XP after multiplier -> raw_xp * random_multiplier
+    random_mult double precision NOT NULL,
+    PRIMARY KEY (entry_id),
+    FOREIGN KEY (snapshot_id) REFERENCES public.leaderboard_snapshot(snapshot_id)
+        ON DELETE CASCADE, -- hvis snapshot slettes, slettes de tilhørende leaderboard entries også
+    FOREIGN KEY (worker_id) REFERENCES public.workers(worker_id)
+);
+
+-- 20. Depends on: (none)
+-- Hardcoded level definitions - exponential XP curve
+CREATE TABLE IF NOT EXISTS public.level_definition
+(
+    level_number int NOT NULL,
+    level_name text NOT NULL,
+    xp_required int NOT NULL, -- XP required to reach this level
+    PRIMARY KEY (level_number)
+);
+
+-- Seed: Hardcoded level definitions
+INSERT INTO public.level_definition (level_number, level_name, xp_required)
+VALUES
+    (1,  'Beginner',     100),
+    (2,  'Amateur',      167),
+    (3,  'Apprentice',   278),
+    (4,  'Collector',    464),
+    (5,  'Professional', 774),
+    (6,  'Expert',       1291),
+    (7,  'Master',       2154),
+    (8,  'Elite',        3593),
+    (9,  'Champion',     5992),
+    (10, 'Legend',       10000)
+ON CONFLICT (level_number) DO NOTHING; -- sikrer at vi ikke får duplikater hvis vi kører seed flere gange
+
+-- 21. Depends on: workers
+-- Tracks workers global XP and level (nulstilles aldrig)
+CREATE TABLE IF NOT EXISTS public.worker_level
+(
+    worker_id bigint NOT NULL,
+    total_xp int NOT NULL DEFAULT 0,
+    current_level int NOT NULL DEFAULT 1,
+    last_updated timestamp DEFAULT now(),
+    PRIMARY KEY (worker_id),
+    FOREIGN KEY (worker_id) REFERENCES public.workers(worker_id),
+    FOREIGN KEY (current_level) REFERENCES public.level_definition(level_number)
+);
+
+-- SEED: Hardcoded achievements (må ikke slettes/ændres - kun xp via achievement_xp_override)
+INSERT INTO public.achievement_definition
+    (achievement_key, achievement_name, description, category, threshold_value, base_xp_reward, difficulty)
+VALUES
+    -- Weight-milestones (kg collected in a month)
+    ('WEIGHT_50KG', 'Beginner', 'Collect 50 kg of materials in a month', 'WEIGHT', 50, 100, 'EASY'),
+    ('WEIGHT_100KG', 'Amateur', 'Collect 100 kg of materials in a month', 'WEIGHT', 100, 200, 'EASY'),
+    ('WEIGHT_250KG', 'Professional', 'Collect 250 kg of materials in a month', 'WEIGHT', 250, 400, 'MEDIUM'),
+    ('WEIGHT_500KG', 'Master Collector', 'Collect 500 kg of materials in a month', 'WEIGHT', 500, 750, 'HARD'),
+    ('WEIGHT_1000KG', 'Legendary Collector', 'Collect 1000 kg of materials in a month', 'WEIGHT', 1000, 1500, 'HARD'),
+
+    -- Days-worked milestones (in a month) -> our new implementations of the so-called "streak" proposed
+    ('DAYS_5', 'Getting Started', 'Work at least 5 days in a month', 'DAYS_WORKED', 5, 75, 'EASY'),
+    ('DAYS_10', 'On a Roll', 'Work at least 10 days in a month', 'DAYS_WORKED', 10, 150, 'MEDIUM'),
+    ('DAYS_15', 'Committed Worker', 'Work at least 15 days in a month', 'DAYS_WORKED', 15, 250, 'HARD'),
+    ('DAYS_20', 'Dedicated Worker', 'Work at least 20 days in a month', 'DAYS_WORKED', 20, 400, 'HARD'),
+    ('DAYS_25', 'Unstoppable Worker', 'Work at least 25 days in a month', 'DAYS_WORKED', 25, 600, 'HARD'),
+
+    -- All-achievement milestones
+    ('ACHIEVEMENTS_COUNT_3', 'Rising Star', 'Unlock 3 different achievements in a month', 'ACHIEVEMENTS_COUNT', 3, 125, 'MEDIUM'),
+    ('ACHIEVEMENTS_COUNT_5', 'Shining Star', 'Unlock 5 different achievements in a month', 'ACHIEVEMENTS_COUNT', 5, 300, 'HARD'),
+    ('ACHIEVEMENTS_COUNT_8', 'Superstar', 'Unlock 8 different achievements in a month', 'ACHIEVEMENTS_COUNT', 8, 500, 'HARD'),
+    ('ACHIEVEMENTS_COUNT_10', 'Legendary Superstar', 'Unlock 10 different achievements in a month', 'ACHIEVEMENTS_COUNT', 10, 750, 'HARD')
+
+    ON CONFLICT (achievement_key) DO NOTHING; -- sikrer at vi ikke får duplikater hvis vi kører seed flere gange
+
+    -- Note fra Dwaj -> Vi har ikke nok achievements endnu til at fylde 10 forskellige i ACHIEVEMENTS_COUNT (skal tilføje mere achievements)
 
 END;
