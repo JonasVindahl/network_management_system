@@ -155,6 +155,7 @@ CREATE TABLE IF NOT EXISTS public.sales
     sale_id     bigserial NOT NULL,
     created_at  timestamp DEFAULT now(),
     sold_at     timestamp,
+    cancelled_at timestamp,
     material    bigint NOT NULL,
     weight      numeric(10, 2) NOT NULL,
     price_kg    numeric(10, 2) NOT NULL,
