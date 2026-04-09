@@ -39,10 +39,11 @@ public class Last5SalesController   {
                     material,
                     weight,
                     price_kg,
-                    date
+                    sold_at::date as sold_date
                 FROM sales
                 WHERE material = ?
-                    ORDER BY date DESC
+                  AND sold_at IS NOT NULL
+                    ORDER BY sold_at DESC
                     LIMIT 5
                 """;
         return  jdbcTemplate.queryForList(sql, materialId);
