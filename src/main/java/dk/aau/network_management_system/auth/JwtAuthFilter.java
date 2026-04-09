@@ -19,6 +19,8 @@ import jakarta.servlet.http.HttpServletResponse;
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
+    private static final ThreadLocal<String> currentToken = new ThreadLocal<>(); 
+
     @Autowired
     private JwtUtil jwtUtil;
 
