@@ -101,8 +101,9 @@ public interface AnalyticsRepository extends JpaRepository<CooperativeEntity, Lo
     FROM sales sa
     JOIN workers w ON sa.responsible = w.worker_id
     WHERE w.cooperative = :cooperativeId
-      AND sa.date >= CAST(:startDate AS date)
-      AND sa.date <= CAST(:endDate AS date)
+      AND sa.sold_at IS NOT NULL
+      AND sa.sold_at >= :startDate
+      AND sa.sold_at <= :endDate
     """, nativeQuery = true)
     List<Object[]> findRevenueRaw(
         @Param("cooperativeId") Long cooperativeId,
@@ -116,19 +117,18 @@ public interface AnalyticsRepository extends JpaRepository<CooperativeEntity, Lo
                 s.material,
                 s.weight,
                 s.price_kg,
-                s.date
+                s.sold_at::date as sold_date
             FROM sales s
             JOIN workers w ON s.responsible = w.worker_id
-            WHERE s.material = ?
-              AND w.cooperative = ?
-            ORDER BY s.date DESC
+            WHERE s.material = :materialId
+              AND w.cooperative = :cooperativeId
+              AND s.sold_at IS NOT NULL
+            ORDER BY s.sold_at DESC
             LIMIT 5
             """, nativeQuery = true)
-    List<Object[]> LastSalesCooperativeRaw(
+    List<Object[]> lastSalesCooperativeRaw(
         @Param("cooperativeId") Long cooperativeId,
         @Param("materialId") Long materialId
-        //@Param("startDate") LocalDateTime startDate,
-        //@Param("endDate") LocalDateTime endDate
     );
 
 
