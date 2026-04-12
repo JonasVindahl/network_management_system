@@ -41,7 +41,6 @@
   .period-selector input { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 13px; font-family: 'DM Mono', monospace; color: var(--text-primary); background: var(--surface); outline: none; }
   .period-selector input:focus { border-color: var(--accent); }
   .period-btn { background: var(--accent); color: white; border: none; padding: 6px 14px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; }
-  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
   .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 20px; }
   .table-card-header { padding: 16px 24px; border-bottom: 1px solid var(--border-light); font-weight: 600; font-size: 15px; display: flex; align-items: center; justify-content: space-between; }
   table { width: 100%; border-collapse: collapse; }
@@ -62,7 +61,6 @@
   .notice-layout { display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start; }
   .section-label { font-size: 14px; font-weight: 600; color: var(--text-secondary); margin-bottom: 14px; }
 
-
   .quick-btn {
     background: var(--bg);
     border: 1px solid var(--border);
@@ -78,22 +76,11 @@
   .quick-btn:hover { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
   .quick-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
 
-  .notice-item {
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    margin-bottom: 10px;
-    overflow: hidden;
-    cursor: pointer;
-  }
+  .notice-item { border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 10px; overflow: hidden; cursor: pointer; }
   .notice-item.high { border-color: #f5c6cb; }
   .notice-item.medium { border-color: #ffeeba; }
   .notice-item.low { border-color: #dee2e6; }
-  .notice-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 18px;
-  }
+  .notice-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; }
   .notice-item.high .notice-header { background: #fff5f5; }
   .notice-item.medium .notice-header { background: #fffbf0; }
   .notice-item.low .notice-header { background: #f8f9fa; }
@@ -106,12 +93,7 @@
   .notice-title { font-size: 14px; font-weight: 500; }
   .notice-expires { font-size: 12px; color: var(--text-muted); }
   .notice-chevron { font-size: 18px; color: var(--text-muted); transition: transform 0.2s; flex-shrink: 0; }
-  .notice-body {
-    display: none;
-    padding: 14px 18px;
-    border-top: 1px solid rgba(0,0,0,0.06);
-    background: var(--surface);
-  }
+  .notice-body { display: none; padding: 14px 18px; border-top: 1px solid rgba(0,0,0,0.06); background: var(--surface); }
   .notice-body p { font-size: 13.5px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 14px; }
   .notice-actions { display: flex; gap: 8px; }
 
@@ -182,51 +164,55 @@
 
   <div class="content">
 
+    <!-- DASHBOARD -->
     <div id="page-dashboard" class="page active">
       <div class="page-header">
         <h1 class="page-title" style="margin-bottom:0">Dashboard</h1>
         <div class="period-selector">
-        Period:
-        <div style="display:flex;gap:4px;">
-          <button class="quick-btn" onclick="setQuick(30)">30d</button>
-          <button class="quick-btn" onclick="setQuick(60)">60d</button>
-          <button class="quick-btn" onclick="setQuick(120)">120d</button>
-          <button class="quick-btn" onclick="setQuick(180)">180d</button>
-          <button class="quick-btn" onclick="setQuick(365)">365d</button>
+          Period:
+          <div style="display:flex;gap:4px;">
+            <button class="quick-btn" onclick="setQuick(30)">30d</button>
+            <button class="quick-btn" onclick="setQuick(60)">60d</button>
+            <button class="quick-btn" onclick="setQuick(120)">120d</button>
+            <button class="quick-btn" onclick="setQuick(180)">180d</button>
+            <button class="quick-btn" onclick="setQuick(365)">365d</button>
+          </div>
+          <input type="date" id="dashFrom">
+          to
+          <input type="date" id="dashTo">
+          <button class="period-btn" onclick="loadDashboard()">Apply</button>
         </div>
-        <input type="date" id="dashFrom">
-        to
-        <input type="date" id="dashTo">
-        <button class="period-btn" onclick="loadDashboard()">Apply</button>
       </div>
+
+      <div id="dashError"></div>
+
+      <p style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">All time</p>
+      <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr);">
+        <div class="stat-card"><div class="stat-label">Total kg Collected</div><div class="stat-value" id="statKg">—</div></div>
+        <div class="stat-card"><div class="stat-label">Total Sold (kg)</div><div class="stat-value" id="statSold">—</div></div>
+        <div class="stat-card"><div class="stat-label">Current Stock (kg)</div><div class="stat-value" id="statStock">—</div></div>
+        <div class="stat-card"><div class="stat-label">Active Workers</div><div class="stat-value" id="statWorkers">—</div></div>
       </div>
-     <div id="dashError"></div>
 
-<p style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">All time:</p>
-<div class="stats-grid" style="grid-template-columns: repeat(4, 1fr);">
-  <div class="stat-card"><div class="stat-label">Total kg Collected</div><div class="stat-value" id="statKg">—</div></div>
-  <div class="stat-card"><div class="stat-label">Total Sold (kg)</div><div class="stat-value" id="statSold">—</div></div>
-  <div class="stat-card"><div class="stat-label">Current Stock (kg)</div><div class="stat-value" id="statStock">—</div></div>
-  <div class="stat-card"><div class="stat-label">Active Workers</div><div class="stat-value" id="statWorkers">—</div></div>
-</div>
+      <p style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;margin-top:16px">Period: <span id="periodLabel">—</span></p>
+      <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
+        <div class="stat-card"><div class="stat-label">Total Revenue</div><div class="stat-value" id="statRevenue">—</div></div>
+        <div class="stat-card"><div class="stat-label">Total Sales</div><div class="stat-value" id="statTotalSales">—</div></div>
+        <div class="stat-card"><div class="stat-label">Avg Price / kg</div><div class="stat-value" id="statAvgPrice">—</div></div>
+      </div>
 
-<p style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;margin-top:16px">Specific periode:</p>
-<div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-top: 0;">
-  <div class="stat-card"><div class="stat-label">Total Revenue</div><div class="stat-value" id="statRevenue">—</div></div>
-  <div class="stat-card"><div class="stat-label">Total Sales</div><div class="stat-value" id="statTotalSales">—</div></div>
-  <div class="stat-card"><div class="stat-label">Avg Price / kg</div><div class="stat-value" id="statAvgPrice">—</div></div>
-</div>
       <div class="table-card">
-  <div class="table-card-header">Worker Productivity</div>
-  <table>
-    <thead><tr><th>Worker Name</th><th>Total kg</th><th>Weighings</th><th>Avg kg/weighing</th></tr></thead>
-    <tbody id="productivityTable"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
-  </table>
-</div>
-
+        <div class="table-card-header">Worker Productivity</div>
+        <table>
+          <thead><tr><th>Worker Name</th><th>Total kg</th><th>Weighings</th><th>Avg kg/weighing</th></tr></thead>
+          <tbody id="productivityTable"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
+        </table>
       </div>
-    </div>
 
+    </div>
+    <!-- END DASHBOARD -->
+
+    <!-- WORKERS -->
     <div id="page-workers" class="page">
       <div class="page-header">
         <h1 class="page-title" style="margin-bottom:0">Workers</h1>
@@ -248,7 +234,9 @@
         </table>
       </div>
     </div>
+    <!-- END WORKERS -->
 
+    <!-- INVENTORY -->
     <div id="page-inventory" class="page">
       <h1 class="page-title">Inventory</h1>
       <div class="table-card">
@@ -276,7 +264,9 @@
         </table>
       </div>
     </div>
+    <!-- END INVENTORY -->
 
+    <!-- NOTICE BOARD -->
     <div id="page-noticeboard" class="page">
       <h1 class="page-title">Notice Board</h1>
       <div class="notice-layout">
@@ -302,7 +292,9 @@
         </div>
       </div>
     </div>
+    <!-- END NOTICE BOARD -->
 
+    <!-- MULTIPLIERS -->
     <div id="page-multipliers" class="page">
       <h1 class="page-title">Multipliers</h1>
       <div class="info-box">
@@ -317,6 +309,7 @@
         </table>
       </div>
     </div>
+    <!-- END MULTIPLIERS -->
 
   </div>
 </main>
@@ -444,6 +437,10 @@ async function loadDashboard() {
   const to   = (document.getElementById('dashTo').value   || defaultTo())   + 'T23:59:59';
   document.getElementById('dashError').innerHTML = '';
 
+  const fromFmt = (document.getElementById('dashFrom').value || defaultFrom()).split('-').reverse().join('/');
+  const toFmt   = (document.getElementById('dashTo').value   || defaultTo()).split('-').reverse().join('/');
+  document.getElementById('periodLabel').textContent = `${fromFmt} - ${toFmt}`;
+
   try {
     const [perf, productivity, revenue] = await Promise.all([
       api('/api/performance'),
@@ -484,6 +481,7 @@ async function loadDashboard() {
       `<div class="error-msg">Could not load dashboard: ${e.message}</div>`;
   }
 }
+
 async function loadWorkers() {
   const from = (document.getElementById('workersFrom').value || defaultFrom()) + 'T00:00:00';
   const to   = (document.getElementById('workersTo').value   || defaultTo())   + 'T23:59:59';
@@ -715,8 +713,6 @@ function openEditModal(id, name, value) {
   document.getElementById('editModal').classList.add('open');
 }
 
-
-
 function setQuick(days) {
   const to = new Date();
   const from = new Date();
@@ -727,7 +723,6 @@ function setQuick(days) {
   event.target.classList.add('active');
   loadDashboard();
 }
-
 
 function closeModal() { document.getElementById('editModal').classList.remove('open'); }
 
@@ -767,7 +762,6 @@ document.addEventListener('visibilitychange', () => {
       resetTimer();
     }
   }
-  
 });
 
 initDates();
