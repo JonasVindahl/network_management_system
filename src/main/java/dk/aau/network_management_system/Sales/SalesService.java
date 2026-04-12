@@ -11,6 +11,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
+import org.springframework.transaction.annotation.Transactional;
+import dk.aau.network_management_system.materials.StockRepository;
 
 import dk.aau.network_management_system.auth.AuthenticatedUser;
 
@@ -19,11 +24,15 @@ public class SalesService {
     
     private final SalesRepository repository;
     private final AuthenticatedUser authenticatedUser;
-    
+    private static final Logger log = LoggerFactory.getLogger(SalesService.class);
+    private final StockRepository stockRepository;
+
     @Autowired
-    public SalesService(SalesRepository repository, AuthenticatedUser authenticatedUser) {
+    public SalesService(SalesRepository repository, AuthenticatedUser authenticatedUser,
+                        StockRepository stockRepository) {
         this.repository = repository;
         this.authenticatedUser = authenticatedUser;
+        this.stockRepository = stockRepository;
     }
 
     public List<SaleDTO> getSalesHistory(Long cooperativeId, Instant startDate, 
@@ -138,6 +147,93 @@ public class SalesService {
         if (!Objects.equals(cooperativeId, userCooperativeId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                 "You can only access your own cooperative's data");
+        }
+    }
+
+    @Transactional
+    public void createSale(Long cooperativeId, Long workerId, CreateSaleDTO dto) {
+        try {
+            repository.insertSale(
+                    dto.getMaterialId(),
+                    dto.getWeight(),
+                    dto.getPriceKg(),
+                    dto.getBuyerId(),
+                    workerId,
+                    cooperativeId,
+                    dto.getExpectedSaleDate()
+            );
+        } catch (DataAccessException e) {
+            log.error("Database error while creating sale for cooperative {}", cooperativeId, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Error creating sale");
+        }
+    }
+
+    @Transactional
+    public void updateSale(Long saleId, Long cooperativeId, UpdateSaleDTO dto) {
+        try {
+            int rows = repository.updateSale(
+                    saleId,
+                    cooperativeId,
+                    dto.getMaterialId(),
+                    dto.getWeight(),
+                    dto.getPriceKg(),
+                    dto.getBuyerId(),
+                    dto.getExpectedSaleDate()
+            );
+            if (rows == 0) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Sale not found, already completed, cancelled, or does not belong to your cooperative");
+            }
+        } catch (DataAccessException e) {
+            log.error("Database error while updating sale {} for cooperative {}", saleId, cooperativeId, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Error updating sale");
+        }
+    }
+
+    @Transactional
+    public void completeSale(Long saleId, Long cooperativeId) {
+        List<Object[]> row = repository.findMaterialAndWeightBySaleId(saleId, cooperativeId);
+        if (row == null || row.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "Sale not found or does not belong to your cooperative");
+        }
+
+        long materialId = ((Number) row.get(0)[0]).longValue();
+        double weight   = ((Number) row.get(0)[1]).doubleValue();
+
+        try {
+            int rows = repository.completeSale(saleId, cooperativeId);
+            if (rows == 0) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "Sale is already completed or cancelled");
+            }
+
+            int stockRows = stockRepository.recordSale(cooperativeId, materialId, weight);
+            if (stockRows == 0) {
+                throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                        "No stock row found for this cooperative and material");
+            }
+        } catch (DataAccessException e) {
+            log.error("Database error while completing sale {} for cooperative {}", saleId, cooperativeId, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Error completing sale");
+        }
+    }
+
+    @Transactional
+    public void cancelSale(Long saleId, Long cooperativeId) {
+        try {
+            int rows = repository.cancelSale(saleId, cooperativeId);
+            if (rows == 0) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Sale not found, already completed, cancelled, or does not belong to your cooperative");
+            }
+        } catch (DataAccessException e) {
+            log.error("Database error while cancelling sale {} for cooperative {}", saleId, cooperativeId, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Error cancelling sale");
         }
     }
 }
