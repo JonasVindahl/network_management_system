@@ -62,6 +62,22 @@
   .notice-layout { display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start; }
   .section-label { font-size: 14px; font-weight: 600; color: var(--text-secondary); margin-bottom: 14px; }
 
+
+  .quick-btn {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text-secondary);
+    transition: all 0.15s;
+  }
+  .quick-btn:hover { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+  .quick-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+
   .notice-item {
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
@@ -170,35 +186,44 @@
       <div class="page-header">
         <h1 class="page-title" style="margin-bottom:0">Dashboard</h1>
         <div class="period-selector">
-          Period:
-          <input type="date" id="dashFrom">
-          to
-          <input type="date" id="dashTo">
-          <button class="period-btn" onclick="loadDashboard()">Apply</button>
+        Period:
+        <div style="display:flex;gap:4px;">
+          <button class="quick-btn" onclick="setQuick(30)">30d</button>
+          <button class="quick-btn" onclick="setQuick(60)">60d</button>
+          <button class="quick-btn" onclick="setQuick(120)">120d</button>
+          <button class="quick-btn" onclick="setQuick(180)">180d</button>
+          <button class="quick-btn" onclick="setQuick(365)">365d</button>
         </div>
+        <input type="date" id="dashFrom">
+        to
+        <input type="date" id="dashTo">
+        <button class="period-btn" onclick="loadDashboard()">Apply</button>
       </div>
-      <div id="dashError"></div>
-      <div class="stats-grid">
-        <div class="stat-card"><div class="stat-label">Total kg Collected</div><div class="stat-value" id="statKg">—</div></div>
-        <div class="stat-card"><div class="stat-label">Total Sold (kg)</div><div class="stat-value" id="statSold">—</div></div>
-        <div class="stat-card"><div class="stat-label">Current Stock (kg)</div><div class="stat-value" id="statStock">—</div></div>
-        <div class="stat-card"><div class="stat-label">Active Workers</div><div class="stat-value" id="statWorkers">—</div></div>
       </div>
-      <div class="two-col">
-        <div class="table-card">
-          <div class="table-card-header">Worker Productivity</div>
-          <table>
-            <thead><tr><th>Worker Name</th><th>Total kg</th><th>Weighings</th><th>Avg kg/weighing</th></tr></thead>
-            <tbody id="productivityTable"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
-          </table>
-        </div>
-        <div class="table-card">
-          <div class="table-card-header">Revenue</div>
-          <table>
-            <thead><tr><th>Total Revenue</th><th>Total Sales</th><th>Avg Price/kg</th></tr></thead>
-            <tbody id="revenueTable"><tr><td colspan="3" class="loading">Loading...</td></tr></tbody>
-          </table>
-        </div>
+     <div id="dashError"></div>
+
+<p style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">All time:</p>
+<div class="stats-grid" style="grid-template-columns: repeat(4, 1fr);">
+  <div class="stat-card"><div class="stat-label">Total kg Collected</div><div class="stat-value" id="statKg">—</div></div>
+  <div class="stat-card"><div class="stat-label">Total Sold (kg)</div><div class="stat-value" id="statSold">—</div></div>
+  <div class="stat-card"><div class="stat-label">Current Stock (kg)</div><div class="stat-value" id="statStock">—</div></div>
+  <div class="stat-card"><div class="stat-label">Active Workers</div><div class="stat-value" id="statWorkers">—</div></div>
+</div>
+
+<p style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;margin-top:16px">Specific periode:</p>
+<div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-top: 0;">
+  <div class="stat-card"><div class="stat-label">Total Revenue</div><div class="stat-value" id="statRevenue">—</div></div>
+  <div class="stat-card"><div class="stat-label">Total Sales</div><div class="stat-value" id="statTotalSales">—</div></div>
+  <div class="stat-card"><div class="stat-label">Avg Price / kg</div><div class="stat-value" id="statAvgPrice">—</div></div>
+</div>
+      <div class="table-card">
+  <div class="table-card-header">Worker Productivity</div>
+  <table>
+    <thead><tr><th>Worker Name</th><th>Total kg</th><th>Weighings</th><th>Avg kg/weighing</th></tr></thead>
+    <tbody id="productivityTable"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
+  </table>
+</div>
+
       </div>
     </div>
 
@@ -446,13 +471,12 @@ async function loadDashboard() {
       : '<tr><td colspan="4" class="loading">No data for selected period</td></tr>';
 
     const revList = Array.isArray(revenue) ? revenue : [];
-    document.getElementById('revenueTable').innerHTML = revList.length
-      ? revList.map(r => `<tr>
-          <td class="mono">R$ ${fmt(r.totalRevenue, 2)}</td>
-          <td class="mono">${fmt(r.totalSales)}</td>
-          <td class="mono">R$ ${fmt(r.avgPricePerKg, 2)}</td>
-        </tr>`).join('')
-      : '<tr><td colspan="3" class="loading">No data for selected period</td></tr>';
+    if (revList.length) {
+      const r = revList[0];
+      document.getElementById('statRevenue').textContent    = 'R$ ' + fmt(r.totalRevenue, 2);
+      document.getElementById('statTotalSales').textContent = fmt(r.totalSales);
+      document.getElementById('statAvgPrice').textContent   = 'R$ ' + fmt(r.avgPricePerKg, 2);
+    }
 
   } catch (e) {
     console.error(e);
@@ -460,7 +484,6 @@ async function loadDashboard() {
       `<div class="error-msg">Could not load dashboard: ${e.message}</div>`;
   }
 }
-
 async function loadWorkers() {
   const from = (document.getElementById('workersFrom').value || defaultFrom()) + 'T00:00:00';
   const to   = (document.getElementById('workersTo').value   || defaultTo())   + 'T23:59:59';
@@ -692,6 +715,20 @@ function openEditModal(id, name, value) {
   document.getElementById('editModal').classList.add('open');
 }
 
+
+
+function setQuick(days) {
+  const to = new Date();
+  const from = new Date();
+  from.setDate(from.getDate() - days);
+  document.getElementById('dashFrom').value = from.toISOString().split('T')[0];
+  document.getElementById('dashTo').value   = to.toISOString().split('T')[0];
+  document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  loadDashboard();
+}
+
+
 function closeModal() { document.getElementById('editModal').classList.remove('open'); }
 
 async function saveMultiplier() {
@@ -730,6 +767,7 @@ document.addEventListener('visibilitychange', () => {
       resetTimer();
     }
   }
+  
 });
 
 initDates();
