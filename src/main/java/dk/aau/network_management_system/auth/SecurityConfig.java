@@ -3,18 +3,14 @@ package dk.aau.network_management_system.auth;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.ProviderManager;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
 
 @Configuration
 @EnableWebSecurity
@@ -26,27 +22,36 @@ public class SecurityConfig {
     @Autowired
     private WorkerDetailsService workerDetailsService;
 
-    @Bean
-    @Order(1)
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        return http
-                .csrf(csrf -> csrf.disable())
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**","/test.html", "/*.html", "/static/**", "/error","/swagger-ui/**", "/v3/api-docs", "/v3/api-docs/**").permitAll()
-                        .anyRequest().authenticated())
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-                .build();
-    }
+@Bean
+public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    http
+        .userDetailsService(workerDetailsService)
+        .authorizeHttpRequests(auth -> auth
+            .requestMatchers("/login", "/css/**", "/js/**", "/images/**", "/api/auth/**").permitAll()
+            .requestMatchers("/web/**").authenticated()
+            .requestMatchers("/api/**").authenticated()
+            .anyRequest().authenticated()
+        )
+        .formLogin(form -> form.disable())
+        .logout(logout -> logout
+            .logoutSuccessHandler((request, response, authentication) -> {
+                jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie("jwt", null);
+                cookie.setMaxAge(0);
+                cookie.setPath("/");
+                response.addCookie(cookie);
+                response.sendRedirect("/login");
+            })
+            .permitAll()
+        )
+        .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+        .csrf(csrf -> csrf.disable());
 
-    @SuppressWarnings("deprecation")
+    return http.build();
+}
+
     @Bean
-    public AuthenticationManager authenticationManager() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(workerDetailsService);
-        provider.setPasswordEncoder(passwordEncoder());
-        return new ProviderManager(provider);
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
     }
 
     @Bean

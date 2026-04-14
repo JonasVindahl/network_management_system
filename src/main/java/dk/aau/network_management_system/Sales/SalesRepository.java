@@ -118,6 +118,7 @@ public interface SalesRepository extends JpaRepository<CooperativeEntity, Long> 
         ORDER BY cs.created_at DESC
         """, nativeQuery = true)
     List<Object[]> findActiveCollectiveSales(@Param("cooperativeId") Long cooperativeId);
+<<<<<<< feature/normalSale
 
     @Modifying
     @Query(value = """
@@ -198,3 +199,6 @@ public interface SalesRepository extends JpaRepository<CooperativeEntity, Long> 
             @Param("cooperativeId") Long cooperativeId
     );
 }
+=======
+}
+>>>>>>> main

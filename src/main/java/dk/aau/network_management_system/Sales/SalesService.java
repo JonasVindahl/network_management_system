@@ -7,7 +7,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -22,6 +25,8 @@ import dk.aau.network_management_system.auth.AuthenticatedUser;
 @Service
 public class SalesService {
     
+    private static final Logger log = LoggerFactory.getLogger(SalesService.class);
+
     private final SalesRepository repository;
     private final AuthenticatedUser authenticatedUser;
     private static final Logger log = LoggerFactory.getLogger(SalesService.class);
@@ -40,6 +45,7 @@ public class SalesService {
         
         validateCooperativeOwnership(cooperativeId);
         
+    try{
         List<SaleDTO> allSales = new ArrayList<>();
         
         if ("REGULAR".equalsIgnoreCase(type) || "ALL".equalsIgnoreCase(type)) {
@@ -63,6 +69,18 @@ public class SalesService {
                 return b.getSoldAt().compareTo(a.getSoldAt());
             })
             .collect(Collectors.toList());
+        } catch (DataAccessException e){
+            log.error("Database error while fetching notices for cooperative {}", cooperativeId, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                "Error retrieving notices");
+        }catch (ClassCastException | NullPointerException e) {
+            log.error("Data mapping error in worker productivity for cooperative {}", 
+                     cooperativeId, e);
+            throw new ResponseStatusException(
+                HttpStatus.INTERNAL_SERVER_ERROR, 
+                "Error processing productivity data"
+            );
+        }
     }
  
     public List<SaleDTO> getActiveSales(Long cooperativeId, String type) {
