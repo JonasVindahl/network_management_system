@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 
 @EnableScheduling
 @Component
-public class MånedligRandomMultiplier {
+public class MonthlyRandomMultiplier {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
