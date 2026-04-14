@@ -1,6 +1,5 @@
 package dk.aau.network_management_system.Collective_Sale_Reports;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,29 +11,27 @@ import dk.aau.network_management_system.auth.AuthenticatedUser;
 import dk.aau.network_management_system.auth.PermissionHelper;
 
 @RestController
-@RequestMapping("/api/reports")
-public class ReportsController {
-    
-    private final ReportsService service;
+@RequestMapping("/api/reports/normal")
+public class SaleReportsController {
+
+    private final SaleReportsService saleReportsService;
     private final PermissionHelper permissionHelper;
-    private final AuthenticatedUser authenticatedUser; // tilføj
+    private final AuthenticatedUser authenticatedUser; 
 
-    @Autowired
-    public ReportsController(ReportsService service, PermissionHelper permissionHelper, AuthenticatedUser authenticatedUser) {
-        this.service = service;
+
+    public SaleReportsController(SaleReportsService saleReportsService, PermissionHelper permissionHelper, AuthenticatedUser authenticatedUser) {
+        this.saleReportsService = saleReportsService;
         this.permissionHelper = permissionHelper;
-        this.authenticatedUser = authenticatedUser; // tilføj
-
+        this.authenticatedUser = authenticatedUser; 
     }
 
-    
-    @GetMapping("/collective/{saleId}")
-    public ResponseEntity<CollectiveSaleReportDTO> getCollectiveSaleReport(
+    @GetMapping("/{saleId}")
+    public ResponseEntity<SaleReportDTO> getSaleReport(
             @PathVariable Long saleId,
             @RequestParam(required = false) Long cooperativeId) {
-        
+
         permissionHelper.requireManagerOrAdmin();
-        
+
         Long targetCooperativeId = null;
         
         if (!authenticatedUser.isAdmin()) {
@@ -43,11 +40,12 @@ public class ReportsController {
             targetCooperativeId = cooperativeId;
         }
        
-        CollectiveSaleReportDTO report = service.getCollectiveSaleReport(
-            saleId, 
+
+        SaleReportDTO report = saleReportsService.getSaleReport(
+            saleId,
             targetCooperativeId
         );
-        
+
         return ResponseEntity.ok(report);
     }
 }

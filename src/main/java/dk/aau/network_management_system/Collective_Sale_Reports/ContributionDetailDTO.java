@@ -1,8 +1,5 @@
 package dk.aau.network_management_system.Collective_Sale_Reports;
 
-
-
-//For et enkelt coop bidrag i collective sale
 public class ContributionDetailDTO {
     
     private Long cooperativeId;
@@ -23,8 +20,6 @@ public class ContributionDetailDTO {
         this.contributedWeight = contributedWeight;
         this.revenueShare = revenueShare;
 
-
-        //procent bidragelse for coop
         if(totalWeight != null && totalWeight > 0){
             this.percentageOfTotal = (contributedWeight / totalWeight) * 100;
         } else {
