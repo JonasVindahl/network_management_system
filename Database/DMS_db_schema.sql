@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS public.notice_board
     created_at     timestamp DEFAULT now(),
     last_updated   timestamp DEFAULT now(),
     created_by     bigint NOT NULL,
-    priority       smallint DEFAULT 1,
+    priority       integer DEFAULT 1,
     expires_at     timestamp,
     title          text NOT NULL,
     content        text NOT NULL,
@@ -90,31 +90,34 @@ CREATE TABLE IF NOT EXISTS public.notice_board
     FOREIGN KEY (created_by) REFERENCES public.workers(worker_id)
 );
 
--- 8. Depends on: materials, buyers
+-- 8. Depends on: materials, buyers, cooperative
 CREATE TABLE IF NOT EXISTS public.collective_sale
 (
-    collective_sale_id bigserial NOT NULL,
-    created_at         timestamp DEFAULT now(),
-    sold_at            timestamp,
-    buyer_id           bigint NOT NULL,
-    material_id        bigint NOT NULL,
-    total_weight       numeric(10, 2) NOT NULL,
-    price_kg           numeric(10, 2) NOT NULL,
-    expected_sale_date timestamp NOT NULL,
+    collective_sale_id       bigserial NOT NULL,
+    created_at               timestamp DEFAULT now(),
+    sold_at                  timestamp,
+    buyer_id                 bigint NOT NULL,
+    material_id              bigint NOT NULL,
+    total_weight             numeric(10, 2),
+    price_kg                 numeric(10, 2) NOT NULL,
+    expected_sale_date       timestamp NOT NULL,
+    creator_cooperative_id   bigint NOT NULL,
     PRIMARY KEY (collective_sale_id),
     FOREIGN KEY (material_id) REFERENCES public.materials(material_id),
-    FOREIGN KEY (buyer_id) REFERENCES public.buyers(buyer_id)
+    FOREIGN KEY (buyer_id) REFERENCES public.buyers(buyer_id),
+    FOREIGN KEY (creator_cooperative_id) REFERENCES public.cooperative(cooperative_id)
 );
 
 -- 9. Depends on: collective_sale, cooperative
--- Tracks each cooperative's contribution to a collective sale
+-- status: INVITED | ACCEPTED | LEFT
 CREATE TABLE IF NOT EXISTS public.collective_sale_contribution
 (
     contribution_id    bigserial NOT NULL,
     collective_sale_id bigint NOT NULL,
     cooperative_id     bigint NOT NULL,
-    contributed_weight numeric(10, 2) NOT NULL,
+    contributed_weight numeric(10, 2),
     revenue_share      numeric(10, 2),
+    status             varchar(20) NOT NULL DEFAULT 'ACCEPTED',
     PRIMARY KEY (contribution_id),
     FOREIGN KEY (collective_sale_id) REFERENCES public.collective_sale(collective_sale_id),
     FOREIGN KEY (cooperative_id) REFERENCES public.cooperative(cooperative_id),
@@ -152,6 +155,7 @@ CREATE TABLE IF NOT EXISTS public.sales
     sale_id     bigserial NOT NULL,
     created_at  timestamp DEFAULT now(),
     sold_at     timestamp,
+    cancelled_at timestamp,
     material    bigint NOT NULL,
     weight      numeric(10, 2) NOT NULL,
     price_kg    numeric(10, 2) NOT NULL,
@@ -285,38 +289,8 @@ CREATE TABLE IF NOT EXISTS public.worker_achievement
     FOREIGN KEY(cooperative_id) REFERENCES public.cooperative(cooperative_id)
 );
 
--- 18. Depends on: cooperative, workers
--- Manager markerer en dag som understaffed - workers som bejer den dag får XP
-CREATE TABLE IF NOT EXISTS public.understaffed_day
-(
-    understaffed_id bigserial NOT NULL,
-    cooperative_id bigint NOT NULL,
-    work_date date NOT NULL,
-    xp_reward int NOT NULL DEFAULT 50,
-    created_by bigint NOT NULL,
-    created_at timestamp DEFAULT now(),
-    PRIMARY KEY (understaffed_id),
-    UNIQUE (cooperative_id, work_date),
-    FOREIGN KEY (cooperative_id) REFERENCES public.cooperative(cooperative_id),
-    FOREIGN KEY (created_by) REFERENCES public.workers(worker_id)
-);
 
--- 19. Depends on: workers, understaffed_day
--- Hvem har modtaget XP for en understaffed dag
-CREATE TABLE IF NOT EXISTS public.understaffed_day_xp_earned
-(
-    earned_id bigserial NOT NULL,
-    worker_id bigint NOT NULL,
-    understaffed_id bigint NOT NULL,
-    earned_at timestamp DEFAULT now(),
-    PRIMARY KEY (earned_id),
-    UNIQUE (worker_id, understaffed_id),
-    FOREIGN KEY (worker_id) REFERENCES public.workers(worker_id),
-    FOREIGN KEY (understaffed_id) REFERENCES public.understaffed_day(understaffed_id)
-        ON DELETE CASCADE -- hvis en understaffed dag slettes, slettes de "extra" XP-earnings også
-);
-
--- 20. Depends on: cooperative
+-- 18. Depends on: cooperative
 -- Pre-beregnede leaderboard rækker (opdateres hver 7. dag via scheduler)
 CREATE TABLE IF NOT EXISTS public.leaderboard_snapshot
 (
@@ -330,7 +304,7 @@ CREATE TABLE IF NOT EXISTS public.leaderboard_snapshot
     FOREIGN KEY (cooperative_id) REFERENCES public.cooperative(cooperative_id)
 );
 
--- 21. Depends on: leaderboard_snapshot, workers
+-- 19. Depends on: leaderboard_snapshot, workers
 CREATE TABLE IF NOT EXISTS public.leaderboard_entry
 (
     entry_id bigserial NOT NULL,
@@ -347,9 +321,45 @@ CREATE TABLE IF NOT EXISTS public.leaderboard_entry
     FOREIGN KEY (worker_id) REFERENCES public.workers(worker_id)
 );
 
+-- 20. Depends on: (none)
+-- Hardcoded level definitions - exponential XP curve
+CREATE TABLE IF NOT EXISTS public.level_definition
+(
+    level_number int NOT NULL,
+    level_name text NOT NULL,
+    xp_required int NOT NULL, -- XP required to reach this level
+    PRIMARY KEY (level_number)
+);
+
+-- Seed: Hardcoded level definitions
+INSERT INTO public.level_definition (level_number, level_name, xp_required)
+VALUES
+    (1,  'Beginner',     100),
+    (2,  'Amateur',      167),
+    (3,  'Apprentice',   278),
+    (4,  'Collector',    464),
+    (5,  'Professional', 774),
+    (6,  'Expert',       1291),
+    (7,  'Master',       2154),
+    (8,  'Elite',        3593),
+    (9,  'Champion',     5992),
+    (10, 'Legend',       10000)
+ON CONFLICT (level_number) DO NOTHING; -- sikrer at vi ikke får duplikater hvis vi kører seed flere gange
+
+-- 21. Depends on: workers
+-- Tracks workers global XP and level (nulstilles aldrig)
+CREATE TABLE IF NOT EXISTS public.worker_level
+(
+    worker_id bigint NOT NULL,
+    total_xp int NOT NULL DEFAULT 0,
+    current_level int NOT NULL DEFAULT 1,
+    last_updated timestamp DEFAULT now(),
+    PRIMARY KEY (worker_id),
+    FOREIGN KEY (worker_id) REFERENCES public.workers(worker_id),
+    FOREIGN KEY (current_level) REFERENCES public.level_definition(level_number)
+);
 
 -- SEED: Hardcoded achievements (må ikke slettes/ændres - kun xp via achievement_xp_override)
-
 INSERT INTO public.achievement_definition
     (achievement_key, achievement_name, description, category, threshold_value, base_xp_reward, difficulty)
 VALUES
@@ -373,8 +383,8 @@ VALUES
     ('ACHIEVEMENTS_COUNT_8', 'Superstar', 'Unlock 8 different achievements in a month', 'ACHIEVEMENTS_COUNT', 8, 500, 'HARD'),
     ('ACHIEVEMENTS_COUNT_10', 'Legendary Superstar', 'Unlock 10 different achievements in a month', 'ACHIEVEMENTS_COUNT', 10, 750, 'HARD')
 
-    -- Note fra Dwaj -> Vi har ikke nok achievements endnu til at fylde 10 forskellige i ACHIEVEMENTS_COUNT (skal tilføje mere achievements)
-
     ON CONFLICT (achievement_key) DO NOTHING; -- sikrer at vi ikke får duplikater hvis vi kører seed flere gange
+
+    -- Note fra Dwaj -> Vi har ikke nok achievements endnu til at fylde 10 forskellige i ACHIEVEMENTS_COUNT (skal tilføje mere achievements)
 
 END;
