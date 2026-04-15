@@ -126,7 +126,7 @@ public class AnalyticsService {
 
 
     public List<RevenueDTO> getRevenue(
-            Long cooperativeId, LocalDateTime startDate, LocalDateTime endDate) {
+            Long cooperativeId, Long materialId, LocalDateTime startDate, LocalDateTime endDate) {
 
         if (authenticatedUser.isWorker()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
@@ -139,14 +139,16 @@ public class AnalyticsService {
                 "You can only access your own cooperative's data");
         }
 
-        List<Object[]> revenue = repository.findRevenueRaw(cooperativeId, startDate, endDate);
+        List<Object[]> revenue = repository.findRevenueRaw(cooperativeId, startDate, endDate, materialId);
 
         return revenue.stream()
             .map(row -> new RevenueDTO(
-                ((Number) row[0]).doubleValue(),  // total_revenue
-                ((Number) row[1]).longValue(),    // total_sales
-                ((Number) row[2]).doubleValue()   // avg_price_per_kg
-            ))
+            ((Number) row[0]).doubleValue(),  // totalRevenue
+            ((Number) row[1]).longValue(),    // totalSales
+            ((Number) row[2]).doubleValue(),  // avgPricePerKg
+            (String)  row[3],                 // materialName
+            ((Number) row[4]).longValue()     // materialId
+        ))
             .collect(Collectors.toList());
     }
 
@@ -191,7 +193,7 @@ public class AnalyticsService {
             })
             .collect(Collectors.toList());
     }
-    
+
 public List<Last5SalesDTO> findLastSalesAllCooperatives(Long materialId) {
 
     if (authenticatedUser.isWorker()) {

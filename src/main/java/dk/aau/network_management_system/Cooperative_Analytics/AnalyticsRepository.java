@@ -88,22 +88,27 @@ public interface AnalyticsRepository extends JpaRepository<CooperativeEntity, Lo
     );
 
 
-    @Query(value = """
-        SELECT 
-            COALESCE(SUM(sa.weight * sa.price_kg), 0) as totalRevenue,
-            COUNT(sa.sale_id) as totalSales,
-            COALESCE(AVG(sa.price_kg), 0) as avgPricePerKg
-        FROM sales sa
-        JOIN workers w ON sa.responsible = w.worker_id
-        WHERE w.cooperative = :cooperativeId
-          AND sa.sold_at BETWEEN :startDate AND :endDate
-        """, nativeQuery = true)
-    List<Object[]> findRevenueRaw(
-        @Param("cooperativeId") Long cooperativeId,
-        @Param("startDate") LocalDateTime startDate,
-        @Param("endDate") LocalDateTime endDate
-    );
-
+@Query(value = """
+    SELECT 
+        COALESCE(SUM(sa.weight * sa.price_kg), 0) as totalRevenue,
+        COUNT(sa.sale_id) as totalSales,
+        COALESCE(AVG(sa.price_kg), 0) as avgPricePerKg,
+        m.material_name as materialName,
+        sa.material as materialId
+    FROM sales sa
+    JOIN workers w ON sa.responsible = w.worker_id
+    JOIN materials m ON sa.material = m.material_id
+    WHERE w.cooperative = :cooperativeId
+      AND sa.sold_at BETWEEN :startDate AND :endDate
+      AND (:materialId IS NULL OR sa.material = :materialId)
+    GROUP BY sa.material, m.material_name
+    """, nativeQuery = true)
+List<Object[]> findRevenueRaw(
+    @Param("cooperativeId") Long cooperativeId,
+    @Param("startDate") LocalDateTime startDate,
+    @Param("endDate") LocalDateTime endDate,
+    @Param("materialId") Long materialId
+);
     @Query(value = """
         SELECT
             s.material,

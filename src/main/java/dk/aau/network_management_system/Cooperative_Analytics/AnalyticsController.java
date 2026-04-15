@@ -132,6 +132,7 @@ public class AnalyticsController {
     @GetMapping("/revenue")
         public ResponseEntity<List<RevenueDTO>> getRevenue(
                 @RequestParam(required = false) Long cooperativeId,
+                @RequestParam(required = false) Long materialId,
                 @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
                 @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
     
@@ -165,7 +166,7 @@ public class AnalyticsController {
 
         List<RevenueDTO> result;
 
-        result = service.getRevenue(targetCooperativeId, startDate, endDate);
+        result = service.getRevenue(targetCooperativeId, materialId, startDate, endDate);
         
         return ResponseEntity.ok(result);
     }

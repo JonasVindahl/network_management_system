@@ -121,6 +121,9 @@
   .last-sales-header select { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 5px 10px; font-size: 13px; color: var(--text-primary); background: var(--surface); outline: none; font-family: 'DM Sans', sans-serif; cursor: pointer; }
   .stock-bold { font-weight: 700; font-family: 'DM Mono', monospace; }
 
+  .dual-table-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .dual-table-grid .table-card { margin-bottom: 0; }
+
   /* MODALS */
   .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; }
   .modal-overlay.open { display: flex; }
@@ -132,7 +135,6 @@
   .modal-actions { display: flex; gap: 10px; margin-top: 8px; }
   .btn-cancel { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 11px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; }
 
-  /* Period dropdown separator */
   .period-separator { width: 1px; height: 20px; background: var(--border); margin: 0 2px; }
 </style>
 </head>
@@ -202,18 +204,23 @@
       </div>
 
       <p style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;margin-top:16px">Period: <span id="periodLabel">—</span></p>
-      <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
-        <div class="stat-card"><div class="stat-label">Total Revenue</div><div class="stat-value" id="statRevenue">—</div></div>
-        <div class="stat-card"><div class="stat-label">Total Sales</div><div class="stat-value" id="statTotalSales">—</div></div>
-        <div class="stat-card"><div class="stat-label">Avg Price / kg</div><div class="stat-value" id="statAvgPrice">—</div></div>
-      </div>
 
-      <div class="table-card">
-        <div class="table-card-header">Worker Productivity</div>
-        <table>
-          <thead><tr><th>Worker Name</th><th>Total kg</th><th>Weighings</th><th>Avg kg/weighing</th></tr></thead>
-          <tbody id="productivityTable"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
-        </table>
+      <div class="dual-table-grid">
+        <div class="table-card">
+          <div class="table-card-header">Worker Productivity</div>
+          <table>
+            <thead><tr><th>Worker Name</th><th>Total kg</th><th>Weighings</th><th>Avg kg/weighing</th></tr></thead>
+            <tbody id="productivityTable"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
+          </table>
+        </div>
+
+        <div class="table-card">
+          <div class="table-card-header">Avg Price / kg per Material</div>
+          <table>
+            <thead><tr><th>Material</th><th>Total Revenue</th><th>Sales</th><th>Avg Price / kg</th></tr></thead>
+            <tbody id="avgPriceTable"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
+          </table>
+        </div>
       </div>
 
     </div>
@@ -263,19 +270,19 @@
         </table>
       </div>
       <div class="table-card">
-      <div class="last-sales-header">
-        <span>Last 5 Sales</span>
-        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)">
-          <div style="display:flex;gap:4px;">
-            <button class="quick-btn active" id="scopeMyBtn" onclick="setSalesScope('my')">My Cooperative</button>
-            <button class="quick-btn" id="scopeAllBtn" onclick="setSalesScope('all')">All Cooperatives</button>
+        <div class="last-sales-header">
+          <span>Last 5 Sales</span>
+          <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)">
+            <div style="display:flex;gap:4px;">
+              <button class="quick-btn active" id="scopeMyBtn" onclick="setSalesScope('my')">My Cooperative</button>
+              <button class="quick-btn" id="scopeAllBtn" onclick="setSalesScope('all')">All Cooperatives</button>
+            </div>
+            Material:
+            <select id="last5MaterialSelect" onchange="loadLast5Sales()">
+              <option value="">Select material...</option>
+            </select>
           </div>
-          Material:
-          <select id="last5MaterialSelect" onchange="loadLast5Sales()">
-            <option value="">Select material...</option>
-          </select>
         </div>
-      </div>
         <table>
           <thead><tr><th>Date</th><th>Material ID</th><th>Weight (kg)</th><th>Price/kg</th></tr></thead>
           <tbody id="last5Table">
@@ -507,12 +514,14 @@ async function loadDashboard() {
       : '<tr><td colspan="4" class="loading">No data for selected period</td></tr>';
 
     const revList = Array.isArray(revenue) ? revenue : [];
-    if (revList.length) {
-      const r = revList[0];
-      document.getElementById('statRevenue').textContent    = 'R$ ' + fmt(r.totalRevenue, 2);
-      document.getElementById('statTotalSales').textContent = fmt(r.totalSales);
-      document.getElementById('statAvgPrice').textContent   = 'R$ ' + fmt(r.avgPricePerKg, 2);
-    }
+    document.getElementById('avgPriceTable').innerHTML = revList.length
+      ? revList.map(r => `<tr>
+          <td>${r.materialName ?? '—'}</td>
+          <td class="mono">R$ ${fmt(r.totalRevenue, 2)}</td>
+          <td class="mono">${fmt(r.totalSales)}</td>
+          <td class="mono" style="color:var(--accent);font-weight:600">R$ ${fmt(r.avgPricePerKg, 2)}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="4" class="loading">No data for selected period</td></tr>';
 
   } catch (e) {
     console.error(e);
@@ -584,18 +593,12 @@ async function loadInventory() {
       : '<tr><td colspan="4" class="loading">No data</td></tr>';
 
     const sel = document.getElementById('last5MaterialSelect');
-
     const materialList = Array.isArray(materials) ? materials : [];
-
     sel.innerHTML =
       '<option value="">Select material...</option>' +
       materialList
         .filter(m => m.materialId != null)
-        .map(m => `
-          <option value="${m.materialId}">
-            ${m.materialName}
-          </option>
-        `)
+        .map(m => `<option value="${m.materialId}">${m.materialName}</option>`)
         .join('');
 
   } catch (e) {
@@ -607,44 +610,44 @@ async function loadInventory() {
 let salesScope = 'my';
 
 function setSalesScope(scope) {
-    salesScope = scope;
-    document.getElementById('scopeMyBtn').classList.toggle('active', scope === 'my');
-    document.getElementById('scopeAllBtn').classList.toggle('active', scope === 'all');
-    loadLast5Sales();
+  salesScope = scope;
+  document.getElementById('scopeMyBtn').classList.toggle('active', scope === 'my');
+  document.getElementById('scopeAllBtn').classList.toggle('active', scope === 'all');
+  loadLast5Sales();
 }
 
 async function loadLast5Sales() {
-    const matId = document.getElementById('last5MaterialSelect').value;
-    if (!matId) {
-        document.getElementById('last5Table').innerHTML =
-            '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted)">Select a material</td></tr>';
-        return;
-    }
+  const matId = document.getElementById('last5MaterialSelect').value;
+  if (!matId) {
+    document.getElementById('last5Table').innerHTML =
+      '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted)">Select a material</td></tr>';
+    return;
+  }
 
-    const endpoint = salesScope === 'all'
-        ? `/api/cooperative/lastsales/all?materialId=${matId}`
-        : `/api/cooperative/lastsales?materialId=${matId}`;
+  const endpoint = salesScope === 'all'
+    ? `/api/cooperative/lastsales/all?materialId=${matId}`
+    : `/api/cooperative/lastsales?materialId=${matId}`;
 
-    try {
-        const data = await api(endpoint);
-        const list = Array.isArray(data) ? data : [];
+  try {
+    const data = await api(endpoint);
+    const list = Array.isArray(data) ? data : [];
 
-        const scopeNote = salesScope === 'all'
-            ? '<tr><td colspan="4" style="padding:8px 24px;font-size:12px;color:var(--text-muted);background:var(--bg)">Anonymous data — across all cooperatives</td></tr>'
-            : '';
+    const scopeNote = salesScope === 'all'
+      ? '<tr><td colspan="4" style="padding:8px 24px;font-size:12px;color:var(--text-muted);background:var(--bg)">Anonymous data — across all cooperatives</td></tr>'
+      : '';
 
-        document.getElementById('last5Table').innerHTML = list.length
-            ? scopeNote + list.map(s => `<tr>
-                <td class="mono">${fmtDate(s.date)}</td>
-                <td class="mono">${s.material ?? '—'}</td>
-                <td class="mono">${fmt(s.weight)}</td>
-                <td class="mono">R$ ${fmt(s.priceKg, 2)}</td>
-              </tr>`).join('')
-            : '<tr><td colspan="4" class="loading">No sales found</td></tr>';
-    } catch (e) {
-        document.getElementById('last5Table').innerHTML =
-            `<tr><td colspan="4" class="error-msg">Error: ${e.message}</td></tr>`;
-    }
+    document.getElementById('last5Table').innerHTML = list.length
+      ? scopeNote + list.map(s => `<tr>
+          <td class="mono">${fmtDate(s.date)}</td>
+          <td class="mono">${s.material ?? '—'}</td>
+          <td class="mono">${fmt(s.weight)}</td>
+          <td class="mono">R$ ${fmt(s.priceKg, 2)}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="4" class="loading">No sales found</td></tr>';
+  } catch (e) {
+    document.getElementById('last5Table').innerHTML =
+      `<tr><td colspan="4" class="error-msg">Error: ${e.message}</td></tr>`;
+  }
 }
 
 async function loadNotices() {
