@@ -1,4 +1,4 @@
-package dk.aau.network_management_system.Collective_Sale_Reports;
+package dk.aau.network_management_system.Sale_Reports;
 
 import java.sql.Timestamp;
 import java.time.Instant;

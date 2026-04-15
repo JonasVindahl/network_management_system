@@ -1,4 +1,4 @@
-package dk.aau.network_management_system.Collective_Sale_Reports;
+package dk.aau.network_management_system.Sale_Reports;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -12,23 +12,23 @@ import dk.aau.network_management_system.auth.AuthenticatedUser;
 import dk.aau.network_management_system.auth.PermissionHelper;
 
 @RestController
-@RequestMapping("/api/reports")
+@RequestMapping("/api/reports/sales/collective")
 public class ReportsController {
     
     private final ReportsService service;
     private final PermissionHelper permissionHelper;
-    private final AuthenticatedUser authenticatedUser; // tilføj
+    private final AuthenticatedUser authenticatedUser; 
 
     @Autowired
     public ReportsController(ReportsService service, PermissionHelper permissionHelper, AuthenticatedUser authenticatedUser) {
         this.service = service;
         this.permissionHelper = permissionHelper;
-        this.authenticatedUser = authenticatedUser; // tilføj
+        this.authenticatedUser = authenticatedUser; 
 
     }
 
     
-    @GetMapping("/collective/{saleId}")
+    @GetMapping("/{saleId}")
     public ResponseEntity<CollectiveSaleReportDTO> getCollectiveSaleReport(
             @PathVariable Long saleId,
             @RequestParam(required = false) Long cooperativeId) {

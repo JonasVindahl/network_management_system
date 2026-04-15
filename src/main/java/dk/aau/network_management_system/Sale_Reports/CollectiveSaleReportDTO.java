@@ -1,4 +1,4 @@
-package dk.aau.network_management_system.Collective_Sale_Reports;
+package dk.aau.network_management_system.Sale_Reports;
 
 import java.time.Instant;
 import java.util.List;
@@ -37,7 +37,7 @@ public class CollectiveSaleReportDTO {
         this.buyerId = buyerId;
         this.buyerName = buyerName;
         this.createdAt = createdAt;
-        this.soldAt = soldAt;  // ✅ FIXED
+        this.soldAt = soldAt; 
         this.expectedSaleDate = expectedSaleDate;
         this.totalWeight = totalWeight;
         this.pricePerKg = pricePerKg;
@@ -47,7 +47,6 @@ public class CollectiveSaleReportDTO {
         this.totalCooperatives = contributions != null ? contributions.size() : 0;
     }
     
-    // Getters and Setters
     public Long getCollectiveSaleId() { return collectiveSaleId; }
     public void setCollectiveSaleId(Long collectiveSaleId) { 
         this.collectiveSaleId = collectiveSaleId; 
@@ -62,9 +61,9 @@ public class CollectiveSaleReportDTO {
     public String getMaterialName() { return materialName; }
     public void setMaterialName(String materialName) { this.materialName = materialName; }
     
-    public Instant getSoldAt() { return soldAt; }  // ✅ FIXED
+    public Instant getSoldAt() { return soldAt; } 
     public void setSoldAt(Instant soldAt) { 
-        this.soldAt = soldAt;  // ✅ FIXED
+        this.soldAt = soldAt;  
         this.status = soldAt == null ? "ACTIVE" : "SOLD";
     }
 

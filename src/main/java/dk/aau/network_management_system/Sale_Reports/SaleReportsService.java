@@ -1,9 +1,13 @@
-package dk.aau.network_management_system.Collective_Sale_Reports;
+package dk.aau.network_management_system.Sale_Reports;
 
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -16,33 +20,34 @@ public class SaleReportsService {
     
     private static final Logger log = LoggerFactory.getLogger(SaleReportsService.class);
 
-    private final SaleReportsRepository saleReportsRepository;
+    private final SaleReportsRepository repository;
     private final AuthenticatedUser authenticatedUser;
 
-    public SaleReportsService(SaleReportsRepository saleReportsRepository,
+    @Autowired
+    public SaleReportsService(SaleReportsRepository repository,
                              AuthenticatedUser authenticatedUser) {
-        this.saleReportsRepository = saleReportsRepository;
+        this.repository = repository;
         this.authenticatedUser = authenticatedUser;
     }
 
     public SaleReportDTO getSaleReport(Long saleId, Long requestingCooperativeId) {
         
         try {
-            if (!saleReportsRepository.saleExists(saleId)) {
+            if (!repository.saleExists(saleId)) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Sale with id " + saleId + " not found");
+                    "Sale not found");
             }
             
             validateSaleAccess(saleId, requestingCooperativeId);
             
-            List<Object[]> rows = saleReportsRepository.findSaleReport(saleId);
+            List<Object[]> rawData = repository.findSaleReport(saleId);
             
-            if (rows.isEmpty()) {
-                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Sale data could not be retrieved");
+            if (rawData.isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "Sale data not found");
             }
 
-            return new SaleReportDTO(rows.get(0));
+            return mapToSaleReportDTO(rawData.get(0));
             
         } catch (ResponseStatusException e) {
             throw e;
@@ -57,6 +62,48 @@ public class SaleReportsService {
         }
     }
     
+   
+    private SaleReportDTO mapToSaleReportDTO(Object[] row) {
+        
+        Long saleId = ((Number) row[0]).longValue();
+        Instant createdAt = row[1] != null ? ((Timestamp) row[1]).toInstant() : null;
+        Instant soldAt = row[2] != null ? ((Timestamp) row[2]).toInstant() : null;
+        Instant cancelledAt = row[3] != null ? ((Timestamp) row[3]).toInstant() : null;
+        Instant expectedSaleDate = row[4] != null ? ((Timestamp) row[4]).toInstant() : null;
+        Double weight = ((Number) row[5]).doubleValue();
+        Double pricePerKg = ((Number) row[6]).doubleValue();
+        // row[7] er i DTO
+        Long materialId = ((Number) row[8]).longValue();
+        String materialName = (String) row[9];
+        Long buyerId = ((Number) row[10]).longValue();
+        String buyerName = (String) row[11];
+        Long responsibleWorkerId = ((Number) row[12]).longValue();
+        String responsibleWorkerName = (String) row[13];
+        Long cooperativeId = ((Number) row[14]).longValue();
+        String cooperativeName = (String) row[15];
+        
+        log.info("Mapped sale report - saleId: {}, soldAt: {}, cancelledAt: {}", 
+                saleId, soldAt, cancelledAt);
+        
+        return new SaleReportDTO(
+            saleId,
+            materialId,
+            materialName,
+            buyerId,
+            buyerName,
+            responsibleWorkerId,
+            responsibleWorkerName,
+            cooperativeId,
+            cooperativeName,
+            createdAt,
+            soldAt,
+            cancelledAt,
+            expectedSaleDate,
+            weight,
+            pricePerKg
+        );
+    }
+    
 
     private void validateSaleAccess(Long saleId, Long cooperativeId) {
         
@@ -69,20 +116,20 @@ public class SaleReportsService {
             return;
         }
         
+        Long userCooperativeId = authenticatedUser.getCooperativeId();
+        
         if (cooperativeId == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                 "Cooperative ID is required");
         }
         
-        Long userCooperativeId = authenticatedUser.getCooperativeId();
-        
-        if (!cooperativeId.equals(userCooperativeId)) {
+        if (!Objects.equals(cooperativeId, userCooperativeId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                 "You can only access your own cooperative's sale reports");
         }
         
         try {
-            boolean isOwner = saleReportsRepository.isSaleOwnedByCooperative(saleId, cooperativeId);
+            boolean isOwner = repository.isSaleOwnedByCooperative(saleId, cooperativeId);
             
             if (!isOwner) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN,
