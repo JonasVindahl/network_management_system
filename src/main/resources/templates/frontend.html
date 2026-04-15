@@ -247,15 +247,19 @@
         </table>
       </div>
       <div class="table-card">
-        <div class="last-sales-header">
-          <span>Last 5 Sales</span>
-          <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)">
-            Material:
-            <select id="last5MaterialSelect" onchange="loadLast5Sales()">
-              <option value="">Select material...</option>
-            </select>
+      <div class="last-sales-header">
+        <span>Last 5 Sales</span>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)">
+          <div style="display:flex;gap:4px;">
+            <button class="quick-btn active" id="scopeMyBtn" onclick="setSalesScope('my')">My Cooperative</button>
+            <button class="quick-btn" id="scopeAllBtn" onclick="setSalesScope('all')">All Cooperatives</button>
           </div>
+          Material:
+          <select id="last5MaterialSelect" onchange="loadLast5Sales()">
+            <option value="">Select material...</option>
+          </select>
         </div>
+      </div>
         <table>
           <thead><tr><th>Date</th><th>Material ID</th><th>Weight (kg)</th><th>Price/kg</th></tr></thead>
           <tbody id="last5Table">
@@ -525,9 +529,11 @@ async function loadWorkers() {
 let stockList = [];
 
 async function loadInventory() {
-  try {
-    const stock = await api('/api/stock');
-    stockList = Array.isArray(stock) ? stock : [];
+    try {
+        const [stock, materials] = await Promise.all([
+            api('/api/stock'),
+            api('/api/cooperative/materials')
+        ]);
 
     document.getElementById('stockTable').innerHTML = stockList.length
       ? stockList.map(s => `<tr>
@@ -538,42 +544,60 @@ async function loadInventory() {
         </tr>`).join('')
       : '<tr><td colspan="4" class="loading">No data</td></tr>';
 
-    const sel = document.getElementById('last5MaterialSelect');
-    sel.innerHTML = '<option value="">Select material...</option>' +
-      stockList
-        .filter(s => s.materialId != null)
-        .map(s => `<option value="${s.materialId}">${s.materialName}</option>`).join('');
+      const sel = document.getElementById('last5MaterialSelect');
+        sel.innerHTML = '<option value="">Select material...</option>' +
+            materials
+                .map(m => `<option value="${m.materialId}">${m.materialName}</option>`)
+                .join('');
 
-  } catch (e) {
-    document.getElementById('stockTable').innerHTML =
-      `<tr><td colspan="4" class="error-msg">Error: ${e.message}</td></tr>`;
-  }
+    } catch (e) {
+        document.getElementById('stockTable').innerHTML =
+            `<tr><td colspan="4" class="error-msg">Error: ${e.message}</td></tr>`;
+    }
+}
+
+let salesScope = 'my';
+
+function setSalesScope(scope) {
+    salesScope = scope;
+    document.getElementById('scopeMyBtn').classList.toggle('active', scope === 'my');
+    document.getElementById('scopeAllBtn').classList.toggle('active', scope === 'all');
+    loadLast5Sales();
 }
 
 async function loadLast5Sales() {
-  const matId = document.getElementById('last5MaterialSelect').value;
-  if (!matId) {
-    document.getElementById('last5Table').innerHTML =
-      '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted)">Select a material</td></tr>';
-    return;
-  }
-  try {
-    const data = await api(`/api/cooperative/lastsales?materialId=${matId}`);
-    const list = Array.isArray(data) ? data : [];
-    document.getElementById('last5Table').innerHTML = list.length
-      ? list.map(s => `<tr>
-          <td class="mono">${fmtDate(s.date)}</td>
-          <td class="mono">${s.material ?? '—'}</td>
-          <td class="mono">${fmt(s.weight)}</td>
-          <td class="mono">R$ ${fmt(s.priceKg, 2)}</td>
-        </tr>`).join('')
-      : '<tr><td colspan="4" class="loading">No sales found</td></tr>';
-  } catch (e) {
-    document.getElementById('last5Table').innerHTML =
-      `<tr><td colspan="4" class="error-msg">Error: ${e.message}</td></tr>`;
-  }
-}
+    const matId = document.getElementById('last5MaterialSelect').value;
+    if (!matId) {
+        document.getElementById('last5Table').innerHTML =
+            '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted)">Select a material</td></tr>';
+        return;
+    }
 
+    const endpoint = salesScope === 'all'
+        ? `/api/cooperative/lastsales/all?materialId=${matId}`
+        : `/api/cooperative/lastsales?materialId=${matId}`;
+
+    try {
+        const data = await api(endpoint);
+        const list = Array.isArray(data) ? data : [];
+
+        const scopeNote = salesScope === 'all'
+            ? '<tr><td colspan="4" style="padding:8px 24px;font-size:12px;color:var(--text-muted);background:var(--bg)">Anonymous data — across all cooperatives</td></tr>'
+            : '';
+
+        document.getElementById('last5Table').innerHTML = list.length
+            ? scopeNote + list.map(s => `<tr>
+                <td class="mono">${fmtDate(s.date)}</td>
+                <td class="mono">${s.material ?? '—'}</td>
+                <td class="mono">${fmt(s.weight)}</td>
+                <td class="mono">R$ ${fmt(s.priceKg, 2)}</td>
+              </tr>`).join('')
+            : '<tr><td colspan="4" class="loading">No sales found</td></tr>';
+    } catch (e) {
+        document.getElementById('last5Table').innerHTML =
+            `<tr><td colspan="4" class="error-msg">Error: ${e.message}</td></tr>`;
+    }
+}
 async function loadNotices() {
   try {
     const data = await api('/api/notices');

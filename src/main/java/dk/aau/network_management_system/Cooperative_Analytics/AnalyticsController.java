@@ -2,6 +2,7 @@ package dk.aau.network_management_system.Cooperative_Analytics;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -170,6 +171,27 @@ public class AnalyticsController {
     }
 
 
+  @GetMapping("/cooperative/materials")
+public ResponseEntity<List<Map<String, Object>>> getAllMaterials() {
+    if (authenticatedUser.isWorker()) {
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Workers cannot access this");
+    }
+    return ResponseEntity.ok(service.getAllMaterials());
+}
+
+    @GetMapping("/cooperative/lastsales/all")
+    public ResponseEntity<List<Last5SalesDTO>> findLastSalesAllCooperatives(
+            @RequestParam Long materialId) {
+
+        if (authenticatedUser.isWorker()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Workers cannot access sales data");
+        }
+
+        List<Last5SalesDTO> result = service.findLastSalesAllCooperatives(materialId);
+        return ResponseEntity.ok(result);
+    }
+
     @GetMapping("/cooperative/lastsales")
     public ResponseEntity<List<Last5SalesDTO>> findLastSalesForCooperative(
             @RequestParam(required = false) Long cooperativeId,
@@ -197,6 +219,7 @@ public class AnalyticsController {
         return ResponseEntity.ok(result);
     }
 
+    
 
     @GetMapping("/stock")
     public ResponseEntity<List<StockByMaterialDTO>> getStockByMaterial(
@@ -228,7 +251,8 @@ public class AnalyticsController {
             
             return ResponseEntity.ok(result);
     }
-
+    
+    
 
 }
 

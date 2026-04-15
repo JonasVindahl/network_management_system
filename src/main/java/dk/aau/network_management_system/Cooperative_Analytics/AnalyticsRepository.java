@@ -104,7 +104,6 @@ public interface AnalyticsRepository extends JpaRepository<CooperativeEntity, Lo
         @Param("endDate") LocalDateTime endDate
     );
 
-    //sidste 5 salg (ny)
     @Query(value = """
         SELECT
             s.material,
@@ -123,5 +122,44 @@ public interface AnalyticsRepository extends JpaRepository<CooperativeEntity, Lo
         @Param("cooperativeId") Long cooperativeId,
         @Param("materialId") Long materialId
     );
+
+
+    @Query(value = """
+        SELECT DISTINCT
+            mat.material_id,
+            mat.material_name
+        FROM materials mat
+        ORDER BY mat.material_name
+        """, nativeQuery = true)
+    List<Object[]> getAllMaterials();
+
+    @Query(value = """
+        SELECT DISTINCT
+            mat.material_id,
+            mat.material_name
+        FROM sales s
+        JOIN materials mat ON s.material = mat.material_id
+        WHERE s.sold_at IS NOT NULL
+        ORDER BY mat.material_name
+        """, nativeQuery = true)
+    List<Object[]> getMaterialsWithSales();
+
+    @Query(value = """
+        SELECT
+            s.material,
+            s.weight,
+            s.price_kg,
+            s.sold_at
+        FROM sales s
+        WHERE s.material = :materialId
+        AND s.sold_at IS NOT NULL
+        ORDER BY s.sold_at DESC
+        LIMIT 5
+        """, nativeQuery = true)
+    List<Object[]> lastSalesAllCooperativesRaw(
+        @Param("materialId") Long materialId
+    );
+
+
 
 }
