@@ -40,6 +40,8 @@
   .period-selector { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-secondary); }
   .period-selector input { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 13px; font-family: 'DM Mono', monospace; color: var(--text-primary); background: var(--surface); outline: none; }
   .period-selector input:focus { border-color: var(--accent); }
+  .period-selector select { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 13px; font-family: 'DM Sans', sans-serif; color: var(--text-primary); background: var(--surface); outline: none; cursor: pointer; }
+  .period-selector select:focus { border-color: var(--accent); }
   .period-btn { background: var(--accent); color: white; border: none; padding: 6px 14px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; }
   .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 20px; }
   .table-card-header { padding: 16px 24px; border-bottom: 1px solid var(--border-light); font-weight: 600; font-size: 15px; display: flex; align-items: center; justify-content: space-between; }
@@ -129,6 +131,9 @@
   .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 20px; }
   .modal-actions { display: flex; gap: 10px; margin-top: 8px; }
   .btn-cancel { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 11px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+
+  /* Period dropdown separator */
+  .period-separator { width: 1px; height: 20px; background: var(--border); margin: 0 2px; }
 </style>
 </head>
 <body>
@@ -170,16 +175,18 @@
         <h1 class="page-title" style="margin-bottom:0">Dashboard</h1>
         <div class="period-selector">
           Period:
-          <div style="display:flex;gap:4px;">
-            <button class="quick-btn" onclick="setQuick(30)">30d</button>
-            <button class="quick-btn" onclick="setQuick(60)">60d</button>
-            <button class="quick-btn" onclick="setQuick(120)">120d</button>
-            <button class="quick-btn" onclick="setQuick(180)">180d</button>
-            <button class="quick-btn" onclick="setQuick(365)">365d</button>
-          </div>
-          <input type="date" id="dashFrom">
+          <select id="dashQuickSelect" onchange="applyQuickDash(this.value)">
+            <option value="">Custom</option>
+            <option value="30" selected>Last 30 days</option>
+            <option value="60">Last 60 days</option>
+            <option value="120">Last 120 days</option>
+            <option value="180">Last 180 days</option>
+            <option value="365">Last 365 days</option>
+          </select>
+          <div class="period-separator"></div>
+          <input type="date" id="dashFrom" onchange="document.getElementById('dashQuickSelect').value=''">
           to
-          <input type="date" id="dashTo">
+          <input type="date" id="dashTo" onchange="document.getElementById('dashQuickSelect').value=''">
           <button class="period-btn" onclick="loadDashboard()">Apply</button>
         </div>
       </div>
@@ -218,9 +225,18 @@
         <h1 class="page-title" style="margin-bottom:0">Workers</h1>
         <div class="period-selector">
           Period:
-          <input type="date" id="workersFrom">
+          <select id="workersQuickSelect" onchange="applyQuickWorkers(this.value)">
+            <option value="">Custom</option>
+            <option value="30" selected>Last 30 days</option>
+            <option value="60">Last 60 days</option>
+            <option value="120">Last 120 days</option>
+            <option value="180">Last 180 days</option>
+            <option value="365">Last 365 days</option>
+          </select>
+          <div class="period-separator"></div>
+          <input type="date" id="workersFrom" onchange="document.getElementById('workersQuickSelect').value=''">
           to
-          <input type="date" id="workersTo">
+          <input type="date" id="workersTo" onchange="document.getElementById('workersQuickSelect').value=''">
           <button class="period-btn" onclick="loadWorkers()">Apply</button>
         </div>
       </div>
@@ -393,13 +409,18 @@ function fmtDate(s) {
 
 function defaultFrom() {
   const d = new Date();
-  d.setMonth(d.getMonth() - 1);
-  d.setDate(1);
+  d.setDate(d.getDate() - 30);
   return d.toISOString().split('T')[0];
 }
 
 function defaultTo() {
   return new Date().toISOString().split('T')[0];
+}
+
+function dateFromDaysAgo(days) {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d.toISOString().split('T')[0];
 }
 
 function plabel(p) { return p >= 3 ? 'high' : p >= 2 ? 'medium' : 'low'; }
@@ -412,6 +433,20 @@ function initDates() {
   document.getElementById('dashTo').value = to;
   document.getElementById('workersFrom').value = from;
   document.getElementById('workersTo').value = to;
+}
+
+function applyQuickDash(days) {
+  if (!days) return;
+  document.getElementById('dashFrom').value = dateFromDaysAgo(parseInt(days));
+  document.getElementById('dashTo').value = defaultTo();
+  loadDashboard();
+}
+
+function applyQuickWorkers(days) {
+  if (!days) return;
+  document.getElementById('workersFrom').value = dateFromDaysAgo(parseInt(days));
+  document.getElementById('workersTo').value = defaultTo();
+  loadWorkers();
 }
 
 const loaders = {
@@ -529,31 +564,44 @@ async function loadWorkers() {
 let stockList = [];
 
 async function loadInventory() {
-    try {
-        const [stock, materials] = await Promise.all([
-            api('/api/stock'),
-            api('/api/cooperative/materials')
-        ]);
+  try {
+    const [stock, materials] = await Promise.all([
+      api('/api/stock'),
+      api('/api/cooperative/materials')
+    ]);
+
+    stockList = Array.isArray(stock) ? stock : [];
 
     document.getElementById('stockTable').innerHTML = stockList.length
-      ? stockList.map(s => `<tr>
+      ? stockList.map(s => `
+        <tr>
           <td>${s.materialName ?? '—'}</td>
           <td class="mono">${fmt(s.totalCollected)}</td>
           <td class="mono">${fmt(s.totalSold)}</td>
           <td class="stock-bold">${fmt(s.currentStock)}</td>
-        </tr>`).join('')
+        </tr>
+      `).join('')
       : '<tr><td colspan="4" class="loading">No data</td></tr>';
 
-      const sel = document.getElementById('last5MaterialSelect');
-        sel.innerHTML = '<option value="">Select material...</option>' +
-            materials
-                .map(m => `<option value="${m.materialId}">${m.materialName}</option>`)
-                .join('');
+    const sel = document.getElementById('last5MaterialSelect');
 
-    } catch (e) {
-        document.getElementById('stockTable').innerHTML =
-            `<tr><td colspan="4" class="error-msg">Error: ${e.message}</td></tr>`;
-    }
+    const materialList = Array.isArray(materials) ? materials : [];
+
+    sel.innerHTML =
+      '<option value="">Select material...</option>' +
+      materialList
+        .filter(m => m.materialId != null)
+        .map(m => `
+          <option value="${m.materialId}">
+            ${m.materialName}
+          </option>
+        `)
+        .join('');
+
+  } catch (e) {
+    document.getElementById('stockTable').innerHTML =
+      `<tr><td colspan="4" class="error-msg">Error: ${e.message}</td></tr>`;
+  }
 }
 
 let salesScope = 'my';
@@ -598,6 +646,7 @@ async function loadLast5Sales() {
             `<tr><td colspan="4" class="error-msg">Error: ${e.message}</td></tr>`;
     }
 }
+
 async function loadNotices() {
   try {
     const data = await api('/api/notices');
@@ -735,17 +784,6 @@ function openEditModal(id, name, value) {
   document.getElementById('editMaterialName').value = name;
   document.getElementById('editMultiplierValue').value = value;
   document.getElementById('editModal').classList.add('open');
-}
-
-function setQuick(days) {
-  const to = new Date();
-  const from = new Date();
-  from.setDate(from.getDate() - days);
-  document.getElementById('dashFrom').value = from.toISOString().split('T')[0];
-  document.getElementById('dashTo').value   = to.toISOString().split('T')[0];
-  document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
-  loadDashboard();
 }
 
 function closeModal() { document.getElementById('editModal').classList.remove('open'); }
