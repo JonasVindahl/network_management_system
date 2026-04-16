@@ -22,4 +22,19 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
         @Param("materialId")    long materialId,
         @Param("amount")        double amount
     );
+
+    @Modifying
+    @Query(value = """
+    UPDATE public.stock
+    SET
+        total_sold_kg    = total_sold_kg    + :amount,
+        current_stock_kg = current_stock_kg - :amount
+    WHERE cooperative = :cooperativeId
+      AND material    = :materialId
+    """, nativeQuery = true)
+    int recordSale(
+            @Param("cooperativeId") long cooperativeId,
+            @Param("materialId") long materialId,
+            @Param("amount") double amount
+    );
 }
