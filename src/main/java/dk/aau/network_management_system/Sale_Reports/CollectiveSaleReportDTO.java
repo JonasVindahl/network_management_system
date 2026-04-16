@@ -1,22 +1,20 @@
-package dk.aau.network_management_system.Collective_Sale_Reports;
+package dk.aau.network_management_system.Sale_Reports;
 
 import java.time.Instant;
 import java.util.List;
 
-//Rapport for collective salg 
 public class CollectiveSaleReportDTO {
 
     private Long collectiveSaleId;
-    private String status; // AKTIVT/SOLGT
+    private String status;
 
     private Long materialId;
     private String materialName;
     private Long buyerId;
     private String buyerName;
     
-    
     private Instant createdAt;
-    private Instant soldAt;  // NULL = AKTIVT
+    private Instant soldAt; 
     private Instant expectedSaleDate;
     
     private Double totalWeight;
@@ -24,7 +22,6 @@ public class CollectiveSaleReportDTO {
     private Double totalRevenue;
 
     private Integer totalCooperatives;
-
     private List<ContributionDetailDTO> contributions;
     
     public CollectiveSaleReportDTO(){}
@@ -40,7 +37,7 @@ public class CollectiveSaleReportDTO {
         this.buyerId = buyerId;
         this.buyerName = buyerName;
         this.createdAt = createdAt;
-        this.soldAt = soldAt;
+        this.soldAt = soldAt; 
         this.expectedSaleDate = expectedSaleDate;
         this.totalWeight = totalWeight;
         this.pricePerKg = pricePerKg;
@@ -50,7 +47,6 @@ public class CollectiveSaleReportDTO {
         this.totalCooperatives = contributions != null ? contributions.size() : 0;
     }
     
-    //getters and Setters
     public Long getCollectiveSaleId() { return collectiveSaleId; }
     public void setCollectiveSaleId(Long collectiveSaleId) { 
         this.collectiveSaleId = collectiveSaleId; 
@@ -65,6 +61,12 @@ public class CollectiveSaleReportDTO {
     public String getMaterialName() { return materialName; }
     public void setMaterialName(String materialName) { this.materialName = materialName; }
     
+    public Instant getSoldAt() { return soldAt; } 
+    public void setSoldAt(Instant soldAt) { 
+        this.soldAt = soldAt;  
+        this.status = soldAt == null ? "ACTIVE" : "SOLD";
+    }
+
     public Long getBuyerId() { return buyerId; }
     public void setBuyerId(Long buyerId) { this.buyerId = buyerId; }
     
@@ -74,12 +76,12 @@ public class CollectiveSaleReportDTO {
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
 
-    public Instant getExpectedSaleDate() {return expectedSaleDate;}
-    public void setExpectedSaleDate(Instant expectedSaleDate){
+    public Instant getExpectedSaleDate() { return expectedSaleDate; }
+    public void setExpectedSaleDate(Instant expectedSaleDate) {
         this.expectedSaleDate = expectedSaleDate;
     }
 
-    public Double getTotalWeight() {return totalWeight; }
+    public Double getTotalWeight() { return totalWeight; }
     public void setTotalWeight(Double totalWeight){
         this.totalWeight = totalWeight;
         if (this.pricePerKg != null){
@@ -87,15 +89,13 @@ public class CollectiveSaleReportDTO {
         }
     }
 
-
-    public Double getPricePerKg(){return pricePerKg;}
-    public void setPricePerKg(Double pricePerkg){
-        this.pricePerKg = pricePerkg;
-        if(this.pricePerKg!= null){
-            this.totalRevenue = this.totalWeight * pricePerkg;
+    public Double getPricePerKg() { return pricePerKg; }
+    public void setPricePerKg(Double pricePerKg) {
+        this.pricePerKg = pricePerKg;
+        if (this.totalWeight != null) {
+            this.totalRevenue = this.totalWeight * pricePerKg;
         }
     }
-
 
     public Double getTotalRevenue() { return totalRevenue; }
     public void setTotalRevenue(Double totalRevenue) { this.totalRevenue = totalRevenue; }
@@ -110,6 +110,4 @@ public class CollectiveSaleReportDTO {
         this.contributions = contributions;
         this.totalCooperatives = contributions != null ? contributions.size() : 0;
     }
-
-
 }
