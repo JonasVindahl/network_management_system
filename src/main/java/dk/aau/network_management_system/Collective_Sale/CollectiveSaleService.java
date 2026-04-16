@@ -230,8 +230,6 @@ public class CollectiveSaleService {
                 "Error updating sale material");
         }
     }
-<<<<<<< Updated upstream
-=======
 
     public List<ActiveCollectiveSaleDTO> getActiveSales() {
         try {
@@ -289,5 +287,4 @@ public class CollectiveSaleService {
                 "Expected sale date must be in the future");
         }
     }
->>>>>>> Stashed changes
 }
