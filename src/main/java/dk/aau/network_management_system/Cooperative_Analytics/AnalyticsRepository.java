@@ -12,17 +12,20 @@ import org.springframework.stereotype.Repository;
 public interface AnalyticsRepository extends JpaRepository<CooperativeEntity, Long> {
 
     @Query(value = """
-        SELECT 
-            COALESCE(SUM(s.total_collected_kg), 0) as total_collected,
-            COALESCE(SUM(s.total_sold_kg), 0) as total_sold,
-            COALESCE(SUM(s.current_stock_kg), 0) as current_stock,
-            (SELECT COUNT(*) FROM workers WHERE cooperative = :cooperativeId AND exit_date IS NULL) as active_workers
-        FROM stock s
-        WHERE s.cooperative = :cooperativeId
-        """, nativeQuery = true)
-    List<Object[]> findCooperativePerformanceRaw(
-        @Param("cooperativeId") Long cooperativeId);
-
+    SELECT 
+        COALESCE(SUM(s.total_collected_kg), 0) as total_collected,
+        COALESCE(SUM(s.total_sold_kg), 0) as total_sold,
+        COALESCE(SUM(s.current_stock_kg), 0) as current_stock,
+        (SELECT COUNT(*) FROM workers 
+         WHERE cooperative = :cooperativeId 
+         AND exit_date IS NULL) as active_workers
+    FROM stock s
+    WHERE s.cooperative = :cooperativeId
+    """, nativeQuery = true)
+List<Object[]> findCooperativePerformanceRaw(
+    @Param("cooperativeId") Long cooperativeId,
+    @Param("startDate") LocalDateTime startDate,
+    @Param("endDate") LocalDateTime endDate);
 
     @Query(value = """
         SELECT 

@@ -195,14 +195,11 @@
 
       <div id="dashError"></div>
 
-      <p style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">All time</p>
-      <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr);">
-        <div class="stat-card"><div class="stat-label">Total kg Collected</div><div class="stat-value" id="statKg">—</div></div>
-        <div class="stat-card"><div class="stat-label">Total Sold (kg)</div><div class="stat-value" id="statSold">—</div></div>
-        <div class="stat-card"><div class="stat-label">Current Stock (kg)</div><div class="stat-value" id="statStock">—</div></div>
-        <div class="stat-card"><div class="stat-label">Active Workers</div><div class="stat-value" id="statWorkers">—</div></div>
-      </div>
-
+     <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
+  <div class="stat-card"><div class="stat-label">Total kg Collected</div><div class="stat-value" id="statKg">—</div></div>
+  <div class="stat-card"><div class="stat-label">Total Sold (kg)</div><div class="stat-value" id="statSold">—</div></div>
+  <div class="stat-card"><div class="stat-label">Current Stock (kg)</div><div class="stat-value" id="statStock">—</div></div>
+</div>
       <p style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;margin-top:16px">Period: <span id="periodLabel">—</span></p>
 
       <div class="dual-table-grid">
@@ -248,6 +245,12 @@
         </div>
       </div>
       <div id="workersError"></div>
+      <div class="stats-grid" style="grid-template-columns: repeat(1, 1fr); max-width: 200px; margin-bottom: 24px;">
+    <div class="stat-card">
+      <div class="stat-label">Active Workers</div>
+      <div class="stat-value" id="statWorkers">—</div>
+    </div>
+  </div>
       <div id="leaderboardCards" class="leaderboard"></div>
       <div class="table-card">
         <div class="table-card-header">Worker Productivity</div>
@@ -489,7 +492,7 @@ async function loadDashboard() {
 
   try {
     const [perf, productivity, revenue] = await Promise.all([
-      api('/api/performance'),
+      api(`/api/performance?startDate=${from}&endDate=${to}`),
       api(`/api/productivity?startDate=${from}&endDate=${to}`),
       api(`/api/revenue?startDate=${from}&endDate=${to}`)
     ]);
@@ -514,15 +517,27 @@ async function loadDashboard() {
       : '<tr><td colspan="4" class="loading">No data for selected period</td></tr>';
 
     const revList = Array.isArray(revenue) ? revenue : [];
-    document.getElementById('avgPriceTable').innerHTML = revList.length
-      ? revList.map(r => `<tr>
-          <td>${r.materialName ?? '—'}</td>
-          <td class="mono">R$ ${fmt(r.totalRevenue, 2)}</td>
-          <td class="mono">${fmt(r.totalSales)}</td>
-          <td class="mono" style="color:var(--accent);font-weight:600">R$ ${fmt(r.avgPricePerKg, 2)}</td>
-        </tr>`).join('')
-      : '<tr><td colspan="4" class="loading">No data for selected period</td></tr>';
+    // I loadDashboard(), erstat avgPriceTable innerHTML assignment:
+const total = revList.reduce((acc, r) => ({
+  revenue: acc.revenue + (r.totalRevenue ?? 0),
+  sales:   acc.sales   + (r.totalSales   ?? 0)
+}), { revenue: 0, sales: 0 });
 
+document.getElementById('avgPriceTable').innerHTML = revList.length
+  ? revList.map(r => `<tr>
+      <td>${r.materialName ?? '—'}</td>
+      <td class="mono">R$ ${fmt(r.totalRevenue, 2)}</td>
+      <td class="mono">${fmt(r.totalSales)}</td>
+      <td class="mono" style="color:var(--accent);font-weight:600">R$ ${fmt(r.avgPricePerKg, 2)}</td>
+    </tr>`).join('') +
+    `<tr style="border-top: 2px solid var(--border); background: var(--bg);">
+      <td style="font-weight:600">Total</td>
+      <td class="mono" style="font-weight:600">R$ ${fmt(total.revenue, 2)}</td>
+      <td class="mono" style="font-weight:600">${fmt(total.sales)}</td>
+      <td></td>
+    </tr>`
+  : '<tr><td colspan="4" class="loading">No data for selected period</td></tr>';
+  
   } catch (e) {
     console.error(e);
     document.getElementById('dashError').innerHTML =
@@ -536,6 +551,12 @@ async function loadWorkers() {
   document.getElementById('workersError').innerHTML = '';
 
   try {
+
+    const perf = await api('/api/performance');
+  const perfList = Array.isArray(perf) ? perf : [];
+  if (perfList.length > 0) {
+    document.getElementById('statWorkers').textContent = perfList[0].activeWorkers ?? '—';
+  }
     const data = await api(`/api/productivity?startDate=${from}&endDate=${to}`);
     const list = Array.isArray(data) ? data : [];
     list.sort((a, b) => (b.totalCollectedKg ?? 0) - (a.totalCollectedKg ?? 0));

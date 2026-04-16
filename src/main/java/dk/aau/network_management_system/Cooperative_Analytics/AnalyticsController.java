@@ -30,37 +30,33 @@ public class AnalyticsController {
         this.authenticatedUser = authenticatedUser;
     }
 
-    //opdateret for presmission
-    @GetMapping("/performance")
-    public ResponseEntity<List<CooperativePerformanceDTO>> getPerformance(
-            @RequestParam(required = false) Long cooperativeId) {
-        
-        Long targetCooperativeId;
+@GetMapping("/performance")
+public ResponseEntity<List<CooperativePerformanceDTO>> getPerformance(
+        @RequestParam(required = false) Long cooperativeId,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
 
-        if (authenticatedUser.isWorker()) {
-        throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
-                    "Workers cannot access cooperative performance data");   
-                             
-        } else if (authenticatedUser.isManager()) {
-            // Manager kan se alle workers i egen cooperative
-            targetCooperativeId = authenticatedUser.getCooperativeId();
-            
-        } else {
-        // Admin SKAL specificere cooperativeId
+    Long targetCooperativeId;
+
+    if (authenticatedUser.isWorker()) {
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                "Workers cannot access cooperative performance data");
+
+    } else if (authenticatedUser.isManager()) {
+        targetCooperativeId = authenticatedUser.getCooperativeId();
+
+    } else {
         if (cooperativeId == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                 "Admin must specify cooperativeId parameter");
         }
         targetCooperativeId = cooperativeId;
     }
 
-        List<CooperativePerformanceDTO> result;
+    List<CooperativePerformanceDTO> result = service.getCooperativePerformance(targetCooperativeId, startDate, endDate);
 
-        result = service.getCooperativePerformance(targetCooperativeId);
-        
-        return ResponseEntity.ok(result);
-    }
-
+    return ResponseEntity.ok(result);
+}
 
      //GET - All worker productivity in cooperative
     @GetMapping("/productivity")

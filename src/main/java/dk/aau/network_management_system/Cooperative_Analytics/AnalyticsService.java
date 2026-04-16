@@ -25,30 +25,31 @@ public class AnalyticsService {
         this.authenticatedUser = authenticatedUser;
     }
 
-    public List<CooperativePerformanceDTO> getCooperativePerformance(Long cooperativeId) {
+   public List<CooperativePerformanceDTO> getCooperativePerformance(
+        Long cooperativeId, LocalDateTime startDate, LocalDateTime endDate) {
 
-        if (authenticatedUser.isWorker()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                "Workers cannot access cooperative performance data");
-        }
-
-        if (!authenticatedUser.isAdmin() &&
-            !cooperativeId.equals(authenticatedUser.getCooperativeId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                "You can only access your own cooperative's data");
-        }
-
-        List<Object[]> results = repository.findCooperativePerformanceRaw(cooperativeId);
-
-        return results.stream()
-            .map(row -> new CooperativePerformanceDTO(
-                ((Number) row[0]).doubleValue(),  // total_collected
-                ((Number) row[1]).doubleValue(),  // total_sold
-                ((Number) row[2]).doubleValue(),  // current_stock
-                ((Number) row[3]).intValue()      // active_workers
-            ))
-            .collect(Collectors.toList());
+    if (authenticatedUser.isWorker()) {
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+            "Workers cannot access cooperative performance data");
     }
+
+    if (!authenticatedUser.isAdmin() &&
+        !cooperativeId.equals(authenticatedUser.getCooperativeId())) {
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+            "You can only access your own cooperative's data");
+    }
+
+    List<Object[]> results = repository.findCooperativePerformanceRaw(cooperativeId, startDate, endDate);
+
+    return results.stream()
+        .map(row -> new CooperativePerformanceDTO(
+            ((Number) row[0]).doubleValue(),
+            ((Number) row[1]).doubleValue(),
+            ((Number) row[2]).doubleValue(),
+            ((Number) row[3]).intValue()
+        ))
+        .collect(Collectors.toList());
+}
 
     public List<WorkerProductivityDTO> getAllWorkerProductivity(
             Long cooperativeId, LocalDateTime startDate, LocalDateTime endDate) {
