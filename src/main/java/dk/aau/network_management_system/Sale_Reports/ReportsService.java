@@ -1,4 +1,4 @@
-package dk.aau.network_management_system.Collective_Sale_Reports;
+package dk.aau.network_management_system.Sale_Reports;
 
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -32,13 +32,12 @@ public class ReportsService {
 
 
     public CollectiveSaleReportDTO getCollectiveSaleReport(Long saleId, Long cooperativeId) {
-
-        validateReportAccess(saleId, cooperativeId);
-
         try {
             if(!repository.collectiveSaleExists((saleId))){
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Collective sale not found");
             }
+
+            validateReportAccess(saleId, cooperativeId);
 
             List<Object[]> rawData = repository.findCollectiveSaleReport(saleId);
 
@@ -65,62 +64,63 @@ public class ReportsService {
     }
 
 private CollectiveSaleReportDTO mapToReportDTO(List<Object[]> rawData) {
-        
-        if (rawData.isEmpty()) {
-            throw new IllegalArgumentException("Cannot map - There is missing data");
-        }
-        
-        // First row contains sale info (same for all rows)
-        Object[] firstRow = rawData.get(0);
-        
-        Long collectiveSaleId = ((Number) firstRow[0]).longValue();
-        Long materialId = ((Number) firstRow[1]).longValue();
-        String materialName = (String) firstRow[2];
-        Long buyerId = ((Number) firstRow[3]).longValue();
-        String buyerName = (String) firstRow[4];
-        Instant createdAt = firstRow[5] != null ? ((Timestamp) firstRow[5]).toInstant() : null;
-        Instant soldAt = firstRow[6] != null ? ((Timestamp) firstRow[6]).toInstant() : null;
-        Instant expectedSaleDate = firstRow[7] != null ? ((Timestamp) firstRow[7]).toInstant() : null;
-        Double totalWeight = ((Number) firstRow[8]).doubleValue();
-        Double pricePerKg = ((Number) firstRow[9]).doubleValue();
-        
-        List<ContributionDetailDTO> contributions = new ArrayList<>();
-        
-        for (Object[] row : rawData) {
-            Long coopId = ((Number) row[10]).longValue();
-            String coopName = (String) row[11];
-            Double contributedWeight = ((Number) row[12]).doubleValue();
-            Double revenueShare = row[13] != null ? ((Number) row[13]).doubleValue() : null;
-            
-            if (revenueShare == null) {
-                revenueShare = contributedWeight * pricePerKg;
-            }
-            
-            ContributionDetailDTO contribution = new ContributionDetailDTO(
-                coopId, 
-                coopName, 
-                contributedWeight, 
-                totalWeight,
-                revenueShare
-            );
-            
-            contributions.add(contribution);
-        }
-        
-        return new CollectiveSaleReportDTO(
-            collectiveSaleId,
-            materialId,
-            materialName,
-            buyerId,
-            buyerName,
-            createdAt,
-            soldAt,
-            expectedSaleDate,
-            totalWeight,
-            pricePerKg,
-            contributions
-        );
+    
+    if (rawData.isEmpty()) {
+        throw new IllegalArgumentException("Cannot map - There is missing data");
     }
+    
+    Object[] firstRow = rawData.get(0);
+    
+    Long collectiveSaleId = ((Number) firstRow[0]).longValue();
+    Long materialId = ((Number) firstRow[1]).longValue();
+    String materialName = (String) firstRow[2];
+    Long buyerId = ((Number) firstRow[3]).longValue();
+    String buyerName = (String) firstRow[4];
+    Instant createdAt = firstRow[5] != null ? ((Timestamp) firstRow[5]).toInstant() : null;
+    Instant soldAt = firstRow[6] != null ? ((Timestamp) firstRow[6]).toInstant() : null;  // ✅ FIXED
+    Instant expectedSaleDate = firstRow[7] != null ? ((Timestamp) firstRow[7]).toInstant() : null;
+    Double totalWeight = ((Number) firstRow[8]).doubleValue();
+    Double pricePerKg = ((Number) firstRow[9]).doubleValue();
+    
+    List<ContributionDetailDTO> contributions = new ArrayList<>();
+    
+    for (Object[] row : rawData) {
+        Long coopId = ((Number) row[10]).longValue();
+        String coopName = (String) row[11];
+        Double contributedWeight = ((Number) row[12]).doubleValue();
+        Double revenueShare = row[13] != null ? ((Number) row[13]).doubleValue() : null;
+        
+        if (revenueShare == null) {
+            revenueShare = contributedWeight * pricePerKg;
+        }
+        
+        ContributionDetailDTO contribution = new ContributionDetailDTO(
+            coopId, 
+            coopName, 
+            contributedWeight, 
+            totalWeight,
+            revenueShare
+        );
+        
+        contributions.add(contribution);
+    }
+    
+    log.info("Mapped collective sale report - soldAt: {}", soldAt);
+    
+    return new CollectiveSaleReportDTO(
+        collectiveSaleId,
+        materialId,
+        materialName,
+        buyerId,
+        buyerName,
+        createdAt,
+        soldAt,
+        expectedSaleDate,
+        totalWeight,
+        pricePerKg,
+        contributions
+    );
+}
 
 
     private void validateReportAccess(Long saleId, Long cooperativeId){

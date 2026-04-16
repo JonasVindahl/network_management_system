@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS public.notice_board
     created_at     timestamp DEFAULT now(),
     last_updated   timestamp DEFAULT now(),
     created_by     bigint NOT NULL,
-    priority       smallint DEFAULT 1,
+    priority       integer DEFAULT 1,
     expires_at     timestamp,
     title          text NOT NULL,
     content        text NOT NULL,
@@ -90,31 +90,34 @@ CREATE TABLE IF NOT EXISTS public.notice_board
     FOREIGN KEY (created_by) REFERENCES public.workers(worker_id)
 );
 
--- 8. Depends on: materials, buyers
+-- 8. Depends on: materials, buyers, cooperative
 CREATE TABLE IF NOT EXISTS public.collective_sale
 (
-    collective_sale_id bigserial NOT NULL,
-    created_at         timestamp DEFAULT now(),
-    sold_at            timestamp,
-    buyer_id           bigint NOT NULL,
-    material_id        bigint NOT NULL,
-    total_weight       numeric(10, 2) NOT NULL,
-    price_kg           numeric(10, 2) NOT NULL,
-    expected_sale_date timestamp NOT NULL,
+    collective_sale_id       bigserial NOT NULL,
+    created_at               timestamp DEFAULT now(),
+    sold_at                  timestamp,
+    buyer_id                 bigint NOT NULL,
+    material_id              bigint NOT NULL,
+    total_weight             numeric(10, 2),
+    price_kg                 numeric(10, 2) NOT NULL,
+    expected_sale_date       timestamp NOT NULL,
+    creator_cooperative_id   bigint NOT NULL,
     PRIMARY KEY (collective_sale_id),
     FOREIGN KEY (material_id) REFERENCES public.materials(material_id),
-    FOREIGN KEY (buyer_id) REFERENCES public.buyers(buyer_id)
+    FOREIGN KEY (buyer_id) REFERENCES public.buyers(buyer_id),
+    FOREIGN KEY (creator_cooperative_id) REFERENCES public.cooperative(cooperative_id)
 );
 
 -- 9. Depends on: collective_sale, cooperative
--- Tracks each cooperative's contribution to a collective sale
+-- status: INVITED | ACCEPTED | LEFT
 CREATE TABLE IF NOT EXISTS public.collective_sale_contribution
 (
     contribution_id    bigserial NOT NULL,
     collective_sale_id bigint NOT NULL,
     cooperative_id     bigint NOT NULL,
-    contributed_weight numeric(10, 2) NOT NULL,
+    contributed_weight numeric(10, 2),
     revenue_share      numeric(10, 2),
+    status             varchar(20) NOT NULL DEFAULT 'ACCEPTED',
     PRIMARY KEY (contribution_id),
     FOREIGN KEY (collective_sale_id) REFERENCES public.collective_sale(collective_sale_id),
     FOREIGN KEY (cooperative_id) REFERENCES public.cooperative(cooperative_id),
@@ -152,6 +155,7 @@ CREATE TABLE IF NOT EXISTS public.sales
     sale_id     bigserial NOT NULL,
     created_at  timestamp DEFAULT now(),
     sold_at     timestamp,
+    cancelled_at timestamp,
     material    bigint NOT NULL,
     weight      numeric(10, 2) NOT NULL,
     price_kg    numeric(10, 2) NOT NULL,
