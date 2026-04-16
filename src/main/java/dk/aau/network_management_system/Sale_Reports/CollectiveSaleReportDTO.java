@@ -82,9 +82,9 @@ public class CollectiveSaleReportDTO {
     }
 
     public Double getTotalWeight() { return totalWeight; }
-    public void setTotalWeight(Double totalWeight) {
+    public void setTotalWeight(Double totalWeight){
         this.totalWeight = totalWeight;
-        if (this.pricePerKg != null) {
+        if (this.pricePerKg != null){
             this.totalRevenue = totalWeight * this.pricePerKg;
         }
     }
