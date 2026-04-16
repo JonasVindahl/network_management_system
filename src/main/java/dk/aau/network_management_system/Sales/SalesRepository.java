@@ -48,7 +48,7 @@ public interface SalesRepository extends JpaRepository<CooperativeEntity, Long> 
             cs.sold_at,
             cs.expected_sale_date,
             m.material_name,
-            csc.contributed_weight,
+            COALESCE(csc.contributed_weight, 0),
             cs.price_kg,
             b.buyer_name,
             (SELECT COUNT(*) FROM collective_sale_contribution
@@ -102,7 +102,7 @@ public interface SalesRepository extends JpaRepository<CooperativeEntity, Long> 
             cs.sold_at,
             cs.expected_sale_date,
             m.material_name,
-            csc.contributed_weight,
+            COALESCE(csc.contributed_weight, 0),
             cs.price_kg,
             b.buyer_name,
             (SELECT COUNT(*) FROM collective_sale_contribution
