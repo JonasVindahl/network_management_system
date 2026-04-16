@@ -27,18 +27,7 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
     http
         .userDetailsService(workerDetailsService)
         .authorizeHttpRequests(auth -> auth
-        		.requestMatchers(
-        			    "/login",
-        			    "/login.html",
-        			    "/error",
-        			    "/favicon.ico",
-        			    "/css/**",
-        			    "/js/**",
-        			    "/images/**",
-        			    "/api/auth/**",
-        			    "/swagger-ui/**",
-        			    "/v3/api-docs/**"
-        			).permitAll()
+            .requestMatchers("test.html", "login.html", "/login", "/css/**", "/js/**", "/images/**", "/api/auth/**").permitAll()
             .requestMatchers("/web/**").authenticated()
             .requestMatchers("/api/**").authenticated()
             .anyRequest().authenticated()
