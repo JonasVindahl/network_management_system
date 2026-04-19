@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 import dk.aau.network_management_system.auth.PermissionHelper;
 
 @RestController
-@RequestMapping("/api/gamification/leaderboard")
+@RequestMapping("/api/leaderboard")
 
 public class LeaderboardController {
          private final LeaderboardService leaderboardService;
