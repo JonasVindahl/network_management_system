@@ -1,14 +1,11 @@
 package dk.aau.network_management_system.Cooperative_Analytics;
 
-import java.sql.Date;
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -28,30 +25,31 @@ public class AnalyticsService {
         this.authenticatedUser = authenticatedUser;
     }
 
-    public List<CooperativePerformanceDTO> getCooperativePerformance(Long cooperativeId) {
+   public List<CooperativePerformanceDTO> getCooperativePerformance(
+        Long cooperativeId, LocalDateTime startDate, LocalDateTime endDate) {
 
-        if (authenticatedUser.isWorker()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                "Workers cannot access cooperative performance data");
-        }
-
-        if (!authenticatedUser.isAdmin() &&
-            !cooperativeId.equals(authenticatedUser.getCooperativeId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                "You can only access your own cooperative's data");
-        }
-
-        List<Object[]> results = repository.findCooperativePerformanceRaw(cooperativeId);
-
-        return results.stream()
-            .map(row -> new CooperativePerformanceDTO(
-                ((Number) row[0]).doubleValue(),  // total_collected
-                ((Number) row[1]).doubleValue(),  // total_sold
-                ((Number) row[2]).doubleValue(),  // current_stock
-                ((Number) row[3]).intValue()      // active_workers
-            ))
-            .collect(Collectors.toList());
+    if (authenticatedUser.isWorker()) {
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+            "Workers cannot access cooperative performance data");
     }
+
+    if (!authenticatedUser.isAdmin() &&
+        !cooperativeId.equals(authenticatedUser.getCooperativeId())) {
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+            "You can only access your own cooperative's data");
+    }
+
+    List<Object[]> results = repository.findCooperativePerformanceRaw(cooperativeId, startDate, endDate);
+
+    return results.stream()
+        .map(row -> new CooperativePerformanceDTO(
+            ((Number) row[0]).doubleValue(),
+            ((Number) row[1]).doubleValue(),
+            ((Number) row[2]).doubleValue(),
+            ((Number) row[3]).intValue()
+        ))
+        .collect(Collectors.toList());
+}
 
     public List<WorkerProductivityDTO> getAllWorkerProductivity(
             Long cooperativeId, LocalDateTime startDate, LocalDateTime endDate) {
@@ -129,7 +127,7 @@ public class AnalyticsService {
 
 
     public List<RevenueDTO> getRevenue(
-            Long cooperativeId, LocalDateTime startDate, LocalDateTime endDate) {
+            Long cooperativeId, Long materialId, LocalDateTime startDate, LocalDateTime endDate) {
 
         if (authenticatedUser.isWorker()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
@@ -142,18 +140,19 @@ public class AnalyticsService {
                 "You can only access your own cooperative's data");
         }
 
-        List<Object[]> revenue = repository.findRevenueRaw(cooperativeId, startDate, endDate);
+        List<Object[]> revenue = repository.findRevenueRaw(cooperativeId, startDate, endDate, materialId);
 
         return revenue.stream()
             .map(row -> new RevenueDTO(
-                ((Number) row[0]).doubleValue(),  // total_revenue
-                ((Number) row[1]).longValue(),    // total_sales
-                ((Number) row[2]).doubleValue()   // avg_price_per_kg
-            ))
+            ((Number) row[0]).doubleValue(),  // totalRevenue
+            ((Number) row[1]).longValue(),    // totalSales
+            ((Number) row[2]).doubleValue(),  // avgPricePerKg
+            (String)  row[3],                 // materialName
+            ((Number) row[4]).longValue()     // materialId
+        ))
             .collect(Collectors.toList());
     }
 
-    // sold_at til at returnere timestamp
     public List<Last5SalesDTO> findLastSalesForCooperative(
             Long cooperativeId, Long materialId) {
 
@@ -182,4 +181,39 @@ public class AnalyticsService {
             ))
             .collect(Collectors.toList());
     }
+
+
+    public List<Map<String, Object>> getAllMaterials() {
+        List<Object[]> raw = repository.getMaterialsWithSales();
+        return raw.stream()
+            .map(row -> {
+                Map<String, Object> m = new HashMap<>();
+                m.put("materialId", ((Number) row[0]).longValue());
+                m.put("materialName", (String) row[1]);
+                return m;
+            })
+            .collect(Collectors.toList());
+    }
+
+public List<Last5SalesDTO> findLastSalesAllCooperatives(Long materialId) {
+
+    if (authenticatedUser.isWorker()) {
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+            "Workers cannot access sales data");
+    }
+
+    List<Object[]> raw = repository.lastSalesAllCooperativesRaw(materialId);
+
+    return raw.stream()
+        .map(row -> new Last5SalesDTO(
+            ((Number) row[0]).longValue(),    // material
+            ((Number) row[1]).doubleValue(),  // weight
+            ((Number) row[2]).doubleValue(),  // price_kg
+            row[3] instanceof java.sql.Timestamp ts
+                ? ts.toLocalDateTime().toLocalDate()
+                : ((java.sql.Date) row[3]).toLocalDate()
+        ))
+        .collect(Collectors.toList());
+}
+
 }

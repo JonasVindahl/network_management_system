@@ -250,6 +250,48 @@ public class CollectiveSaleService {
         }
     }
 
+    public List<ActiveCollectiveSaleDTO> getActiveSales() {
+        try {
+            if (authenticatedUser.isAdmin()) {
+                return repository.findAllActiveSales().stream()
+                    .map(row -> new ActiveCollectiveSaleDTO(
+                        ((Number) row[0]).longValue(),
+                        (String) row[1],
+                        (String) row[2],
+                        (BigDecimal) row[3],
+                        row[4] != null ? ((java.sql.Timestamp) row[4]).toInstant() : null,
+                        row[5] != null ? ((java.sql.Timestamp) row[5]).toInstant() : null,
+                        ((Number) row[6]).longValue(),
+                        null
+                    ))
+                    .collect(Collectors.toList());
+            } else {
+                Long cooperativeId = requireAuthenticatedCooperativeId();
+                return repository.findActiveSalesForCooperative(cooperativeId).stream()
+                    .map(row -> new ActiveCollectiveSaleDTO(
+                        ((Number) row[0]).longValue(),
+                        (String) row[1],
+                        (String) row[2],
+                        (BigDecimal) row[3],
+                        row[4] != null ? ((java.sql.Timestamp) row[4]).toInstant() : null,
+                        row[5] != null ? ((java.sql.Timestamp) row[5]).toInstant() : null,
+                        ((Number) row[6]).longValue(),
+                        (String) row[7]
+                    ))
+                    .collect(Collectors.toList());
+            }
+        } catch (DataAccessException e) {
+            log.error("Database error while fetching active collective sales", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                "Error retrieving active collective sales");
+        } catch (ClassCastException | NullPointerException e) {
+            log.error("Data mapping error while fetching active collective sales", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                "Error processing active collective sales");
+        }
+    }
+
+
     private Long requireAuthenticatedCooperativeId() {
         Long cooperativeId = authenticatedUser.getCooperativeId();
         if (cooperativeId == null) {
