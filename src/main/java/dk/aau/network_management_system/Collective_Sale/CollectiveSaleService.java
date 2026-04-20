@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import dk.aau.network_management_system.auth.AuthenticatedUser;
+import dk.aau.network_management_system.materials.StockRepository;
 
 @Service
 public class CollectiveSaleService {
@@ -23,12 +24,15 @@ public class CollectiveSaleService {
     private static final Logger log = LoggerFactory.getLogger(CollectiveSaleService.class);
 
     private final CollectiveSaleRepository repository;
+    private final StockRepository stockRepository;
     private final AuthenticatedUser authenticatedUser;
 
     @Autowired
     public CollectiveSaleService(CollectiveSaleRepository repository,
+                                 StockRepository stockRepository,
                                  AuthenticatedUser authenticatedUser) {
         this.repository = repository;
+        this.stockRepository = stockRepository;
         this.authenticatedUser = authenticatedUser;
     }
 
@@ -182,6 +186,17 @@ public class CollectiveSaleService {
                     "You have already left this collective sale");
             }
 
+            // Return any reserved stock before leaving
+            List<Object[]> rows = repository.findSaleMaterialAndContribution(saleId, cooperativeId);
+            if (!rows.isEmpty()) {
+                Object[] row = rows.get(0);
+                BigDecimal reserved = row[1] != null ? toBigDecimal(row[1]) : BigDecimal.ZERO;
+                if (reserved.signum() > 0) {
+                    Long materialId = ((Number) row[0]).longValue();
+                    stockRepository.adjustStock(cooperativeId, materialId, reserved.negate());
+                }
+            }
+
             int updated = repository.updateContributionStatus(saleId, cooperativeId, "LEFT");
             if (updated == 0) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT,
@@ -202,14 +217,33 @@ public class CollectiveSaleService {
         Long cooperativeId = requireAuthenticatedCooperativeId();
 
         try {
-            repository.findActiveSaleCreator(saleId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Collective sale not found or already completed"));
-
-            int updated = repository.updateContributionWeight(saleId, cooperativeId, dto.getWeight());
-            if (updated == 0) {
+            List<Object[]> rows = repository.findSaleMaterialAndContribution(saleId, cooperativeId);
+            if (rows.isEmpty()) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "You are not an accepted participant in this collective sale");
+                    "You are not an accepted participant in this collective sale, or the sale is completed");
+            }
+            Object[] row = rows.get(0);
+
+            Long materialId = ((Number) row[0]).longValue();
+            BigDecimal oldWeight = row[1] != null ? toBigDecimal(row[1]) : BigDecimal.ZERO;
+            BigDecimal newWeight = dto.getWeight();
+            BigDecimal delta = newWeight.subtract(oldWeight);
+
+            if (delta.signum() != 0) {
+                int stockRows = stockRepository.adjustStock(cooperativeId, materialId, delta);
+                if (stockRows == 0) {
+                    BigDecimal available = stockRepository.findCurrentStock(cooperativeId, materialId)
+                        .orElse(BigDecimal.ZERO);
+                    throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "Not enough stock: you have " + available + " kg available, but need "
+                        + delta + " kg more to reach " + newWeight + " kg");
+                }
+            }
+
+            int updated = repository.updateContributionWeight(saleId, cooperativeId, newWeight);
+            if (updated == 0) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Contribution could not be updated");
             }
 
         } catch (ResponseStatusException e) {
@@ -222,9 +256,70 @@ public class CollectiveSaleService {
     }
 
     @Transactional
-    public void updateSaleMaterial(Long saleId, UpdateSaleMaterialDTO dto) {
-        Long cooperativeId = authenticatedUser.getCooperativeId();
+    public void updateSalePrice(Long saleId, UpdateSalePriceDTO dto) {
+        try {
+            Long creatorId = repository.findActiveSaleCreator(saleId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "Collective sale not found or already completed"));
 
+            if (!authenticatedUser.isAdmin() && !Objects.equals(creatorId, requireAuthenticatedCooperativeId())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Only the creator cooperative can update the sale price");
+            }
+
+            int updated = repository.updateSalePrice(saleId, dto.getPricePerKg());
+            if (updated == 0) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Collective sale price could not be updated");
+            }
+
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (DataAccessException e) {
+            log.error("Database error while updating price for sale {}", saleId, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                "Error updating sale price");
+        }
+    }
+
+    @Transactional
+    public void cancelCollectiveSale(Long saleId) {
+        try {
+            Long creatorId = repository.findActiveSaleCreator(saleId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "Collective sale not found or already completed"));
+
+            if (!authenticatedUser.isAdmin() && !Objects.equals(creatorId, requireAuthenticatedCooperativeId())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Only the creator cooperative can delete the sale");
+            }
+
+            // Return all reserved stock to each participant before cancelling
+            List<Object[]> reservations = repository.findAcceptedContributionsWithWeight(saleId);
+            for (Object[] r : reservations) {
+                Long coopId = ((Number) r[0]).longValue();
+                BigDecimal weight = toBigDecimal(r[1]);
+                Long materialId = ((Number) r[2]).longValue();
+                stockRepository.adjustStock(coopId, materialId, weight.negate());
+            }
+
+            int updated = repository.cancelSale(saleId);
+            if (updated == 0) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Collective sale could not be deleted");
+            }
+
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (DataAccessException e) {
+            log.error("Database error while cancelling sale {}", saleId, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                "Error deleting sale");
+        }
+    }
+
+    @Transactional
+    public void updateSaleMaterial(Long saleId, UpdateSaleMaterialDTO dto) {
         try {
             Long creatorId = repository.findActiveSaleCreator(saleId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
@@ -233,6 +328,11 @@ public class CollectiveSaleService {
             if (!authenticatedUser.isAdmin() && !Objects.equals(creatorId, requireAuthenticatedCooperativeId())) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "Only the creator cooperative can update the sale material");
+            }
+
+            if (repository.countContributionsWithWeight(saleId) > 0) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Cannot change material while participants have reserved stock. Ask them to reset their contribution to 0 first.");
             }
 
             int updated = repository.updateSaleMaterial(saleId, dto.getMaterialId());
@@ -299,6 +399,13 @@ public class CollectiveSaleService {
                 "Authenticated user is not associated with a cooperative");
         }
         return cooperativeId;
+    }
+
+    private static BigDecimal toBigDecimal(Object v) {
+        if (v == null) return BigDecimal.ZERO;
+        if (v instanceof BigDecimal bd) return bd;
+        if (v instanceof Number n) return BigDecimal.valueOf(n.doubleValue());
+        return new BigDecimal(v.toString());
     }
 
     private void validateExpectedSaleDate(java.time.Instant expectedSaleDate) {

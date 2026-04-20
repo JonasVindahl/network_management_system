@@ -25,14 +25,17 @@ public class CollectiveSaleReportDTO {
 
     private Integer totalCooperatives;
 
+    private Long creatorCooperativeId;
+
     private List<ContributionDetailDTO> contributions;
-    
+
     public CollectiveSaleReportDTO(){}
 
-    public CollectiveSaleReportDTO(Long collectiveSaleId, Long materialId, 
+    public CollectiveSaleReportDTO(Long collectiveSaleId, Long materialId,
                                    String materialName, Long buyerId, String buyerName,
                                    Instant createdAt, Instant soldAt, Instant expectedSaleDate,
                                    Double totalWeight, Double pricePerKg,
+                                   Long creatorCooperativeId,
                                    List<ContributionDetailDTO> contributions) {
         this.collectiveSaleId = collectiveSaleId;
         this.materialId = materialId;
@@ -46,6 +49,7 @@ public class CollectiveSaleReportDTO {
         this.pricePerKg = pricePerKg;
         this.totalRevenue = totalWeight * pricePerKg;
         this.status = soldAt == null ? "ACTIVE" : "SOLD";
+        this.creatorCooperativeId = creatorCooperativeId;
         this.contributions = contributions;
         this.totalCooperatives = contributions != null ? contributions.size() : 0;
     }
@@ -101,8 +105,13 @@ public class CollectiveSaleReportDTO {
     public void setTotalRevenue(Double totalRevenue) { this.totalRevenue = totalRevenue; }
     
     public Integer getTotalCooperatives() { return totalCooperatives; }
-    public void setTotalCooperatives(Integer totalCooperatives) { 
-        this.totalCooperatives = totalCooperatives; 
+    public void setTotalCooperatives(Integer totalCooperatives) {
+        this.totalCooperatives = totalCooperatives;
+    }
+
+    public Long getCreatorCooperativeId() { return creatorCooperativeId; }
+    public void setCreatorCooperativeId(Long creatorCooperativeId) {
+        this.creatorCooperativeId = creatorCooperativeId;
     }
     
     public List<ContributionDetailDTO> getContributions() { return contributions; }

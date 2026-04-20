@@ -36,6 +36,9 @@ public class CollectiveSaleEntity {
     @Column(name = "sold_at")
     private Instant soldAt;
 
+    @Column(name = "cancelled_at")
+    private Instant cancelledAt;
+
     // No-arg constructor required by JPA
     public CollectiveSaleEntity() {
         this.createdAt = Instant.now();
@@ -79,4 +82,7 @@ public class CollectiveSaleEntity {
 
     public Instant getSoldAt() { return soldAt; }
     public void setSoldAt(Instant soldAt) { this.soldAt = soldAt; }
+
+    public Instant getCancelledAt() { return cancelledAt; }
+    public void setCancelledAt(Instant cancelledAt) { this.cancelledAt = cancelledAt; }
 }
