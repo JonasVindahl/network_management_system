@@ -12,17 +12,20 @@ import org.springframework.stereotype.Repository;
 public interface AnalyticsRepository extends JpaRepository<CooperativeEntity, Long> {
 
     @Query(value = """
-        SELECT 
-            COALESCE(SUM(s.total_collected_kg), 0) as total_collected,
-            COALESCE(SUM(s.total_sold_kg), 0) as total_sold,
-            COALESCE(SUM(s.current_stock_kg), 0) as current_stock,
-            (SELECT COUNT(*) FROM workers WHERE cooperative = :cooperativeId AND exit_date IS NULL) as active_workers
-        FROM stock s
-        WHERE s.cooperative = :cooperativeId
-        """, nativeQuery = true)
-    List<Object[]> findCooperativePerformanceRaw(
-        @Param("cooperativeId") Long cooperativeId);
-
+    SELECT 
+        COALESCE(SUM(s.total_collected_kg), 0) as total_collected,
+        COALESCE(SUM(s.total_sold_kg), 0) as total_sold,
+        COALESCE(SUM(s.current_stock_kg), 0) as current_stock,
+        (SELECT COUNT(*) FROM workers 
+         WHERE cooperative = :cooperativeId 
+         AND exit_date IS NULL) as active_workers
+    FROM stock s
+    WHERE s.cooperative = :cooperativeId
+    """, nativeQuery = true)
+List<Object[]> findCooperativePerformanceRaw(
+    @Param("cooperativeId") Long cooperativeId,
+    @Param("startDate") LocalDateTime startDate,
+    @Param("endDate") LocalDateTime endDate);
 
     @Query(value = """
         SELECT 
@@ -88,23 +91,27 @@ public interface AnalyticsRepository extends JpaRepository<CooperativeEntity, Lo
     );
 
 
-    @Query(value = """
-        SELECT 
-            COALESCE(SUM(sa.weight * sa.price_kg), 0) as totalRevenue,
-            COUNT(sa.sale_id) as totalSales,
-            COALESCE(AVG(sa.price_kg), 0) as avgPricePerKg
-        FROM sales sa
-        JOIN workers w ON sa.responsible = w.worker_id
-        WHERE w.cooperative = :cooperativeId
-          AND sa.sold_at BETWEEN :startDate AND :endDate
-        """, nativeQuery = true)
-    List<Object[]> findRevenueRaw(
-        @Param("cooperativeId") Long cooperativeId,
-        @Param("startDate") LocalDateTime startDate,
-        @Param("endDate") LocalDateTime endDate
-    );
-
-    //sidste 5 salg (ny)
+@Query(value = """
+    SELECT 
+        COALESCE(SUM(sa.weight * sa.price_kg), 0) as totalRevenue,
+        COUNT(sa.sale_id) as totalSales,
+        COALESCE(AVG(sa.price_kg), 0) as avgPricePerKg,
+        m.material_name as materialName,
+        sa.material as materialId
+    FROM sales sa
+    JOIN workers w ON sa.responsible = w.worker_id
+    JOIN materials m ON sa.material = m.material_id
+    WHERE w.cooperative = :cooperativeId
+      AND sa.sold_at BETWEEN :startDate AND :endDate
+      AND (:materialId IS NULL OR sa.material = :materialId)
+    GROUP BY sa.material, m.material_name
+    """, nativeQuery = true)
+List<Object[]> findRevenueRaw(
+    @Param("cooperativeId") Long cooperativeId,
+    @Param("startDate") LocalDateTime startDate,
+    @Param("endDate") LocalDateTime endDate,
+    @Param("materialId") Long materialId
+);
     @Query(value = """
         SELECT
             s.material,
@@ -123,5 +130,44 @@ public interface AnalyticsRepository extends JpaRepository<CooperativeEntity, Lo
         @Param("cooperativeId") Long cooperativeId,
         @Param("materialId") Long materialId
     );
+
+
+    @Query(value = """
+        SELECT DISTINCT
+            mat.material_id,
+            mat.material_name
+        FROM materials mat
+        ORDER BY mat.material_name
+        """, nativeQuery = true)
+    List<Object[]> getAllMaterials();
+
+    @Query(value = """
+        SELECT DISTINCT
+            mat.material_id,
+            mat.material_name
+        FROM sales s
+        JOIN materials mat ON s.material = mat.material_id
+        WHERE s.sold_at IS NOT NULL
+        ORDER BY mat.material_name
+        """, nativeQuery = true)
+    List<Object[]> getMaterialsWithSales();
+
+    @Query(value = """
+        SELECT
+            s.material,
+            s.weight,
+            s.price_kg,
+            s.sold_at
+        FROM sales s
+        WHERE s.material = :materialId
+        AND s.sold_at IS NOT NULL
+        ORDER BY s.sold_at DESC
+        LIMIT 5
+        """, nativeQuery = true)
+    List<Object[]> lastSalesAllCooperativesRaw(
+        @Param("materialId") Long materialId
+    );
+
+
 
 }
