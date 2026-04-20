@@ -406,6 +406,16 @@ function closeConfirm() {
 
 let dropsLoaded = false;
 let stockByMaterial = {};
+let allCooperatives = [];
+let createInvitedIds = new Set();
+
+function buildCoopOptions(excludeIds) {
+  const myCoopId = getMyCooperativeId();
+  const ex = new Set((excludeIds ?? []).map(Number));
+  if (myCoopId != null) ex.add(Number(myCoopId));
+  const filtered = allCooperatives.filter(c => !ex.has(Number(c.cooperativeId)));
+  return '<option value="">— select —</option>' + filtered.map(c => `<option value="${c.cooperativeId}">${c.cooperativeName}</option>`).join('');
+}
 
 async function loadDropdowns() {
   try {
@@ -416,7 +426,7 @@ async function loadDropdowns() {
     ]);
     const materials = Array.isArray(stock)  ? stock  : [];
     const buyerList = Array.isArray(buyers) ? buyers : [];
-    const coopList  = Array.isArray(coops)  ? coops  : [];
+    allCooperatives = Array.isArray(coops)  ? coops  : [];
 
     // Always refresh the stock map (it can change on add/reserve)
     stockByMaterial = {};
@@ -424,18 +434,13 @@ async function loadDropdowns() {
 
     if (dropsLoaded) return;
 
-    // Filter out our own cooperative from invite dropdowns
-    const myCoopId = getMyCooperativeId();
-    const inviteCoops = coopList.filter(c => myCoopId == null || Number(c.cooperativeId) !== Number(myCoopId));
-
     const matOpts  = '<option value="">— select —</option>' + materials.map(m => `<option value="${m.materialId}">${m.materialName}</option>`).join('');
-    const coopOpts = '<option value="">— select —</option>' + inviteCoops.map(c => `<option value="${c.cooperativeId}">${c.cooperativeName}</option>`).join('');
 
     document.getElementById('createMaterial').innerHTML    = matOpts;
     document.getElementById('manageMaterial').innerHTML    = matOpts;
     document.getElementById('createBuyer').innerHTML       = '<option value="">— select —</option>' + buyerList.map(b => `<option value="${b.buyerId}">${b.buyerName}</option>`).join('');
-    document.getElementById('inviteCooperative').innerHTML = coopOpts;
-    document.getElementById('createInviteCoop').innerHTML  = coopOpts;
+    document.getElementById('inviteCooperative').innerHTML = buildCoopOptions();
+    document.getElementById('createInviteCoop').innerHTML  = buildCoopOptions();
 
     dropsLoaded = true;
   } catch (e) { console.error('Dropdowns failed:', e); }
@@ -555,9 +560,11 @@ async function createSale() {
     dropsLoaded = false;
     await loadDropdowns();
     createdSaleId = saleId;
+    createInvitedIds = new Set();
     document.getElementById('createdSaleIdLabel').textContent = `#${saleId}`;
     document.getElementById('createInviteSection').style.display = 'block';
     document.getElementById('createInvitedList').innerHTML = '';
+    document.getElementById('createInviteCoop').innerHTML = buildCoopOptions();
     loadActiveSales();
   } catch (e) {
     showMsg('createError', e.message, true);
@@ -581,7 +588,8 @@ async function sendCreateInvite() {
     item.className = 'invited-item';
     item.innerHTML = `<span>${coopName}</span><span class="badge badge-invited">INVITED</span>`;
     list.appendChild(item);
-    document.getElementById('createInviteCoop').value = '';
+    createInvitedIds.add(Number(coopId));
+    document.getElementById('createInviteCoop').innerHTML = buildCoopOptions([...createInvitedIds]);
   } catch (e) {
     showMsg('createInviteError', e.message, true);
   }
@@ -659,6 +667,14 @@ async function loadSaleReport(saleId) {
     if (isOwner && data.pricePerKg != null) {
       document.getElementById('managePrice').value = data.pricePerKg;
     }
+
+    // Exclude already-invited/participating (and own) coops from the invite dropdown
+    const excludeIds = contributions
+      .filter(c => c.status !== 'LEFT')
+      .map(c => c.cooperativeId)
+      .filter(id => id != null);
+    if (data.creatorCooperativeId != null) excludeIds.push(data.creatorCooperativeId);
+    document.getElementById('inviteCooperative').innerHTML = buildCoopOptions(excludeIds);
 
     updateStockHint();
 
