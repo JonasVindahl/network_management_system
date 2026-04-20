@@ -27,7 +27,7 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
     http
         .userDetailsService(workerDetailsService)
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/login", "/css/**", "/js/**", "/images/**", "/api/auth/**", "/error").permitAll()
+            .requestMatchers("test.html", "login.html", "/login", "/css/**", "/js/**", "/images/**", "/api/auth/**", "/error").permitAll()
             .requestMatchers("/web/**").authenticated()
             .requestMatchers("/api/**").authenticated()
             .anyRequest().authenticated()

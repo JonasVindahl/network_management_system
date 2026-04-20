@@ -13,6 +13,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import dk.aau.network_management_system.auth.AuthenticatedUser;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import jakarta.validation.Valid;
 
 import dk.aau.network_management_system.auth.PermissionHelper;
 
@@ -22,11 +29,13 @@ public class SalesController {
     
     private final SalesService service;
     private final PermissionHelper permissionHelper;
-    
+    private final AuthenticatedUser authenticatedUser;
+
     @Autowired
-    public SalesController(SalesService service, PermissionHelper permissionHelper) {
+    public SalesController(SalesService service, PermissionHelper permissionHelper, AuthenticatedUser authenticatedUser) {
         this.service = service;
         this.permissionHelper = permissionHelper;
+        this.authenticatedUser = authenticatedUser;
     }
     
     @GetMapping("/history")
@@ -83,5 +92,40 @@ public class SalesController {
         List<SaleDTO> result = service.getActiveSales(targetCooperativeId, type);
         
         return ResponseEntity.ok(result);
+    }
+
+    @PostMapping
+    public ResponseEntity<Void> createSale(@Valid @RequestBody CreateSaleDTO dto) {
+        permissionHelper.requireManagerOrAdmin();
+        Long cooperativeId = permissionHelper.determineTargetCooperative(null);
+        Long workerId = authenticatedUser.getWorkerId();
+        service.createSale(cooperativeId, workerId, dto);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @PutMapping("/{saleId}")
+    public ResponseEntity<Void> updateSale(
+            @PathVariable Long saleId,
+            @Valid @RequestBody UpdateSaleDTO dto) {
+        permissionHelper.requireManagerOrAdmin();
+        Long cooperativeId = permissionHelper.determineTargetCooperative(null);
+        service.updateSale(saleId, cooperativeId, dto);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{saleId}/complete")
+    public ResponseEntity<Void> completeSale(@PathVariable Long saleId) {
+        permissionHelper.requireManagerOrAdmin();
+        Long cooperativeId = permissionHelper.determineTargetCooperative(null);
+        service.completeSale(saleId, cooperativeId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{saleId}/cancel")
+    public ResponseEntity<Void> cancelSale(@PathVariable Long saleId) {
+        permissionHelper.requireManagerOrAdmin();
+        Long cooperativeId = permissionHelper.determineTargetCooperative(null);
+        service.cancelSale(saleId, cooperativeId);
+        return ResponseEntity.noContent().build();
     }
 }

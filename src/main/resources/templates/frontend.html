@@ -40,8 +40,9 @@
   .period-selector { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-secondary); }
   .period-selector input { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 13px; font-family: 'DM Mono', monospace; color: var(--text-primary); background: var(--surface); outline: none; }
   .period-selector input:focus { border-color: var(--accent); }
+  .period-selector select { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 13px; font-family: 'DM Sans', sans-serif; color: var(--text-primary); background: var(--surface); outline: none; cursor: pointer; }
+  .period-selector select:focus { border-color: var(--accent); }
   .period-btn { background: var(--accent); color: white; border: none; padding: 6px 14px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; }
-  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
   .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 20px; }
   .table-card-header { padding: 16px 24px; border-bottom: 1px solid var(--border-light); font-weight: 600; font-size: 15px; display: flex; align-items: center; justify-content: space-between; }
   table { width: 100%; border-collapse: collapse; }
@@ -62,22 +63,26 @@
   .notice-layout { display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start; }
   .section-label { font-size: 14px; font-weight: 600; color: var(--text-secondary); margin-bottom: 14px; }
 
-  .notice-item {
+  .quick-btn {
+    background: var(--bg);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    margin-bottom: 10px;
-    overflow: hidden;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 500;
     cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text-secondary);
+    transition: all 0.15s;
   }
+  .quick-btn:hover { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+  .quick-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+
+  .notice-item { border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 10px; overflow: hidden; cursor: pointer; }
   .notice-item.high { border-color: #f5c6cb; }
   .notice-item.medium { border-color: #ffeeba; }
   .notice-item.low { border-color: #dee2e6; }
-  .notice-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 18px;
-  }
+  .notice-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; }
   .notice-item.high .notice-header { background: #fff5f5; }
   .notice-item.medium .notice-header { background: #fffbf0; }
   .notice-item.low .notice-header { background: #f8f9fa; }
@@ -90,12 +95,7 @@
   .notice-title { font-size: 14px; font-weight: 500; }
   .notice-expires { font-size: 12px; color: var(--text-muted); }
   .notice-chevron { font-size: 18px; color: var(--text-muted); transition: transform 0.2s; flex-shrink: 0; }
-  .notice-body {
-    display: none;
-    padding: 14px 18px;
-    border-top: 1px solid rgba(0,0,0,0.06);
-    background: var(--surface);
-  }
+  .notice-body { display: none; padding: 14px 18px; border-top: 1px solid rgba(0,0,0,0.06); background: var(--surface); }
   .notice-body p { font-size: 13.5px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 14px; }
   .notice-actions { display: flex; gap: 8px; }
 
@@ -121,6 +121,9 @@
   .last-sales-header select { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 5px 10px; font-size: 13px; color: var(--text-primary); background: var(--surface); outline: none; font-family: 'DM Sans', sans-serif; cursor: pointer; }
   .stock-bold { font-weight: 700; font-family: 'DM Mono', monospace; }
 
+  .dual-table-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .dual-table-grid .table-card { margin-bottom: 0; }
+
   /* MODALS */
   .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; }
   .modal-overlay.open { display: flex; }
@@ -131,6 +134,8 @@
   .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 20px; }
   .modal-actions { display: flex; gap: 10px; margin-top: 8px; }
   .btn-cancel { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 11px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+
+  .period-separator { width: 1px; height: 20px; background: var(--border); margin: 0 2px; }
 </style>
 </head>
 <body>
@@ -169,25 +174,38 @@
 
   <div class="content">
 
+    <!-- DASHBOARD -->
     <div id="page-dashboard" class="page active">
       <div class="page-header">
         <h1 class="page-title" style="margin-bottom:0">Dashboard</h1>
         <div class="period-selector">
           Period:
-          <input type="date" id="dashFrom">
+          <select id="dashQuickSelect" onchange="applyQuickDash(this.value)">
+            <option value="">Custom</option>
+            <option value="30" selected>Last 30 days</option>
+            <option value="60">Last 60 days</option>
+            <option value="120">Last 120 days</option>
+            <option value="180">Last 180 days</option>
+            <option value="365">Last 365 days</option>
+          </select>
+          <div class="period-separator"></div>
+          <input type="date" id="dashFrom" onchange="document.getElementById('dashQuickSelect').value=''">
           to
-          <input type="date" id="dashTo">
+          <input type="date" id="dashTo" onchange="document.getElementById('dashQuickSelect').value=''">
           <button class="period-btn" onclick="loadDashboard()">Apply</button>
         </div>
       </div>
+
       <div id="dashError"></div>
-      <div class="stats-grid">
-        <div class="stat-card"><div class="stat-label">Total kg Collected</div><div class="stat-value" id="statKg">—</div></div>
-        <div class="stat-card"><div class="stat-label">Total Sold (kg)</div><div class="stat-value" id="statSold">—</div></div>
-        <div class="stat-card"><div class="stat-label">Current Stock (kg)</div><div class="stat-value" id="statStock">—</div></div>
-        <div class="stat-card"><div class="stat-label">Active Workers</div><div class="stat-value" id="statWorkers">—</div></div>
-      </div>
-      <div class="two-col">
+
+     <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
+  <div class="stat-card"><div class="stat-label">Total kg Collected</div><div class="stat-value" id="statKg">—</div></div>
+  <div class="stat-card"><div class="stat-label">Total Sold (kg)</div><div class="stat-value" id="statSold">—</div></div>
+  <div class="stat-card"><div class="stat-label">Current Stock (kg)</div><div class="stat-value" id="statStock">—</div></div>
+</div>
+      <p style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;margin-top:16px">Period: <span id="periodLabel">—</span></p>
+
+      <div class="dual-table-grid">
         <div class="table-card">
           <div class="table-card-header">Worker Productivity</div>
           <table>
@@ -195,28 +213,47 @@
             <tbody id="productivityTable"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
           </table>
         </div>
+
         <div class="table-card">
-          <div class="table-card-header">Revenue</div>
+          <div class="table-card-header">Avg Price / kg per Material</div>
           <table>
-            <thead><tr><th>Total Revenue</th><th>Total Sales</th><th>Avg Price/kg</th></tr></thead>
-            <tbody id="revenueTable"><tr><td colspan="3" class="loading">Loading...</td></tr></tbody>
+            <thead><tr><th>Material</th><th>Total Revenue</th><th>Sales</th><th>Avg Price / kg</th></tr></thead>
+            <tbody id="avgPriceTable"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
           </table>
         </div>
       </div>
-    </div>
 
+    </div>
+    <!-- END DASHBOARD -->
+
+    <!-- WORKERS -->
     <div id="page-workers" class="page">
       <div class="page-header">
         <h1 class="page-title" style="margin-bottom:0">Workers</h1>
         <div class="period-selector">
           Period:
-          <input type="date" id="workersFrom">
+          <select id="workersQuickSelect" onchange="applyQuickWorkers(this.value)">
+            <option value="">Custom</option>
+            <option value="30" selected>Last 30 days</option>
+            <option value="60">Last 60 days</option>
+            <option value="120">Last 120 days</option>
+            <option value="180">Last 180 days</option>
+            <option value="365">Last 365 days</option>
+          </select>
+          <div class="period-separator"></div>
+          <input type="date" id="workersFrom" onchange="document.getElementById('workersQuickSelect').value=''">
           to
-          <input type="date" id="workersTo">
+          <input type="date" id="workersTo" onchange="document.getElementById('workersQuickSelect').value=''">
           <button class="period-btn" onclick="loadWorkers()">Apply</button>
         </div>
       </div>
       <div id="workersError"></div>
+      <div class="stats-grid" style="grid-template-columns: repeat(1, 1fr); max-width: 200px; margin-bottom: 24px;">
+    <div class="stat-card">
+      <div class="stat-label">Active Workers</div>
+      <div class="stat-value" id="statWorkers">—</div>
+    </div>
+  </div>
       <div id="leaderboardCards" class="leaderboard"></div>
       <div class="table-card">
         <div class="table-card-header">Worker Productivity</div>
@@ -226,7 +263,9 @@
         </table>
       </div>
     </div>
+    <!-- END WORKERS -->
 
+    <!-- INVENTORY -->
     <div id="page-inventory" class="page">
       <h1 class="page-title">Inventory</h1>
       <div class="table-card">
@@ -240,6 +279,10 @@
         <div class="last-sales-header">
           <span>Last 5 Sales</span>
           <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)">
+            <div style="display:flex;gap:4px;">
+              <button class="quick-btn active" id="scopeMyBtn" onclick="setSalesScope('my')">My Cooperative</button>
+              <button class="quick-btn" id="scopeAllBtn" onclick="setSalesScope('all')">All Cooperatives</button>
+            </div>
             Material:
             <select id="last5MaterialSelect" onchange="loadLast5Sales()">
               <option value="">Select material...</option>
@@ -254,7 +297,9 @@
         </table>
       </div>
     </div>
+    <!-- END INVENTORY -->
 
+    <!-- NOTICE BOARD -->
     <div id="page-noticeboard" class="page">
       <h1 class="page-title">Notice Board</h1>
       <div class="notice-layout">
@@ -280,7 +325,9 @@
         </div>
       </div>
     </div>
+    <!-- END NOTICE BOARD -->
 
+    <!-- MULTIPLIERS -->
     <div id="page-multipliers" class="page">
       <h1 class="page-title">Multipliers</h1>
       <div class="info-box">
@@ -295,6 +342,7 @@
         </table>
       </div>
     </div>
+    <!-- END MULTIPLIERS -->
 
   </div>
 </main>
@@ -374,13 +422,18 @@ function fmtDate(s) {
 
 function defaultFrom() {
   const d = new Date();
-  d.setMonth(d.getMonth() - 1);
-  d.setDate(1);
+  d.setDate(d.getDate() - 30);
   return d.toISOString().split('T')[0];
 }
 
 function defaultTo() {
   return new Date().toISOString().split('T')[0];
+}
+
+function dateFromDaysAgo(days) {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d.toISOString().split('T')[0];
 }
 
 function plabel(p) { return p >= 3 ? 'high' : p >= 2 ? 'medium' : 'low'; }
@@ -393,6 +446,20 @@ function initDates() {
   document.getElementById('dashTo').value = to;
   document.getElementById('workersFrom').value = from;
   document.getElementById('workersTo').value = to;
+}
+
+function applyQuickDash(days) {
+  if (!days) return;
+  document.getElementById('dashFrom').value = dateFromDaysAgo(parseInt(days));
+  document.getElementById('dashTo').value = defaultTo();
+  loadDashboard();
+}
+
+function applyQuickWorkers(days) {
+  if (!days) return;
+  document.getElementById('workersFrom').value = dateFromDaysAgo(parseInt(days));
+  document.getElementById('workersTo').value = defaultTo();
+  loadWorkers();
 }
 
 const loaders = {
@@ -422,9 +489,13 @@ async function loadDashboard() {
   const to   = (document.getElementById('dashTo').value   || defaultTo())   + 'T23:59:59';
   document.getElementById('dashError').innerHTML = '';
 
+  const fromFmt = (document.getElementById('dashFrom').value || defaultFrom()).split('-').reverse().join('/');
+  const toFmt   = (document.getElementById('dashTo').value   || defaultTo()).split('-').reverse().join('/');
+  document.getElementById('periodLabel').textContent = `${fromFmt} - ${toFmt}`;
+
   try {
     const [perf, productivity, revenue] = await Promise.all([
-      api('/api/performance'),
+      api(`/api/performance?startDate=${from}&endDate=${to}`),
       api(`/api/productivity?startDate=${from}&endDate=${to}`),
       api(`/api/revenue?startDate=${from}&endDate=${to}`)
     ]);
@@ -449,14 +520,27 @@ async function loadDashboard() {
       : '<tr><td colspan="4" class="loading">No data for selected period</td></tr>';
 
     const revList = Array.isArray(revenue) ? revenue : [];
-    document.getElementById('revenueTable').innerHTML = revList.length
-      ? revList.map(r => `<tr>
-          <td class="mono">R$ ${fmt(r.totalRevenue, 2)}</td>
-          <td class="mono">${fmt(r.totalSales)}</td>
-          <td class="mono">R$ ${fmt(r.avgPricePerKg, 2)}</td>
-        </tr>`).join('')
-      : '<tr><td colspan="3" class="loading">No data for selected period</td></tr>';
+    // I loadDashboard(), erstat avgPriceTable innerHTML assignment:
+const total = revList.reduce((acc, r) => ({
+  revenue: acc.revenue + (r.totalRevenue ?? 0),
+  sales:   acc.sales   + (r.totalSales   ?? 0)
+}), { revenue: 0, sales: 0 });
 
+document.getElementById('avgPriceTable').innerHTML = revList.length
+  ? revList.map(r => `<tr>
+      <td>${r.materialName ?? '—'}</td>
+      <td class="mono">R$ ${fmt(r.totalRevenue, 2)}</td>
+      <td class="mono">${fmt(r.totalSales)}</td>
+      <td class="mono" style="color:var(--accent);font-weight:600">R$ ${fmt(r.avgPricePerKg, 2)}</td>
+    </tr>`).join('') +
+    `<tr style="border-top: 2px solid var(--border); background: var(--bg);">
+      <td style="font-weight:600">Total</td>
+      <td class="mono" style="font-weight:600">R$ ${fmt(total.revenue, 2)}</td>
+      <td class="mono" style="font-weight:600">${fmt(total.sales)}</td>
+      <td></td>
+    </tr>`
+  : '<tr><td colspan="4" class="loading">No data for selected period</td></tr>';
+  
   } catch (e) {
     console.error(e);
     document.getElementById('dashError').innerHTML =
@@ -470,6 +554,12 @@ async function loadWorkers() {
   document.getElementById('workersError').innerHTML = '';
 
   try {
+
+    const perf = await api('/api/performance');
+  const perfList = Array.isArray(perf) ? perf : [];
+  if (perfList.length > 0) {
+    document.getElementById('statWorkers').textContent = perfList[0].activeWorkers ?? '—';
+  }
     const data = await api(`/api/productivity?startDate=${from}&endDate=${to}`);
     const list = Array.isArray(data) ? data : [];
     list.sort((a, b) => (b.totalCollectedKg ?? 0) - (a.totalCollectedKg ?? 0));
@@ -508,28 +598,46 @@ let stockList = [];
 
 async function loadInventory() {
   try {
-    const stock = await api('/api/stock');
+    const [stock, materials] = await Promise.all([
+      api('/api/stock'),
+      api('/api/cooperative/materials')
+    ]);
+
     stockList = Array.isArray(stock) ? stock : [];
 
     document.getElementById('stockTable').innerHTML = stockList.length
-      ? stockList.map(s => `<tr>
+      ? stockList.map(s => `
+        <tr>
           <td>${s.materialName ?? '—'}</td>
           <td class="mono">${fmt(s.totalCollected)}</td>
           <td class="mono">${fmt(s.totalSold)}</td>
           <td class="stock-bold">${fmt(s.currentStock)}</td>
-        </tr>`).join('')
+        </tr>
+      `).join('')
       : '<tr><td colspan="4" class="loading">No data</td></tr>';
 
     const sel = document.getElementById('last5MaterialSelect');
-    sel.innerHTML = '<option value="">Select material...</option>' +
-      stockList
-        .filter(s => s.materialId != null)
-        .map(s => `<option value="${s.materialId}">${s.materialName}</option>`).join('');
+    const materialList = Array.isArray(materials) ? materials : [];
+    sel.innerHTML =
+      '<option value="">Select material...</option>' +
+      materialList
+        .filter(m => m.materialId != null)
+        .map(m => `<option value="${m.materialId}">${m.materialName}</option>`)
+        .join('');
 
   } catch (e) {
     document.getElementById('stockTable').innerHTML =
       `<tr><td colspan="4" class="error-msg">Error: ${e.message}</td></tr>`;
   }
+}
+
+let salesScope = 'my';
+
+function setSalesScope(scope) {
+  salesScope = scope;
+  document.getElementById('scopeMyBtn').classList.toggle('active', scope === 'my');
+  document.getElementById('scopeAllBtn').classList.toggle('active', scope === 'all');
+  loadLast5Sales();
 }
 
 async function loadLast5Sales() {
@@ -539,11 +647,21 @@ async function loadLast5Sales() {
       '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted)">Select a material</td></tr>';
     return;
   }
+
+  const endpoint = salesScope === 'all'
+    ? `/api/cooperative/lastsales/all?materialId=${matId}`
+    : `/api/cooperative/lastsales?materialId=${matId}`;
+
   try {
-    const data = await api(`/api/cooperative/lastsales?materialId=${matId}`);
+    const data = await api(endpoint);
     const list = Array.isArray(data) ? data : [];
+
+    const scopeNote = salesScope === 'all'
+      ? '<tr><td colspan="4" style="padding:8px 24px;font-size:12px;color:var(--text-muted);background:var(--bg)">Anonymous data — across all cooperatives</td></tr>'
+      : '';
+
     document.getElementById('last5Table').innerHTML = list.length
-      ? list.map(s => `<tr>
+      ? scopeNote + list.map(s => `<tr>
           <td class="mono">${fmtDate(s.date)}</td>
           <td class="mono">${s.material ?? '—'}</td>
           <td class="mono">${fmt(s.weight)}</td>
