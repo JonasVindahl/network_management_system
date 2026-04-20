@@ -290,17 +290,6 @@
               </div>
               <button class="btn-create" onclick="updateContribution()">Update Weight</button>
             </div>
-            <div class="form-card" style="margin-bottom:0">
-              <div class="form-title">Add Stock</div>
-              <div id="addStockError"></div>
-              <div id="addStockSuccess"></div>
-              <p style="font-size:13px;color:var(--text-secondary);margin-bottom:8px">Received more of this material? Add it to your stock before updating your contribution.</p>
-              <div class="form-group">
-                <label class="form-label">Amount (kg)</label>
-                <input type="number" class="form-control" id="addStockAmount" step="0.01" min="0.01" placeholder="e.g. 100.00">
-              </div>
-              <button class="btn-create" onclick="addStockForSale()">Add to Stock</button>
-            </div>
             <div id="leaveCard" class="form-card" style="margin-bottom:0">
               <div class="form-title">Leave Sale</div>
               <div id="leaveError"></div>
@@ -626,7 +615,7 @@ async function selectSale(saleId) {
   document.querySelectorAll('.sale-list-item').forEach(el => el.classList.remove('selected'));
   const item = document.getElementById(`sale-item-${saleId}`);
   if (item) item.classList.add('selected');
-  clearMsg('manageError', 'inviteError', 'inviteSuccess', 'materialError', 'materialSuccess', 'priceError', 'priceSuccess', 'deleteError', 'deleteSuccess', 'weightError', 'weightSuccess', 'addStockError', 'addStockSuccess', 'leaveError', 'leaveSuccess');
+  clearMsg('manageError', 'inviteError', 'inviteSuccess', 'materialError', 'materialSuccess', 'priceError', 'priceSuccess', 'deleteError', 'deleteSuccess', 'weightError', 'weightSuccess', 'leaveError', 'leaveSuccess');
   document.getElementById('managePanel').style.display = 'none';
   await loadSaleReport(saleId);
 }
@@ -718,34 +707,6 @@ async function updateContribution() {
     loadSaleReport(selectedSaleId);
   } catch (e) {
     showMsg('weightError', e.message, true);
-  }
-}
-
-async function addStockForSale() {
-  clearMsg('addStockError', 'addStockSuccess');
-  if (selectedSaleMaterialId == null) {
-    showMsg('addStockError', 'No material selected for this sale.', true);
-    return;
-  }
-  const amount = document.getElementById('addStockAmount').value;
-  if (!amount || parseFloat(amount) <= 0) {
-    showMsg('addStockError', 'Enter an amount greater than 0.', true);
-    return;
-  }
-  try {
-    await api('/api/stock', {
-      method: 'POST',
-      body: JSON.stringify({
-        materialId: parseInt(selectedSaleMaterialId),
-        amount: parseFloat(amount)
-      })
-    });
-    showMsg('addStockSuccess', `Added ${fmt(parseFloat(amount))} kg to stock.`, false);
-    document.getElementById('addStockAmount').value = '';
-    await refreshStockCache();
-    updateStockHint();
-  } catch (e) {
-    showMsg('addStockError', e.message, true);
   }
 }
 

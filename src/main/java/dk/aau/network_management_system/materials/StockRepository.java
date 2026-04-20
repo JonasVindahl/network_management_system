@@ -53,32 +53,4 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
         @Param("cooperativeId") Long cooperativeId,
         @Param("materialId")    Long materialId
     );
-
-    @Modifying
-    @Query(value = """
-        INSERT INTO public.stock
-            (cooperative, material, total_collected_kg, total_sold_kg, current_stock_kg)
-        VALUES (:cooperativeId, :materialId, :amount, 0, :amount)
-        """, nativeQuery = true)
-    int insertStockRow(
-        @Param("cooperativeId") Long cooperativeId,
-        @Param("materialId")    Long materialId,
-        @Param("amount")        BigDecimal amount
-    );
-
-    @Modifying
-    @Query(value = """
-        UPDATE public.stock
-        SET
-            total_collected_kg = total_collected_kg + :amount,
-            current_stock_kg   = current_stock_kg   + :amount
-        WHERE
-            cooperative = :cooperativeId
-            AND material = :materialId
-        """, nativeQuery = true)
-    int addToStockDecimal(
-        @Param("cooperativeId") Long cooperativeId,
-        @Param("materialId")    Long materialId,
-        @Param("amount")        BigDecimal amount
-    );
 }
