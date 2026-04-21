@@ -158,14 +158,14 @@
     <div class="nav-item" onclick="navigate('inventory',this)">
       <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>Inventory
     </div>
-    <div class="nav-item" onclick="navigate('sales',this)">
-      <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Sales
-    </div>
     <div class="nav-item" onclick="navigate('noticeboard',this)">
       <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Notice Board
     </div>
     <div class="nav-item" onclick="navigate('multipliers',this)">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>Multipliers
+    </div>
+    <div class="nav-item" onclick="window.location.href='/normal-sale'">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Normal Sales
     </div>
     <div class="nav-item" onclick="window.location.href='/collective-sale'">
       <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Collective Sales
@@ -336,71 +336,6 @@
     </div>
     <!-- END NOTICE BOARD -->
 
-    <!-- SALES -->
-    <div id="page-sales" class="page">
-      <div class="page-header">
-        <h1 class="page-title" style="margin-bottom:0">Sales</h1>
-        <div style="display:flex;gap:10px;align-items:center">
-          <div class="sales-tab-group">
-            <button class="sales-tab active" id="tabActive" onclick="switchSalesTab('active')">Active</button>
-            <button class="sales-tab" id="tabHistory" onclick="switchSalesTab('history')">History</button>
-          </div>
-        </div>
-      </div>
-
-<!-- Active Sales Panel -->
- <div id="salesPanelActive">
-  <div id="salesActiveError"></div>
-  <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
-    <div class="stat-card"><div class="stat-label">Active Sales</div><div class="stat-value" id="saleStatCount">—</div></div>
-    <div class="stat-card"><div class="stat-label">Total Weight (kg)</div><div class="stat-value" id="saleStatKg">—</div></div>
-    <div class="stat-card"><div class="stat-label">Expected Revenue</div><div class="stat-value" id="saleStatRevenue" style="font-size:20px">—</div></div>
-  </div>
-  <div class="table-card">
-    <div class="table-card-header">
-      <span>Pending Regular Sales</span>
-      <button class="btn-sm" onclick="loadSalesActive()">↻ Refresh</button>
-    </div>
-    <table>
-      <thead><tr>
-        <th>Sale ID</th><th>Material</th><th>Weight (kg)</th>
-        <th>Price/kg</th><th>Total Revenue</th><th>Buyer</th>
-        <th>Expected Date</th><th>Status</th>
-      </tr></thead>
-      <tbody id="salesActiveTable"><tr><td colspan="8" class="loading">Loading...</td></tr></tbody>
-    </table>
-  </div>
-</div>
-
-<!-- History Panel -->
-<div id="salesPanelHistory" style="display:none">
-  <div class="page-header" style="margin-bottom:16px">
-    <div class="period-selector">Period:<input type="date" id="salesFrom">to<input type="date" id="salesTo">
-      <button class="period-btn" onclick="loadSalesHistory()">Apply</button>
-    </div>
-  </div>
-  <div id="salesHistoryError"></div>
-  <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
-    <div class="stat-card"><div class="stat-label">Completed Sales</div><div class="stat-value" id="histStatCount">—</div></div>
-    <div class="stat-card"><div class="stat-label">Total Weight Sold (kg)</div><div class="stat-value" id="histStatKg">—</div></div>
-    <div class="stat-card"><div class="stat-label">Total Revenue</div><div class="stat-value" id="histStatRevenue" style="font-size:20px">—</div></div>
-  </div>
-  <div class="table-card">
-    <div class="table-card-header">
-      <span>Sales History</span>
-      <span id="histPeriodLabel" style="font-size:12px;color:var(--text-muted);font-weight:400"></span>
-    </div>
-    <table>
-      <thead><tr>
-        <th>Sale ID</th><th>Material</th><th>Weight (kg)</th>
-        <th>Price/kg</th><th>Total Revenue</th><th>Buyer</th>
-        <th>Sold Date</th><th>Status</th>
-      </tr></thead>
-      <tbody id="salesHistoryTable"><tr><td colspan="8" class="loading">Loading...</td></tr></tbody>
-    </table>
-  </div>
-</div>
-</div>
 
 
 
