@@ -311,33 +311,6 @@
     </div>
     <!-- END INVENTORY -->
 
-    <!-- SALES -->
-    <div id="page-sales" class="page">
-      <h1 class="page-title">Sales</h1>
-
-      <div style="display:flex;gap:8px;margin-bottom:20px">
-        <button class="quick-btn active" id="salesTypeNormal" onclick="setSalesType('normal')">Normal Sales</button>
-        <button class="quick-btn" id="salesTypeCollective" onclick="setSalesType('collective')">Collective Sales</button>
-      </div>
-
-      <div class="table-card" style="margin-bottom:20px">
-        <div class="table-card-header">Active Sales</div>
-        <table>
-          <thead><tr><th>Material</th><th>Weight (kg)</th><th>Price/kg</th><th>Buyer</th><th>Date Sold</th><th>Status</th></tr></thead>
-          <tbody id="activeSalesTable"><tr><td colspan="6" class="loading">Loading...</td></tr></tbody>
-        </table>
-      </div>
-
-      <div class="table-card">
-        <div class="table-card-header">History</div>
-        <table>
-          <thead><tr><th>Material</th><th>Weight (kg)</th><th>Price/kg</th><th>Buyer</th><th>Expected Date</th><th>Status</th></tr></thead>
-          <tbody id="historySalesTable"><tr><td colspan="6" class="loading">Loading...</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-    <!-- END SALES -->
-
     <!-- NOTICE BOARD -->
     <div id="page-noticeboard" class="page">
       <h1 class="page-title">Notice Board</h1>
@@ -366,9 +339,10 @@
     </div>
     <!-- END NOTICE BOARD -->
 
+    <!-- SALES -->
     <div id="page-sales" class="page">
-      <div class ="page-header">
-        <h1 class = "page-title" style="margin-bottom:0">Sales</h1>
+      <div class="page-header">
+        <h1 class="page-title" style="margin-bottom:0">Sales</h1>
         <div style="display:flex;gap:10px;align-items:center">
           <div class="sales-tab-group">
             <button class="sales-tab active" id="tabActive" onclick="switchSalesTab('active')">Active</button>
@@ -376,7 +350,6 @@
           </div>
         </div>
       </div>
-    </div>
 
 <!-- Active Sales Panel -->
  <div id="salesPanelActive">
