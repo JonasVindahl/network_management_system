@@ -1,4 +1,4 @@
-package dk.aau.network_management_system.Collective_Sale_Reports;
+package dk.aau.network_management_system.Sale_Reports;
 
 import java.util.List;
 
@@ -13,8 +13,6 @@ import dk.aau.network_management_system.Cooperative_Analytics.CooperativeEntity;
 @Repository
 public interface ReportsRepository extends JpaRepository<CooperativeEntity, Long> {
 
-
-    // Salg info + cooperatives bidragelse
     @Query(value = """
         SELECT 
             cs.collective_sale_id,
@@ -43,7 +41,7 @@ public interface ReportsRepository extends JpaRepository<CooperativeEntity, Long
     List<Object[]> findCollectiveSaleReport(@Param("saleId") Long saleId);
 
 
-    //tjekker om coop er i collectiv salg (Bruges til permissions)
+    //tjekker om coop er i collectiv salg
     @Query(value = """
         SELECT COUNT(*) > 0
         FROM collective_sale_contribution
@@ -56,7 +54,7 @@ public interface ReportsRepository extends JpaRepository<CooperativeEntity, Long
     );
 
 
-    // Tjekker om salget eksistere
+    //tjekker om salget eksistere
     @Query(value = """
         SELECT COUNT(*) > 0
         FROM collective_sale

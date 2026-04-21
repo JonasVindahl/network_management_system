@@ -2,6 +2,7 @@ package dk.aau.network_management_system.Cooperative_Analytics;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -29,37 +30,33 @@ public class AnalyticsController {
         this.authenticatedUser = authenticatedUser;
     }
 
-    //opdateret for presmission
-    @GetMapping("/performance")
-    public ResponseEntity<List<CooperativePerformanceDTO>> getPerformance(
-            @RequestParam(required = false) Long cooperativeId) {
-        
-        Long targetCooperativeId;
+@GetMapping("/performance")
+public ResponseEntity<List<CooperativePerformanceDTO>> getPerformance(
+        @RequestParam(required = false) Long cooperativeId,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
 
-        if (authenticatedUser.isWorker()) {
-        throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
-                    "Workers cannot access cooperative performance data");   
-                             
-        } else if (authenticatedUser.isManager()) {
-            // Manager kan se alle workers i egen cooperative
-            targetCooperativeId = authenticatedUser.getCooperativeId();
-            
-        } else {
-        // Admin SKAL specificere cooperativeId
+    Long targetCooperativeId;
+
+    if (authenticatedUser.isWorker()) {
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                "Workers cannot access cooperative performance data");
+
+    } else if (authenticatedUser.isManager()) {
+        targetCooperativeId = authenticatedUser.getCooperativeId();
+
+    } else {
         if (cooperativeId == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                 "Admin must specify cooperativeId parameter");
         }
         targetCooperativeId = cooperativeId;
     }
 
-        List<CooperativePerformanceDTO> result;
+    List<CooperativePerformanceDTO> result = service.getCooperativePerformance(targetCooperativeId, startDate, endDate);
 
-        result = service.getCooperativePerformance(targetCooperativeId);
-        
-        return ResponseEntity.ok(result);
-    }
-
+    return ResponseEntity.ok(result);
+}
 
      //GET - All worker productivity in cooperative
     @GetMapping("/productivity")
@@ -131,6 +128,7 @@ public class AnalyticsController {
     @GetMapping("/revenue")
         public ResponseEntity<List<RevenueDTO>> getRevenue(
                 @RequestParam(required = false) Long cooperativeId,
+                @RequestParam(required = false) Long materialId,
                 @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
                 @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
     
@@ -164,11 +162,32 @@ public class AnalyticsController {
 
         List<RevenueDTO> result;
 
-        result = service.getRevenue(targetCooperativeId, startDate, endDate);
+        result = service.getRevenue(targetCooperativeId, materialId, startDate, endDate);
         
         return ResponseEntity.ok(result);
     }
 
+
+  @GetMapping("/cooperative/materials")
+public ResponseEntity<List<Map<String, Object>>> getAllMaterials() {
+    if (authenticatedUser.isWorker()) {
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Workers cannot access this");
+    }
+    return ResponseEntity.ok(service.getAllMaterials());
+}
+
+    @GetMapping("/cooperative/lastsales/all")
+    public ResponseEntity<List<Last5SalesDTO>> findLastSalesAllCooperatives(
+            @RequestParam Long materialId) {
+
+        if (authenticatedUser.isWorker()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Workers cannot access sales data");
+        }
+
+        List<Last5SalesDTO> result = service.findLastSalesAllCooperatives(materialId);
+        return ResponseEntity.ok(result);
+    }
 
     @GetMapping("/cooperative/lastsales")
     public ResponseEntity<List<Last5SalesDTO>> findLastSalesForCooperative(
@@ -197,6 +216,7 @@ public class AnalyticsController {
         return ResponseEntity.ok(result);
     }
 
+    
 
     @GetMapping("/stock")
     public ResponseEntity<List<StockByMaterialDTO>> getStockByMaterial(
@@ -228,7 +248,8 @@ public class AnalyticsController {
             
             return ResponseEntity.ok(result);
     }
-
+    
+    
 
 }
 

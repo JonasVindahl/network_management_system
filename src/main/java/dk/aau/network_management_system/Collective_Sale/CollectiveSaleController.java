@@ -23,6 +23,12 @@ public class CollectiveSaleController {
         this.permissionHelper = permissionHelper;
     }
 
+    @GetMapping
+    public ResponseEntity<List<ActiveCollectiveSaleDTO>> getActiveSales() {
+        permissionHelper.requireManagerOrAdmin();
+        return ResponseEntity.ok(service.getActiveSales());
+    }
+
     @GetMapping("/invitations")
     public ResponseEntity<List<CollectiveSaleInvitationDTO>> getPendingInvitations() {
         permissionHelper.requireManagerOrAdmin();
