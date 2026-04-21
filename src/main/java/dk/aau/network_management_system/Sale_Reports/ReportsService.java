@@ -91,17 +91,19 @@ private CollectiveSaleReportDTO mapToReportDTO(List<Object[]> rawData) {
             String coopName = (String) row[11];
             Double contributedWeight = row[12] != null ? ((Number) row[12]).doubleValue() : 0.0;
             Double revenueShare = row[13] != null ? ((Number) row[13]).doubleValue() : null;
+            String status = row[15] != null ? (String) row[15] : null;
 
             if (revenueShare == null) {
                 revenueShare = contributedWeight * pricePerKg;
             }
-            
+
             ContributionDetailDTO contribution = new ContributionDetailDTO(
-                coopId, 
-                coopName, 
-                contributedWeight, 
+                coopId,
+                coopName,
+                contributedWeight,
                 totalWeight,
-                revenueShare
+                revenueShare,
+                status
             );
             
             contributions.add(contribution);
