@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="da">
+<head>
+<meta charset="UTF-8" />
+<title>Normal Sale Report</title>
+<style>
+    @page {
+        size: A4;
+        margin: 18mm 16mm 20mm 16mm;
+        @bottom-right {
+            content: "Page " counter(page) " of " counter(pages);
+            font-size: 9pt;
+            color: #666;
+        }
+    }
+    * { box-sizing: border-box; }
+    body {
+        font-family: "Helvetica", "Arial", sans-serif;
+        font-size: 10pt;
+        color: #1d1d1f;
+        margin: 0;
+    }
+    .header {
+        border-bottom: 2px solid #0d6efd;
+        padding-bottom: 10px;
+        margin-bottom: 18px;
+    }
+    .header h1 {
+        margin: 0 0 4px 0;
+        font-size: 20pt;
+        color: #0d6efd;
+    }
+    .header .meta {
+        font-size: 9pt;
+        color: #555;
+    }
+    .header .meta strong { color: #1d1d1f; }
+    h2 {
+        font-size: 12pt;
+        color: #0d6efd;
+        margin: 18px 0 8px 0;
+        border-bottom: 1px solid #d0d0d0;
+        padding-bottom: 3px;
+    }
+    table.kv {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 6px;
+    }
+    table.kv td {
+        padding: 4px 6px;
+        vertical-align: top;
+    }
+    table.kv td.label {
+        width: 40%;
+        color: #555;
+        font-weight: bold;
+    }
+    .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 9pt;
+        font-weight: bold;
+    }
+    .badge-SOLD      { background: #d1e7dd; color: #0f5132; }
+    .badge-CANCELLED { background: #f8d7da; color: #721c24; }
+    .badge-ACTIVE    { background: #cfe2ff; color: #084298; }
+    .totals {
+        margin-top: 10px;
+        text-align: right;
+        font-size: 11pt;
+    }
+    .totals strong { color: #0d6efd; }
+    .footer {
+        margin-top: 22px;
+        font-size: 8.5pt;
+        color: #777;
+        border-top: 1px solid #d0d0d0;
+        padding-top: 6px;
+    }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Normal Sale Report</h1>
+    <div class="meta">
+        <div>
+            <strong>Cooperative:</strong>
+            <span th:text="${report.cooperativeName}">Cooperative</span>
+            (ID: <span th:text="${report.cooperativeId}">0</span>)
+        </div>
+        <div>
+            <strong>Generated:</strong>
+            <span th:text="${#temporals.format(generatedAt, 'dd-MM-yyyy HH:mm', 'Europe/Copenhagen')}">01-01-2026 12:00</span>
+        </div>
+        <div>
+            <strong>Sale ID:</strong> <span th:text="${report.saleId}">0</span>
+            &nbsp;|&nbsp;
+            <strong>Status:</strong>
+            <span class="badge"
+                  th:classappend="'badge-' + ${report.status}"
+                  th:text="${report.status}">ACTIVE</span>
+        </div>
+    </div>
+</div>
+
+<h2>Overview</h2>
+<table class="kv">
+    <tr>
+        <td class="label">Material</td>
+        <td>
+            <span th:text="${report.materialName}">Material</span>
+            (ID: <span th:text="${report.materialId}">0</span>)
+        </td>
+    </tr>
+    <tr>
+        <td class="label">Buyer</td>
+        <td>
+            <span th:text="${report.buyerName}">Buyer</span>
+            (ID: <span th:text="${report.buyerId}">0</span>)
+        </td>
+    </tr>
+    <tr>
+        <td class="label">Responsible Worker</td>
+        <td>
+            <span th:text="${report.responsibleWorkerName} ?: '—'">—</span>
+            <span th:if="${report.responsibleWorkerId != null}"
+                  style="color:#888;font-size:9pt;">
+                (ID: <span th:text="${report.responsibleWorkerId}">0</span>)
+            </span>
+        </td>
+    </tr>
+    <tr>
+        <td class="label">Cooperative</td>
+        <td>
+            <span th:text="${report.cooperativeName}">Cooperative</span>
+            (ID: <span th:text="${report.cooperativeId}">0</span>)
+        </td>
+    </tr>
+</table>
+
+<h2>Timeline</h2>
+<table class="kv">
+    <tr>
+        <td class="label">Created</td>
+        <td th:text="${report.createdAt != null} ? ${#temporals.format(report.createdAt, 'dd-MM-yyyy HH:mm', 'Europe/Copenhagen')} : '—'">—</td>
+    </tr>
+    <tr>
+        <td class="label">Expected Sale Date</td>
+        <td th:text="${report.expectedSaleDate != null} ? ${#temporals.format(report.expectedSaleDate, 'dd-MM-yyyy', 'Europe/Copenhagen')} : '—'">—</td>
+    </tr>
+    <tr>
+        <td class="label">Sold At</td>
+        <td th:text="${report.soldAt != null} ? ${#temporals.format(report.soldAt, 'dd-MM-yyyy HH:mm', 'Europe/Copenhagen')} : '—'">—</td>
+    </tr>
+    <tr>
+        <td class="label">Cancelled At</td>
+        <td th:text="${report.cancelledAt != null} ? ${#temporals.format(report.cancelledAt, 'dd-MM-yyyy HH:mm', 'Europe/Copenhagen')} : '—'">—</td>
+    </tr>
+</table>
+
+<h2>Financials</h2>
+<table class="kv">
+    <tr>
+        <td class="label">Weight</td>
+        <td>
+            <span th:text="${#numbers.formatDecimal(report.weight, 1, 'POINT', 2, 'COMMA')}">0,00</span> kg
+        </td>
+    </tr>
+    <tr>
+        <td class="label">Price per kg</td>
+        <td>
+            <span th:text="${#numbers.formatDecimal(report.pricePerKg, 1, 'POINT', 2, 'COMMA')}">0,00</span> kr
+        </td>
+    </tr>
+    <tr>
+        <td class="label">Total Revenue</td>
+        <td>
+            <strong>
+                <span th:text="${#numbers.formatDecimal(report.totalRevenue, 1, 'POINT', 2, 'COMMA')}">0,00</span> kr
+            </strong>
+        </td>
+    </tr>
+</table>
+
+<div class="totals">
+    Total Revenue:
+    <strong>
+        <span th:text="${#numbers.formatDecimal(report.totalRevenue, 1, 'POINT', 2, 'COMMA')}">0,00</span> kr
+    </strong>
+</div>
+
+<div class="footer">
+    Network Management System — Normal Sale Report — Sale ID <span th:text="${report.saleId}">0</span>
+</div>
+
+</body>
+</html>

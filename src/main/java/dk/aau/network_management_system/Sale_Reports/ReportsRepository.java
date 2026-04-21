@@ -30,7 +30,8 @@ public interface ReportsRepository extends JpaRepository<CooperativeEntity, Long
             csc.contributed_weight,
             csc.revenue_share,
             cs.creator_cooperative_id,
-            csc.status
+            csc.status,
+            cs.cancelled_at
         FROM collective_sale cs
         JOIN materials m ON cs.material_id = m.material_id
         JOIN buyers b ON cs.buyer_id = b.buyer_id
