@@ -76,10 +76,26 @@ public class CollectiveSaleController {
         return ResponseEntity.ok().build();
     }
 
+    @PutMapping("/{saleId}/price")
+    public ResponseEntity<Void> updateSalePrice(
+            @PathVariable Long saleId,
+            @RequestBody @Valid UpdateSalePriceDTO dto) {
+        permissionHelper.requireManagerOrAdmin();
+        service.updateSalePrice(saleId, dto);
+        return ResponseEntity.ok().build();
+    }
+
     @DeleteMapping("/{saleId}/leave")
     public ResponseEntity<Void> leaveCollectiveSale(@PathVariable Long saleId) {
         permissionHelper.requireManagerOrAdmin();
         service.leaveCollectiveSale(saleId);
         return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{saleId}")
+    public ResponseEntity<Void> cancelCollectiveSale(@PathVariable Long saleId) {
+        permissionHelper.requireManagerOrAdmin();
+        service.cancelCollectiveSale(saleId);
+        return ResponseEntity.noContent().build();
     }
 }

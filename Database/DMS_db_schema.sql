@@ -96,6 +96,7 @@ CREATE TABLE IF NOT EXISTS public.collective_sale
     collective_sale_id       bigserial NOT NULL,
     created_at               timestamp DEFAULT now(),
     sold_at                  timestamp,
+    cancelled_at             timestamp,
     buyer_id                 bigint NOT NULL,
     material_id              bigint NOT NULL,
     total_weight             numeric(10, 2),
@@ -199,7 +200,8 @@ CREATE TABLE IF NOT EXISTS public.stock
     current_stock_kg   numeric(45, 2) NOT NULL,
     PRIMARY KEY (stock_id),
     FOREIGN KEY (cooperative) REFERENCES public.cooperative(cooperative_id),
-    FOREIGN KEY (material) REFERENCES public.materials(material_id)
+    FOREIGN KEY (material) REFERENCES public.materials(material_id),
+    UNIQUE (cooperative, material)
 );
 
 -- 14. Depends on: workers, materials, cooperative
