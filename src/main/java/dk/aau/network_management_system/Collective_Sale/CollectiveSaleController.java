@@ -111,6 +111,8 @@ public class CollectiveSaleController {
         } else {
             return ResponseEntity.ok(service.getMyCollectiveSalesHistory(cooperativeId));
         }
+    }
+    
     @DeleteMapping("/{saleId}")
     public ResponseEntity<Void> cancelCollectiveSale(@PathVariable Long saleId) {
         permissionHelper.requireManagerOrAdmin();
