@@ -634,7 +634,7 @@ async function loadSaleReport(saleId) {
   try {
     await loadDropdowns();
     await refreshStockCache();
-    const data = await api(`/api/reports/collective-sale/${saleId}`);
+    const data = await api(`//api/reports/sales/collective/${saleId}`);
     const myCoopId = getMyCooperativeId();
     const isOwner  = myCoopId !== null && data.creatorCooperativeId != null && Number(myCoopId) === Number(data.creatorCooperativeId);
     selectedSaleMaterialId = data.materialId ?? null;
