@@ -24,4 +24,9 @@ public class WebViewController {
     public String frontend() {
         return "frontend";
     }
+
+    @GetMapping("/collective-sale")
+    public String collectiveSale() {
+        return "collective-sale";
+    }
 }

@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Collective Sales - DMS</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f4f6f8; --surface: #ffffff; --accent: #1a5f7a; --accent-light: #e8f4f8;
+    --text-primary: #1a2332; --text-secondary: #6b7a8d; --text-muted: #9aa5b4;
+    --border: #e8edf2; --border-light: #f0f4f7;
+    --radius: 10px; --radius-sm: 6px;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text-primary); display: flex; min-height: 100vh; font-size: 14px; }
+  .sidebar { width: 200px; min-height: 100vh; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; }
+  .sidebar-logo { padding: 22px 20px 18px; font-size: 17px; font-weight: 600; color: var(--accent); letter-spacing: -0.3px; border-bottom: 1px solid var(--border-light); }
+  .sidebar-nav { padding: 12px 10px; flex: 1; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: var(--radius-sm); cursor: pointer; color: var(--text-secondary); font-size: 13.5px; font-weight: 500; transition: all 0.15s; margin-bottom: 2px; user-select: none; }
+  .nav-item:hover { background: var(--bg); color: var(--text-primary); }
+  .nav-item.active { background: var(--accent); color: white; }
+  .nav-item svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+  .main { margin-left: 200px; flex: 1; display: flex; flex-direction: column; }
+  .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 32px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+  .topbar-title { font-size: 14px; font-weight: 500; color: var(--text-secondary); }
+  .logout-btn { display: flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: 13.5px; font-weight: 500; cursor: pointer; padding: 6px 10px; border-radius: var(--radius-sm); border: none; background: none; }
+  .logout-btn:hover { background: var(--bg); }
+  .logout-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .content { padding: 32px; flex: 1; }
+  .page { display: none; }
+  .page.active { display: block; animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  .page-title { font-size: 24px; font-weight: 600; margin-bottom: 24px; letter-spacing: -0.4px; }
+  .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 20px; }
+  .table-card-header { padding: 16px 24px; border-bottom: 1px solid var(--border-light); font-weight: 600; font-size: 15px; display: flex; align-items: center; justify-content: space-between; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { text-align: left; padding: 11px 24px; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; background: var(--bg); border-bottom: 1px solid var(--border); }
+  tbody td { padding: 13px 24px; font-size: 13.5px; border-bottom: 1px solid var(--border-light); }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--accent-light); }
+  tbody tr.selected td { background: var(--accent-light); }
+  .mono { font-family: 'DM Mono', monospace; font-size: 13px; }
+  .btn-sm { background: var(--accent); color: white; border: none; padding: 6px 14px; border-radius: var(--radius-sm); font-size: 12.5px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .btn-sm:hover { background: #154d64; }
+  .btn-danger { background: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .btn-danger:hover { background: #bb2d3b; }
+  .form-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 20px; }
+  .form-title { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
+  .form-group { margin-bottom: 14px; }
+  .form-label { display: block; font-size: 12.5px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.3px; }
+  .form-control { width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 9px 12px; font-size: 13.5px; font-family: 'DM Sans', sans-serif; color: var(--text-primary); background: var(--surface); outline: none; }
+  .form-control:focus { border-color: var(--accent); }
+  .btn-create { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .btn-create:hover { background: #154d64; }
+  .loading { text-align: center; padding: 32px; color: var(--text-muted); font-size: 13px; }
+  .error-msg { background: #fff5f5; border: 1px solid #f5c6cb; border-radius: var(--radius-sm); padding: 12px 16px; color: #721c24; font-size: 13px; margin-bottom: 14px; }
+  .success-msg { background: #f0fff4; border: 1px solid #b2dfdb; border-radius: var(--radius-sm); padding: 12px 16px; color: #1b5e20; font-size: 13px; margin-bottom: 14px; }
+  .badge { display: inline-block; font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 4px; font-family: 'DM Mono', monospace; }
+  .badge-accepted { background: #d4edda; color: #1b5e20; }
+  .badge-invited  { background: #fff3cd; color: #856404; }
+  .badge-creator  { background: #e8f4f8; color: var(--accent); }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal-box { background: white; border-radius: var(--radius); padding: 28px; width: 440px; }
+  .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .btn-cancel { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .detail-row { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--border-light); font-size: 13.5px; }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-label { color: var(--text-secondary); font-weight: 500; }
+  .detail-value { font-family: 'DM Mono', monospace; font-size: 13px; }
+  /* Manage layout */
+  .manage-layout { display: grid; grid-template-columns: 340px 1fr; gap: 24px; align-items: start; }
+  .sale-list-item { padding: 14px 16px; border-bottom: 1px solid var(--border-light); cursor: pointer; transition: background 0.1s; }
+  .sale-list-item:last-child { border-bottom: none; }
+  .sale-list-item:hover { background: var(--bg); }
+  .sale-list-item.selected { background: var(--accent-light); border-left: 3px solid var(--accent); }
+  .sale-list-item .sale-name { font-weight: 600; font-size: 13.5px; margin-bottom: 3px; }
+  .sale-list-item .sale-meta { font-size: 12px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
+  .actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .section-divider { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; margin: 20px 0 12px; }
+  /* Create invite section */
+  #createInviteSection { display: none; }
+  .invited-list { margin-top: 12px; }
+  .invited-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-light); font-size: 13px; }
+  .invited-item:last-child { border-bottom: none; }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">DMS Manager</div>
+  <nav class="sidebar-nav">
+    <div class="nav-item" onclick="window.location.href='/frontend'">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard
+    </div>
+    <div class="nav-item active" onclick="navigate('active',this)">
+      <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Active Sales
+    </div>
+    <div class="nav-item" onclick="navigate('invitations',this)">
+      <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.18 6.18l1.37-1.37a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Invitations <span id="invBadge" style="display:none;background:#dc3545;color:white;border-radius:10px;padding:1px 6px;font-size:11px;margin-left:4px"></span>
+    </div>
+    <div class="nav-item" onclick="navigate('create',this)">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Create Sale
+    </div>
+    <div class="nav-item" onclick="navigate('manage',this)">
+      <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Manage Sale
+    </div>
+  </nav>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <span class="topbar-title">Collective Sales</span>
+    <button class="logout-btn" onclick="doLogout()">
+      <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Logout
+    </button>
+  </div>
+
+  <div class="content">
+
+    <!-- ── ACTIVE SALES ── -->
+    <div id="page-active" class="page active">
+      <div class="page-header">
+        <h1 class="page-title" style="margin-bottom:0">Active Sales</h1>
+        <button class="btn-sm" onclick="loadActiveSales()">Refresh</button>
+      </div>
+      <div id="activeError"></div>
+      <div class="table-card">
+        <table>
+          <thead>
+            <tr><th>ID</th><th>Material</th><th>Buyer</th><th>Price/kg</th><th>Expected Date</th><th>Creator</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody id="activeTable"><tr><td colspan="8" class="loading">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── INVITATIONS ── -->
+    <div id="page-invitations" class="page">
+      <div class="page-header">
+        <h1 class="page-title" style="margin-bottom:0">Pending Invitations</h1>
+        <button class="btn-sm" onclick="loadInvitations()">Refresh</button>
+      </div>
+      <div id="invError"></div>
+      <div class="table-card">
+        <table>
+          <thead>
+            <tr><th>ID</th><th>Material</th><th>Buyer</th><th>Price/kg</th><th>Expected Date</th><th>Creator</th><th></th></tr>
+          </thead>
+          <tbody id="invTable"><tr><td colspan="7" class="loading">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── CREATE SALE ── -->
+    <div id="page-create" class="page">
+      <h1 class="page-title">Create Collective Sale</h1>
+      <div style="max-width:520px">
+        <div class="form-card">
+          <div id="createError"></div>
+          <div id="createSuccess"></div>
+          <div class="form-group">
+            <label class="form-label">Material</label>
+            <select class="form-control" id="createMaterial"><option value="">Loading...</option></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Buyer</label>
+            <select class="form-control" id="createBuyer"><option value="">Loading...</option></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Price per kg</label>
+            <input type="number" class="form-control" id="createPrice" step="0.01" min="0.01" placeholder="e.g. 12.50">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Expected Sale Date</label>
+            <input type="datetime-local" class="form-control" id="createDate">
+          </div>
+          <button class="btn-create" onclick="createSale()">Create Sale</button>
+        </div>
+
+        <!-- Invite section — shown after creation -->
+        <div id="createInviteSection" class="form-card">
+          <div class="form-title">Invite Cooperatives to Sale <span id="createdSaleIdLabel"></span></div>
+          <div id="createInviteError"></div>
+          <div id="createInviteSuccess"></div>
+          <div style="display:flex;gap:10px;align-items:flex-end">
+            <div class="form-group" style="flex:1;margin-bottom:0">
+              <label class="form-label">Cooperative</label>
+              <select class="form-control" id="createInviteCoop"><option value="">— select —</option></select>
+            </div>
+            <button class="btn-create" style="white-space:nowrap" onclick="sendCreateInvite()">Send Invite</button>
+          </div>
+          <div class="invited-list" id="createInvitedList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MANAGE SALE ── -->
+    <div id="page-manage" class="page">
+      <div class="page-header">
+        <h1 class="page-title" style="margin-bottom:0">Manage Sale</h1>
+        <button class="btn-sm" onclick="loadManageSaleList()">Refresh</button>
+      </div>
+      <div id="manageError"></div>
+
+      <div class="manage-layout">
+
+        <!-- Left: sale list -->
+        <div class="table-card" style="margin-bottom:0">
+          <div class="table-card-header" style="font-size:13px">Your Sales</div>
+          <div id="manageSaleList"><div class="loading">Loading...</div></div>
+        </div>
+
+        <!-- Right: management panel -->
+        <div id="managePanel" style="display:none">
+
+          <!-- Details + contributions -->
+          <div class="table-card">
+            <div class="table-card-header">
+              <span id="managePanelTitle">Sale Details</span>
+            </div>
+            <div style="padding:16px 24px" id="saleDetails"></div>
+          </div>
+          <div class="table-card">
+            <div class="table-card-header">Contributions</div>
+            <table>
+              <thead><tr><th>Cooperative</th><th>Weight (kg)</th><th>Revenue</th><th>Status</th></tr></thead>
+              <tbody id="contributionsTable"></tbody>
+            </table>
+          </div>
+
+          <!-- Owner-only actions -->
+          <div id="ownerActions">
+            <div class="section-divider">Owner Actions</div>
+            <div class="actions-grid">
+              <div class="form-card" style="margin-bottom:0">
+                <div class="form-title">Invite Cooperative</div>
+                <div id="inviteError"></div>
+                <div id="inviteSuccess"></div>
+                <div class="form-group">
+                  <label class="form-label">Cooperative</label>
+                  <select class="form-control" id="inviteCooperative"><option value="">Loading...</option></select>
+                </div>
+                <button class="btn-create" onclick="inviteCooperative()">Send Invitation</button>
+              </div>
+              <div class="form-card" style="margin-bottom:0">
+                <div class="form-title">Change Material</div>
+                <div id="materialError"></div>
+                <div id="materialSuccess"></div>
+                <div class="form-group">
+                  <label class="form-label">Material</label>
+                  <select class="form-control" id="manageMaterial"><option value="">Loading...</option></select>
+                </div>
+                <button class="btn-create" onclick="updateMaterial()">Change Material</button>
+              </div>
+              <div class="form-card" style="margin-bottom:0">
+                <div class="form-title">Change Price per kg</div>
+                <div id="priceError"></div>
+                <div id="priceSuccess"></div>
+                <div class="form-group">
+                  <label class="form-label">Price per kg (kr)</label>
+                  <input type="number" class="form-control" id="managePrice" step="0.01" min="0.01" placeholder="e.g. 12.50">
+                </div>
+                <button class="btn-create" onclick="updatePrice()">Change Price</button>
+              </div>
+              <div class="form-card" style="margin-bottom:0">
+                <div class="form-title">Delete Sale</div>
+                <div id="deleteError"></div>
+                <div id="deleteSuccess"></div>
+                <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px">As the creator, you cannot leave the sale. Deleting cancels the sale for all participants. The record is kept in the database.</p>
+                <button class="btn-danger" onclick="deleteSale()">Delete This Sale</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Participant actions -->
+          <div class="section-divider">My Actions</div>
+          <div class="actions-grid">
+            <div class="form-card" style="margin-bottom:0">
+              <div class="form-title">Update My Contribution</div>
+              <div id="weightError"></div>
+              <div id="weightSuccess"></div>
+              <div class="form-group">
+                <label class="form-label">Weight (kg) <span id="stockHint" style="font-weight:400;color:var(--text-secondary);font-size:12px"></span></label>
+                <input type="number" class="form-control" id="contributionWeight" step="0.01" min="0" placeholder="e.g. 500.00">
+              </div>
+              <button class="btn-create" onclick="updateContribution()">Update Weight</button>
+            </div>
+            <div id="leaveCard" class="form-card" style="margin-bottom:0">
+              <div class="form-title">Leave Sale</div>
+              <div id="leaveError"></div>
+              <div id="leaveSuccess"></div>
+              <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px">The creator cooperative cannot leave. This action cannot be undone.</p>
+              <button class="btn-danger" onclick="leaveSale()">Leave This Sale</button>
+            </div>
+          </div>
+
+        </div><!-- /managePanel -->
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<div id="confirmModal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-title" id="confirmTitle">Are you sure?</div>
+    <p id="confirmText" style="font-size:13.5px;color:var(--text-secondary)"></p>
+    <div class="modal-actions">
+      <button class="btn-create" id="confirmOk">Confirm</button>
+      <button class="btn-cancel" onclick="closeConfirm()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Auth ───────────────────────────────────────────────────────────────────
+
+function getToken() {
+  const m = document.cookie.match(/(?:^|;\s*)jwt=([^;]+)/);
+  return m ? m[1] : null;
+}
+
+function getMyCooperativeId() {
+  const t = getToken();
+  if (!t) return null;
+  try { return JSON.parse(atob(t.split('.')[1])).cooperativeId ?? null; }
+  catch { return null; }
+}
+
+async function api(path, opts = {}) {
+  const token = getToken();
+  const res = await fetch(path, {
+    ...opts,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': 'Bearer ' + token } : {}),
+      ...(opts.headers || {})
+    }
+  });
+  if (res.status === 401) { window.location.href = '/login'; throw new Error('Unauthorized'); }
+  const text = await res.text();
+  if (!res.ok) throw new Error(text || 'HTTP ' + res.status);
+  return text ? JSON.parse(text) : null;
+}
+
+function doLogout() {
+  document.cookie = 'jwt=; path=/; max-age=0';
+  window.location.href = '/login';
+}
+
+// ── Navigation ─────────────────────────────────────────────────────────────
+
+const loaders = {
+  active:      loadActiveSales,
+  invitations: loadInvitations,
+  create:      loadDropdowns,
+  manage:      () => { loadDropdowns(); loadManageSaleList(); }
+};
+
+function navigate(page, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  el.classList.add('active');
+  if (loaders[page]) loaders[page]();
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+function fmtDate(s) {
+  if (!s) return '—';
+  return new Date(s).toLocaleDateString('da-DK', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function fmt(n, dec = 2) {
+  if (n == null) return '—';
+  return Number(n).toLocaleString('da-DK', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+
+function showMsg(id, text, isError) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = `<div class="${isError ? 'error-msg' : 'success-msg'}">${text}</div>`;
+}
+
+function clearMsg(...ids) {
+  ids.forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
+}
+
+function confirm2(title, text, onOk) {
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmText').textContent = text;
+  document.getElementById('confirmOk').onclick = () => { closeConfirm(); onOk(); };
+  document.getElementById('confirmModal').classList.add('open');
+}
+
+function closeConfirm() {
+  document.getElementById('confirmModal').classList.remove('open');
+}
+
+// ── Dropdowns ──────────────────────────────────────────────────────────────
+
+let dropsLoaded = false;
+let stockByMaterial = {};
+let allCooperatives = [];
+let createInvitedIds = new Set();
+
+function buildCoopOptions(excludeIds) {
+  const myCoopId = getMyCooperativeId();
+  const ex = new Set((excludeIds ?? []).map(Number));
+  if (myCoopId != null) ex.add(Number(myCoopId));
+  const filtered = allCooperatives.filter(c => !ex.has(Number(c.cooperativeId)));
+  return '<option value="">— select —</option>' + filtered.map(c => `<option value="${c.cooperativeId}">${c.cooperativeName}</option>`).join('');
+}
+
+async function loadDropdowns() {
+  try {
+    const [stock, buyers, coops] = await Promise.all([
+      api('/api/stock'),
+      api('/api/buyers'),
+      api('/api/cooperatives')
+    ]);
+    const materials = Array.isArray(stock)  ? stock  : [];
+    const buyerList = Array.isArray(buyers) ? buyers : [];
+    allCooperatives = Array.isArray(coops)  ? coops  : [];
+
+    // Always refresh the stock map (it can change on add/reserve)
+    stockByMaterial = {};
+    materials.forEach(m => { stockByMaterial[m.materialId] = m.currentStockKg ?? m.currentStock ?? 0; });
+
+    if (dropsLoaded) return;
+
+    const matOpts  = '<option value="">— select —</option>' + materials.map(m => `<option value="${m.materialId}">${m.materialName}</option>`).join('');
+
+    document.getElementById('createMaterial').innerHTML    = matOpts;
+    document.getElementById('manageMaterial').innerHTML    = matOpts;
+    document.getElementById('createBuyer').innerHTML       = '<option value="">— select —</option>' + buyerList.map(b => `<option value="${b.buyerId}">${b.buyerName}</option>`).join('');
+    document.getElementById('inviteCooperative').innerHTML = buildCoopOptions();
+    document.getElementById('createInviteCoop').innerHTML  = buildCoopOptions();
+
+    dropsLoaded = true;
+  } catch (e) { console.error('Dropdowns failed:', e); }
+}
+
+async function refreshStockCache() {
+  try {
+    const stock = await api('/api/stock');
+    const materials = Array.isArray(stock) ? stock : [];
+    stockByMaterial = {};
+    materials.forEach(m => { stockByMaterial[m.materialId] = m.currentStockKg ?? m.currentStock ?? 0; });
+  } catch (e) { console.error('Stock refresh failed:', e); }
+}
+
+// ── Active Sales ───────────────────────────────────────────────────────────
+
+async function loadActiveSales() {
+  document.getElementById('activeError').innerHTML = '';
+  document.getElementById('activeTable').innerHTML = '<tr><td colspan="8" class="loading">Loading...</td></tr>';
+  try {
+    const list = (await api('/api/collective-sale')) ?? [];
+    document.getElementById('activeTable').innerHTML = list.length
+      ? list.map(s => {
+          const bc = s.myStatus === 'ACCEPTED' ? 'badge-accepted' : s.myStatus === 'INVITED' ? 'badge-invited' : 'badge-creator';
+          return `<tr>
+            <td class="mono">${s.collectiveSaleId}</td>
+            <td>${s.materialName}</td>
+            <td>${s.buyerName}</td>
+            <td class="mono">${fmt(s.pricePerKg)} kr</td>
+            <td class="mono">${fmtDate(s.expectedSaleDate)}</td>
+            <td class="mono">${s.creatorCooperativeId}</td>
+            <td><span class="badge ${bc}">${s.myStatus ?? 'admin'}</span></td>
+            <td><button class="btn-sm" onclick="goManage(${s.collectiveSaleId})">Manage</button></td>
+          </tr>`;
+        }).join('')
+      : '<tr><td colspan="8" class="loading">No active collective sales</td></tr>';
+  } catch (e) {
+    document.getElementById('activeError').innerHTML = `<div class="error-msg">Error: ${e.message}</div>`;
+    document.getElementById('activeTable').innerHTML = '';
+  }
+}
+
+let activeSalesCache = [];
+
+async function goManage(saleId) {
+  navigate('manage', document.querySelector('.nav-item:nth-child(5)'));
+  await loadManageSaleList();
+  selectSale(saleId);
+}
+
+// ── Invitations ────────────────────────────────────────────────────────────
+
+async function loadInvitations() {
+  document.getElementById('invError').innerHTML = '';
+  document.getElementById('invTable').innerHTML = '<tr><td colspan="7" class="loading">Loading...</td></tr>';
+  try {
+    const list = (await api('/api/collective-sale/invitations')) ?? [];
+    const badge = document.getElementById('invBadge');
+    badge.textContent = list.length;
+    badge.style.display = list.length ? 'inline' : 'none';
+    document.getElementById('invTable').innerHTML = list.length
+      ? list.map(inv => `<tr>
+          <td class="mono">${inv.collectiveSaleId}</td>
+          <td>${inv.materialName}</td>
+          <td>${inv.buyerName}</td>
+          <td class="mono">${fmt(inv.pricePerKg)} kr</td>
+          <td class="mono">${fmtDate(inv.expectedSaleDate)}</td>
+          <td class="mono">${inv.creatorCooperativeId}</td>
+          <td><button class="btn-sm" onclick="joinSale(${inv.collectiveSaleId})">Accept</button></td>
+        </tr>`).join('')
+      : '<tr><td colspan="7" class="loading">No pending invitations</td></tr>';
+  } catch (e) {
+    document.getElementById('invError').innerHTML = `<div class="error-msg">Error: ${e.message}</div>`;
+    document.getElementById('invTable').innerHTML = '';
+  }
+}
+
+async function joinSale(saleId) {
+  try {
+    await api(`/api/collective-sale/${saleId}/join`, { method: 'POST' });
+    loadInvitations();
+    loadActiveSales();
+  } catch (e) {
+    document.getElementById('invError').innerHTML = `<div class="error-msg">Could not accept: ${e.message}</div>`;
+  }
+}
+
+// ── Create Sale ────────────────────────────────────────────────────────────
+
+let createdSaleId = null;
+
+async function createSale() {
+  clearMsg('createError', 'createSuccess');
+  const materialId = document.getElementById('createMaterial').value;
+  const buyerId    = document.getElementById('createBuyer').value;
+  const price      = document.getElementById('createPrice').value;
+  const date       = document.getElementById('createDate').value;
+
+  if (!materialId || !buyerId || !price || !date) {
+    showMsg('createError', 'Please fill in all fields.', true);
+    return;
+  }
+
+  try {
+    const saleId = await api('/api/collective-sale', {
+      method: 'POST',
+      body: JSON.stringify({
+        materialId: parseInt(materialId),
+        buyerId:    parseInt(buyerId),
+        pricePerKg: parseFloat(price),
+        expectedSaleDate: new Date(date).toISOString()
+      })
+    });
+    showMsg('createSuccess', `Sale #${saleId} created.`, false);
+    document.getElementById('createPrice').value = '';
+    document.getElementById('createDate').value  = '';
+    dropsLoaded = false;
+    await loadDropdowns();
+    createdSaleId = saleId;
+    createInvitedIds = new Set();
+    document.getElementById('createdSaleIdLabel').textContent = `#${saleId}`;
+    document.getElementById('createInviteSection').style.display = 'block';
+    document.getElementById('createInvitedList').innerHTML = '';
+    document.getElementById('createInviteCoop').innerHTML = buildCoopOptions();
+    loadActiveSales();
+  } catch (e) {
+    showMsg('createError', e.message, true);
+  }
+}
+
+async function sendCreateInvite() {
+  clearMsg('createInviteError', 'createInviteSuccess');
+  const coopId = document.getElementById('createInviteCoop').value;
+  if (!coopId) { showMsg('createInviteError', 'Select a cooperative.', true); return; }
+
+  try {
+    await api(`/api/collective-sale/${createdSaleId}/invite`, {
+      method: 'POST',
+      body: JSON.stringify({ cooperativeId: parseInt(coopId) })
+    });
+    const coopName = document.getElementById('createInviteCoop').options[document.getElementById('createInviteCoop').selectedIndex].text;
+    showMsg('createInviteSuccess', `Invited ${coopName}.`, false);
+    const list = document.getElementById('createInvitedList');
+    const item = document.createElement('div');
+    item.className = 'invited-item';
+    item.innerHTML = `<span>${coopName}</span><span class="badge badge-invited">INVITED</span>`;
+    list.appendChild(item);
+    createInvitedIds.add(Number(coopId));
+    document.getElementById('createInviteCoop').innerHTML = buildCoopOptions([...createInvitedIds]);
+  } catch (e) {
+    showMsg('createInviteError', e.message, true);
+  }
+}
+
+// ── Manage: sale list ──────────────────────────────────────────────────────
+
+async function loadManageSaleList() {
+  document.getElementById('manageSaleList').innerHTML = '<div class="loading">Loading...</div>';
+  try {
+    activeSalesCache = (await api('/api/collective-sale')) ?? [];
+    const container = document.getElementById('manageSaleList');
+    if (!activeSalesCache.length) {
+      container.innerHTML = '<div class="loading">No active sales</div>';
+      return;
+    }
+    container.innerHTML = activeSalesCache.map(s => `
+      <div class="sale-list-item" id="sale-item-${s.collectiveSaleId}" onclick="selectSale(${s.collectiveSaleId})">
+        <div class="sale-name">${s.materialName} → ${s.buyerName}</div>
+        <div class="sale-meta">#${s.collectiveSaleId} · ${fmt(s.pricePerKg)} kr/kg · ${fmtDate(s.expectedSaleDate)}</div>
+      </div>`).join('');
+  } catch (e) {
+    document.getElementById('manageSaleList').innerHTML = `<div class="error-msg" style="margin:12px">${e.message}</div>`;
+  }
+}
+
+let selectedSaleId = null;
+
+async function selectSale(saleId) {
+  selectedSaleId = saleId;
+  document.querySelectorAll('.sale-list-item').forEach(el => el.classList.remove('selected'));
+  const item = document.getElementById(`sale-item-${saleId}`);
+  if (item) item.classList.add('selected');
+  clearMsg('manageError', 'inviteError', 'inviteSuccess', 'materialError', 'materialSuccess', 'priceError', 'priceSuccess', 'deleteError', 'deleteSuccess', 'weightError', 'weightSuccess', 'leaveError', 'leaveSuccess');
+  document.getElementById('managePanel').style.display = 'none';
+  await loadSaleReport(saleId);
+}
+
+let selectedSaleMaterialId = null;
+
+async function loadSaleReport(saleId) {
+  try {
+    await loadDropdowns();
+    await refreshStockCache();
+    const data = await api(`/api/reports/collective-sale/${saleId}`);
+    const myCoopId = getMyCooperativeId();
+    const isOwner  = myCoopId !== null && data.creatorCooperativeId != null && Number(myCoopId) === Number(data.creatorCooperativeId);
+    selectedSaleMaterialId = data.materialId ?? null;
+
+    document.getElementById('managePanelTitle').textContent = `Sale #${saleId}`;
+    document.getElementById('saleDetails').innerHTML = `
+      <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">${data.status ?? '—'}</span></div>
+      <div class="detail-row"><span class="detail-label">Material</span><span class="detail-value">${data.materialName ?? '—'}</span></div>
+      <div class="detail-row"><span class="detail-label">Buyer</span><span class="detail-value">${data.buyerName ?? '—'}</span></div>
+      <div class="detail-row"><span class="detail-label">Price/kg</span><span class="detail-value">${fmt(data.pricePerKg)} kr</span></div>
+      <div class="detail-row"><span class="detail-label">Total Weight</span><span class="detail-value">${fmt(data.totalWeight)} kg</span></div>
+      <div class="detail-row"><span class="detail-label">Expected Date</span><span class="detail-value">${fmtDate(data.expectedSaleDate)}</span></div>
+    `;
+
+    const contributions = Array.isArray(data.contributions) ? data.contributions : [];
+    document.getElementById('contributionsTable').innerHTML = contributions.length
+      ? contributions.map(c => `<tr>
+          <td>${c.cooperativeName ?? c.cooperativeId}</td>
+          <td class="mono">${fmt(c.contributedWeight)} kg</td>
+          <td class="mono">${fmt(c.revenueShare)} kr</td>
+          <td><span class="badge ${c.status === 'ACCEPTED' ? 'badge-accepted' : 'badge-invited'}">${c.status}</span></td>
+        </tr>`).join('')
+      : '<tr><td colspan="4" class="loading">No contributions yet</td></tr>';
+
+    // Show/hide owner-only section
+    document.getElementById('ownerActions').style.display = isOwner ? 'block' : 'none';
+    // Hide "leave" for owner (creator cannot leave — must delete the sale instead)
+    document.getElementById('leaveCard').style.display = isOwner ? 'none' : 'block';
+    // Prefill price input with current value
+    if (isOwner && data.pricePerKg != null) {
+      document.getElementById('managePrice').value = data.pricePerKg;
+    }
+
+    // Exclude already-invited/participating (and own) coops from the invite dropdown
+    const excludeIds = contributions
+      .filter(c => c.status !== 'LEFT')
+      .map(c => c.cooperativeId)
+      .filter(id => id != null);
+    if (data.creatorCooperativeId != null) excludeIds.push(data.creatorCooperativeId);
+    document.getElementById('inviteCooperative').innerHTML = buildCoopOptions(excludeIds);
+
+    updateStockHint();
+
+    document.getElementById('managePanel').style.display = 'block';
+  } catch (e) {
+    showMsg('manageError', e.message, true);
+  }
+}
+
+async function inviteCooperative() {
+  clearMsg('inviteError', 'inviteSuccess');
+  const coopId = document.getElementById('inviteCooperative').value;
+  if (!coopId) { showMsg('inviteError', 'Select a cooperative.', true); return; }
+  try {
+    await api(`/api/collective-sale/${selectedSaleId}/invite`, {
+      method: 'POST',
+      body: JSON.stringify({ cooperativeId: parseInt(coopId) })
+    });
+    showMsg('inviteSuccess', 'Invitation sent.', false);
+    loadSaleReport(selectedSaleId);
+  } catch (e) {
+    showMsg('inviteError', e.message, true);
+  }
+}
+
+function updateStockHint() {
+  const hint = document.getElementById('stockHint');
+  if (!hint) return;
+  if (selectedSaleMaterialId != null && stockByMaterial[selectedSaleMaterialId] != null) {
+    hint.textContent = `(Available stock: ${fmt(stockByMaterial[selectedSaleMaterialId])} kg)`;
+  } else {
+    hint.textContent = '';
+  }
+}
+
+async function updateContribution() {
+  clearMsg('weightError', 'weightSuccess');
+  const weight = document.getElementById('contributionWeight').value;
+  if (!weight) { showMsg('weightError', 'Enter a weight.', true); return; }
+  try {
+    await api(`/api/collective-sale/${selectedSaleId}/contribution`, {
+      method: 'PUT',
+      body: JSON.stringify({ weight: parseFloat(weight) })
+    });
+    showMsg('weightSuccess', 'Weight updated.', false);
+    loadSaleReport(selectedSaleId);
+  } catch (e) {
+    showMsg('weightError', e.message, true);
+  }
+}
+
+async function updateMaterial() {
+  clearMsg('materialError', 'materialSuccess');
+  const materialId = document.getElementById('manageMaterial').value;
+  if (!materialId) { showMsg('materialError', 'Select a material.', true); return; }
+  try {
+    await api(`/api/collective-sale/${selectedSaleId}/material`, {
+      method: 'PUT',
+      body: JSON.stringify({ materialId: parseInt(materialId) })
+    });
+    showMsg('materialSuccess', 'Material updated.', false);
+    loadSaleReport(selectedSaleId);
+  } catch (e) {
+    showMsg('materialError', e.message, true);
+  }
+}
+
+async function updatePrice() {
+  clearMsg('priceError', 'priceSuccess');
+  const price = document.getElementById('managePrice').value;
+  if (!price || parseFloat(price) <= 0) { showMsg('priceError', 'Enter a price greater than 0.', true); return; }
+  try {
+    await api(`/api/collective-sale/${selectedSaleId}/price`, {
+      method: 'PUT',
+      body: JSON.stringify({ pricePerKg: parseFloat(price) })
+    });
+    showMsg('priceSuccess', 'Price updated.', false);
+    loadSaleReport(selectedSaleId);
+  } catch (e) {
+    showMsg('priceError', e.message, true);
+  }
+}
+
+async function deleteSale() {
+  confirm2(
+    'Delete Sale',
+    `Are you sure you want to delete sale #${selectedSaleId}? This cancels the sale for all participants. The record is kept in the database.`,
+    async () => {
+      clearMsg('deleteError', 'deleteSuccess');
+      try {
+        await api(`/api/collective-sale/${selectedSaleId}`, { method: 'DELETE' });
+        showMsg('deleteSuccess', 'Sale deleted.', false);
+        document.getElementById('managePanel').style.display = 'none';
+        loadManageSaleList();
+        loadActiveSales();
+      } catch (e) {
+        showMsg('deleteError', e.message, true);
+      }
+    }
+  );
+}
+
+async function leaveSale() {
+  confirm2(
+    'Leave Sale',
+    `Are you sure you want to leave sale #${selectedSaleId}? This cannot be undone.`,
+    async () => {
+      clearMsg('leaveError', 'leaveSuccess');
+      try {
+        await api(`/api/collective-sale/${selectedSaleId}/leave`, { method: 'DELETE' });
+        showMsg('leaveSuccess', 'You have left the sale.', false);
+        document.getElementById('managePanel').style.display = 'none';
+        loadManageSaleList();
+        loadActiveSales();
+      } catch (e) {
+        showMsg('leaveError', e.message, true);
+      }
+    }
+  );
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+
+loadActiveSales();
+loadInvitations();
+</script>
+</body>
+</html>
