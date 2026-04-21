@@ -107,8 +107,6 @@ private CollectiveSaleReportDTO mapToReportDTO(List<Object[]> rawData) {
             contributions.add(contribution);
         }
         
-        log.info("Mapped collective sale report - soldAt: {}", soldAt);
-        
         return new CollectiveSaleReportDTO(
             collectiveSaleId,
             materialId,
@@ -123,6 +121,7 @@ private CollectiveSaleReportDTO mapToReportDTO(List<Object[]> rawData) {
             creatorCooperativeId,
             contributions
         );
+ 
 }
 
 
