@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Kollektive Salg</title>
+    <style>
+        body { font-family: monospace; padding: 20px; max-width: 900px; }
+        h2 { border-bottom: 2px solid #333; padding-bottom: 4px; }
+        h3 { margin-top: 24px; }
+        input, select { width: 100%; margin: 5px 0; padding: 5px; box-sizing: border-box; }
+        button { margin: 5px 5px 5px 0; padding: 8px 15px; cursor: pointer; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; white-space: pre-wrap; }
+        .token-status { padding: 5px; margin: 5px 0; }
+        .ok { background: #d4edda; }
+        .no { background: #f8d7da; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+        th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #ddd; font-family: monospace; }
+        th { background: #f4f4f4; }
+        .section { margin-top: 32px; }
+        .msg { padding: 6px; margin: 6px 0; }
+        .msg.ok { background: #d4edda; }
+        .msg.err { background: #f8d7da; }
+        .badge { font-size: 0.85em; padding: 2px 6px; border-radius: 3px; }
+        .badge-accepted { background: #d4edda; }
+        .badge-invited  { background: #fff3cd; }
+        .badge-none     { background: #e2e3e5; }
+    </style>
+</head>
+<body>
+
+<h2>Kollektive Salg</h2>
+
+<div>
+    <div id="tokenStatus" class="token-status no">Ingen token — gå til <a href="/test.html">login-siden</a> først</div>
+</div>
+
+<!-- ───── 1. OVERSIGT ───── -->
+<div class="section">
+    <h2>Aktive salg</h2>
+    <button onclick="loadActiveSales()">Opdater</button>
+    <div id="activeSalesMsg" class="msg" style="display:none"></div>
+    <table id="activeSalesTable" style="display:none">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Materiale</th>
+                <th>Køber</th>
+                <th>Pris/kg</th>
+                <th>Forventet dato</th>
+                <th>Opretter</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="activeSalesBody"></tbody>
+    </table>
+</div>
+
+<!-- ───── 2. INVITATIONER ───── -->
+<div class="section">
+    <h2>Afventende invitationer</h2>
+    <button onclick="loadInvitations()">Opdater</button>
+    <div id="invitationsMsg" class="msg" style="display:none"></div>
+    <table id="invitationsTable" style="display:none">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Materiale</th>
+                <th>Køber</th>
+                <th>Pris/kg</th>
+                <th>Forventet dato</th>
+                <th>Opretter</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="invitationsBody"></tbody>
+    </table>
+</div>
+
+<!-- ───── 3. OPRET SALG ───── -->
+<div class="section">
+    <h2>Opret nyt kollektivt salg</h2>
+    <label>Materiale</label>
+    <select id="createMaterial"><option value="">— vælg —</option></select>
+    <label>Køber</label>
+    <select id="createBuyer"><option value="">— vælg —</option></select>
+    <label>Pris per kg</label>
+    <input id="createPrice" type="number" step="0.01" min="0.01" placeholder="f.eks. 12.50" />
+    <label>Forventet salgsdato</label>
+    <input id="createDate" type="datetime-local" />
+    <button onclick="createSale()">Opret salg</button>
+    <div id="createMsg" class="msg" style="display:none"></div>
+</div>
+
+<!-- ───── 4. ADMINISTRER SALG ───── -->
+<div class="section">
+    <h2>Administrer salg</h2>
+    <label>Salg ID</label>
+    <input id="manageSaleId" type="number" placeholder="Salg ID" style="width:200px" />
+    <button onclick="loadSaleReport()">Hent detaljer</button>
+
+    <div id="saleReport" style="display:none; margin-top:12px">
+        <h3>Detaljer</h3>
+        <pre id="saleReportPre"></pre>
+
+        <h3>Inviter kooperativ</h3>
+        <select id="inviteCooperative"><option value="">— vælg —</option></select>
+        <button onclick="inviteCooperative()">Inviter</button>
+        <div id="inviteMsg" class="msg" style="display:none"></div>
+
+        <h3>Opdater din vægtbidrag (kg)</h3>
+        <input id="contributionWeight" type="number" step="0.01" min="0.01" placeholder="f.eks. 500.00" style="width:200px" />
+        <button onclick="updateContribution()">Opdater vægt</button>
+        <div id="contributionMsg" class="msg" style="display:none"></div>
+
+        <h3>Skift materiale</h3>
+        <select id="manageMaterial"><option value="">— vælg —</option></select>
+        <button onclick="updateMaterial()">Skift materiale</button>
+        <div id="materialMsg" class="msg" style="display:none"></div>
+
+        <h3>Forlad salg</h3>
+        <button onclick="leaveSale()" style="background:#f8d7da">Forlad dette salg</button>
+        <div id="leaveMsg" class="msg" style="display:none"></div>
+    </div>
+</div>
+
+<script>
+    const TOKEN_KEY = 'jwt_token';
+
+    function token() { return localStorage.getItem(TOKEN_KEY); }
+
+    function authHeaders() {
+        return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token()}` };
+    }
+
+    function formatDate(iso) {
+        if (!iso) return '—';
+        return new Date(iso).toLocaleDateString('da-DK', { year:'numeric', month:'short', day:'numeric' });
+    }
+
+    function showMsg(id, text, isError) {
+        const el = document.getElementById(id);
+        el.textContent = text;
+        el.className = 'msg ' + (isError ? 'err' : 'ok');
+        el.style.display = 'block';
+    }
+
+    function updateTokenStatus() {
+        const t = token();
+        const el = document.getElementById('tokenStatus');
+        if (t) {
+            const payload = JSON.parse(atob(t.split('.')[1]));
+            el.className = 'token-status ok';
+            el.textContent = `Logget ind — CPF: ${payload.sub} | Rolle: ${payload.role}`;
+        } else {
+            el.className = 'token-status no';
+            el.innerHTML = 'Ingen token — gå til <a href="/test.html">login-siden</a> først';
+        }
+    }
+
+    // ── Dropdowns ──────────────────────────────────────────────────────────
+
+    async function loadDropdowns() {
+        const [matRes, buyRes, coopRes] = await Promise.all([
+            fetch('/api/stock', { headers: authHeaders() }),
+            fetch('/api/buyers', { headers: authHeaders() }),
+            fetch('/api/cooperatives', { headers: authHeaders() })
+        ]);
+
+        if (matRes.ok) {
+            const materials = await matRes.json();
+            const selectors = [document.getElementById('createMaterial'), document.getElementById('manageMaterial')];
+            selectors.forEach(sel => {
+                sel.innerHTML = '<option value="">— vælg —</option>';
+                materials.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.materialId;
+                    opt.textContent = m.materialName;
+                    sel.appendChild(opt);
+                });
+            });
+        }
+
+        if (buyRes.ok) {
+            const buyers = await buyRes.json();
+            const sel = document.getElementById('createBuyer');
+            sel.innerHTML = '<option value="">— vælg —</option>';
+            buyers.forEach(b => {
+                const opt = document.createElement('option');
+                opt.value = b.buyerId;
+                opt.textContent = b.buyerName;
+                sel.appendChild(opt);
+            });
+        }
+
+        if (coopRes.ok) {
+            const coops = await coopRes.json();
+            const sel = document.getElementById('inviteCooperative');
+            sel.innerHTML = '<option value="">— vælg —</option>';
+            coops.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.cooperativeId;
+                opt.textContent = c.cooperativeName;
+                sel.appendChild(opt);
+            });
+        }
+    }
+
+    // ── 1. Aktive salg ─────────────────────────────────────────────────────
+
+    async function loadActiveSales() {
+        const res = await fetch('/api/collective-sale', { headers: authHeaders() });
+        const msg = document.getElementById('activeSalesMsg');
+        const table = document.getElementById('activeSalesTable');
+        const body = document.getElementById('activeSalesBody');
+
+        if (!res.ok) {
+            showMsg('activeSalesMsg', `Fejl ${res.status}: ${await res.text()}`, true);
+            table.style.display = 'none';
+            return;
+        }
+
+        const sales = await res.json();
+        msg.style.display = 'none';
+        body.innerHTML = '';
+
+        if (sales.length === 0) {
+            showMsg('activeSalesMsg', 'Ingen aktive salg.', false);
+            table.style.display = 'none';
+            return;
+        }
+
+        sales.forEach(s => {
+            const badgeClass = s.myStatus === 'ACCEPTED' ? 'badge-accepted'
+                             : s.myStatus === 'INVITED'  ? 'badge-invited'
+                             : 'badge-none';
+            const badgeText = s.myStatus ?? 'admin';
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${s.collectiveSaleId}</td>
+                <td>${s.materialName}</td>
+                <td>${s.buyerName}</td>
+                <td>${s.pricePerKg} kr</td>
+                <td>${formatDate(s.expectedSaleDate)}</td>
+                <td>${s.creatorCooperativeId}</td>
+                <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+                <td><button onclick="quickLoad(${s.collectiveSaleId})">Administrer</button></td>
+            `;
+            body.appendChild(tr);
+        });
+
+        table.style.display = 'table';
+    }
+
+    function quickLoad(saleId) {
+        document.getElementById('manageSaleId').value = saleId;
+        loadSaleReport();
+        document.getElementById('saleReport').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // ── 2. Invitationer ────────────────────────────────────────────────────
+
+    async function loadInvitations() {
+        const res = await fetch('/api/collective-sale/invitations', { headers: authHeaders() });
+        const table = document.getElementById('invitationsTable');
+        const body = document.getElementById('invitationsBody');
+
+        if (!res.ok) {
+            showMsg('invitationsMsg', `Fejl ${res.status}: ${await res.text()}`, true);
+            table.style.display = 'none';
+            return;
+        }
+
+        const invitations = await res.json();
+        document.getElementById('invitationsMsg').style.display = 'none';
+        body.innerHTML = '';
+
+        if (invitations.length === 0) {
+            showMsg('invitationsMsg', 'Ingen afventende invitationer.', false);
+            table.style.display = 'none';
+            return;
+        }
+
+        invitations.forEach(inv => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${inv.collectiveSaleId}</td>
+                <td>${inv.materialName}</td>
+                <td>${inv.buyerName}</td>
+                <td>${inv.pricePerKg} kr</td>
+                <td>${formatDate(inv.expectedSaleDate)}</td>
+                <td>${inv.creatorCooperativeId}</td>
+                <td><button onclick="joinSale(${inv.collectiveSaleId})">Accepter</button></td>
+            `;
+            body.appendChild(tr);
+        });
+
+        table.style.display = 'table';
+    }
+
+    async function joinSale(saleId) {
+        const res = await fetch(`/api/collective-sale/${saleId}/join`, {
+            method: 'POST',
+            headers: authHeaders()
+        });
+        if (res.ok) {
+            loadInvitations();
+            loadActiveSales();
+        } else {
+            alert(`Fejl ved accept: ${res.status} ${await res.text()}`);
+        }
+    }
+
+    // ── 3. Opret salg ──────────────────────────────────────────────────────
+
+    async function createSale() {
+        const materialId = document.getElementById('createMaterial').value;
+        const buyerId    = document.getElementById('createBuyer').value;
+        const price      = document.getElementById('createPrice').value;
+        const date       = document.getElementById('createDate').value;
+
+        if (!materialId || !buyerId || !price || !date) {
+            showMsg('createMsg', 'Udfyld alle felter.', true);
+            return;
+        }
+
+        const res = await fetch('/api/collective-sale', {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({
+                materialId: parseInt(materialId),
+                buyerId: parseInt(buyerId),
+                pricePerKg: parseFloat(price),
+                expectedSaleDate: new Date(date).toISOString()
+            })
+        });
+
+        if (res.ok) {
+            const saleId = await res.json();
+            showMsg('createMsg', `Salg oprettet med ID: ${saleId}`, false);
+            loadActiveSales();
+        } else {
+            showMsg('createMsg', `Fejl ${res.status}: ${await res.text()}`, true);
+        }
+    }
+
+    // ── 4. Administrer salg ────────────────────────────────────────────────
+
+    async function loadSaleReport() {
+        const saleId = document.getElementById('manageSaleId').value;
+        if (!saleId) return;
+
+        const res = await fetch(`/api/reports/collective-sale/${saleId}`, { headers: authHeaders() });
+        const panel = document.getElementById('saleReport');
+
+        if (!res.ok) {
+            panel.style.display = 'none';
+            alert(`Fejl ${res.status}: ${await res.text()}`);
+            return;
+        }
+
+        const data = await res.json();
+        document.getElementById('saleReportPre').textContent = JSON.stringify(data, null, 2);
+        panel.style.display = 'block';
+    }
+
+    async function inviteCooperative() {
+        const saleId = document.getElementById('manageSaleId').value;
+        const coopId = document.getElementById('inviteCooperative').value;
+        if (!coopId) { showMsg('inviteMsg', 'Vælg et kooperativ.', true); return; }
+
+        const res = await fetch(`/api/collective-sale/${saleId}/invite`, {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({ cooperativeId: parseInt(coopId) })
+        });
+
+        if (res.ok) {
+            showMsg('inviteMsg', 'Invitation sendt.', false);
+        } else {
+            showMsg('inviteMsg', `Fejl ${res.status}: ${await res.text()}`, true);
+        }
+    }
+
+    async function updateContribution() {
+        const saleId = document.getElementById('manageSaleId').value;
+        const weight = document.getElementById('contributionWeight').value;
+        if (!weight) { showMsg('contributionMsg', 'Angiv en vægt.', true); return; }
+
+        const res = await fetch(`/api/collective-sale/${saleId}/contribution`, {
+            method: 'PUT',
+            headers: authHeaders(),
+            body: JSON.stringify({ weight: parseFloat(weight) })
+        });
+
+        if (res.ok) {
+            showMsg('contributionMsg', 'Vægt opdateret.', false);
+            loadSaleReport();
+        } else {
+            showMsg('contributionMsg', `Fejl ${res.status}: ${await res.text()}`, true);
+        }
+    }
+
+    async function updateMaterial() {
+        const saleId     = document.getElementById('manageSaleId').value;
+        const materialId = document.getElementById('manageMaterial').value;
+        if (!materialId) { showMsg('materialMsg', 'Vælg et materiale.', true); return; }
+
+        const res = await fetch(`/api/collective-sale/${saleId}/material`, {
+            method: 'PUT',
+            headers: authHeaders(),
+            body: JSON.stringify({ materialId: parseInt(materialId) })
+        });
+
+        if (res.ok) {
+            showMsg('materialMsg', 'Materiale opdateret.', false);
+            loadSaleReport();
+        } else {
+            showMsg('materialMsg', `Fejl ${res.status}: ${await res.text()}`, true);
+        }
+    }
+
+    async function leaveSale() {
+        const saleId = document.getElementById('manageSaleId').value;
+        if (!confirm(`Er du sikker på at du vil forlade salg ${saleId}?`)) return;
+
+        const res = await fetch(`/api/collective-sale/${saleId}/leave`, {
+            method: 'DELETE',
+            headers: authHeaders()
+        });
+
+        if (res.ok) {
+            showMsg('leaveMsg', 'Du har forladt salget.', false);
+            document.getElementById('saleReport').style.display = 'none';
+            loadActiveSales();
+        } else {
+            showMsg('leaveMsg', `Fejl ${res.status}: ${await res.text()}`, true);
+        }
+    }
+
+    // ── Init ───────────────────────────────────────────────────────────────
+
+    updateTokenStatus();
+    if (token()) {
+        loadDropdowns();
+        loadActiveSales();
+        loadInvitations();
+    }
+</script>
+</body>
+</html>

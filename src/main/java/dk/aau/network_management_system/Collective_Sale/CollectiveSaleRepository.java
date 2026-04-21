@@ -19,6 +19,7 @@ public interface CollectiveSaleRepository extends JpaRepository<CollectiveSaleEn
         FROM collective_sale
         WHERE collective_sale_id = :saleId
           AND sold_at IS NULL
+          AND cancelled_at IS NULL
         """, nativeQuery = true)
     Optional<Long> findActiveSaleCreator(@Param("saleId") Long saleId);
 
@@ -92,6 +93,7 @@ public interface CollectiveSaleRepository extends JpaRepository<CollectiveSaleEn
         WHERE csc.cooperative_id = :cooperativeId
           AND csc.status = 'INVITED'
           AND cs.sold_at IS NULL
+          AND cs.cancelled_at IS NULL
         ORDER BY cs.created_at DESC
         """, nativeQuery = true)
     List<Object[]> findPendingInvitations(@Param("cooperativeId") Long cooperativeId);
@@ -103,11 +105,74 @@ public interface CollectiveSaleRepository extends JpaRepository<CollectiveSaleEn
         SET material_id = :materialId
         WHERE collective_sale_id = :saleId
           AND sold_at IS NULL
+          AND cancelled_at IS NULL
         """, nativeQuery = true)
     int updateSaleMaterial(
         @Param("saleId") Long saleId,
         @Param("materialId") Long materialId
     );
+
+    @Modifying
+    @Transactional
+    @Query(value = """
+        UPDATE collective_sale
+        SET price_kg = :pricePerKg
+        WHERE collective_sale_id = :saleId
+          AND sold_at IS NULL
+          AND cancelled_at IS NULL
+        """, nativeQuery = true)
+    int updateSalePrice(
+        @Param("saleId") Long saleId,
+        @Param("pricePerKg") BigDecimal pricePerKg
+    );
+
+    @Modifying
+    @Transactional
+    @Query(value = """
+        UPDATE collective_sale
+        SET cancelled_at = now()
+        WHERE collective_sale_id = :saleId
+          AND sold_at IS NULL
+          AND cancelled_at IS NULL
+        """, nativeQuery = true)
+    int cancelSale(@Param("saleId") Long saleId);
+
+    @Query(value = """
+        SELECT cs.material_id, csc.contributed_weight
+        FROM collective_sale cs
+        JOIN collective_sale_contribution csc
+          ON csc.collective_sale_id = cs.collective_sale_id
+        WHERE cs.collective_sale_id = :saleId
+          AND cs.sold_at IS NULL
+          AND cs.cancelled_at IS NULL
+          AND csc.cooperative_id = :cooperativeId
+          AND csc.status = 'ACCEPTED'
+        """, nativeQuery = true)
+    List<Object[]> findSaleMaterialAndContribution(
+        @Param("saleId") Long saleId,
+        @Param("cooperativeId") Long cooperativeId
+    );
+
+    @Query(value = """
+        SELECT csc.cooperative_id, csc.contributed_weight, cs.material_id
+        FROM collective_sale_contribution csc
+        JOIN collective_sale cs ON cs.collective_sale_id = csc.collective_sale_id
+        WHERE csc.collective_sale_id = :saleId
+          AND csc.status = 'ACCEPTED'
+          AND csc.contributed_weight IS NOT NULL
+          AND csc.contributed_weight > 0
+        """, nativeQuery = true)
+    List<Object[]> findAcceptedContributionsWithWeight(@Param("saleId") Long saleId);
+
+    @Query(value = """
+        SELECT COUNT(*)
+        FROM collective_sale_contribution
+        WHERE collective_sale_id = :saleId
+          AND status = 'ACCEPTED'
+          AND contributed_weight IS NOT NULL
+          AND contributed_weight > 0
+        """, nativeQuery = true)
+    long countContributionsWithWeight(@Param("saleId") Long saleId);
 
     @Query(value = """
         SELECT
@@ -126,6 +191,7 @@ public interface CollectiveSaleRepository extends JpaRepository<CollectiveSaleEn
         WHERE csc.cooperative_id = :cooperativeId
           AND csc.status != 'LEFT'
           AND cs.sold_at IS NULL
+          AND cs.cancelled_at IS NULL
         ORDER BY cs.created_at DESC
         """, nativeQuery = true)
     List<Object[]> findActiveSalesForCooperative(@Param("cooperativeId") Long cooperativeId);
@@ -143,6 +209,7 @@ public interface CollectiveSaleRepository extends JpaRepository<CollectiveSaleEn
         JOIN materials m ON cs.material_id = m.material_id
         JOIN buyers b ON cs.buyer_id = b.buyer_id
         WHERE cs.sold_at IS NULL
+          AND cs.cancelled_at IS NULL
         ORDER BY cs.created_at DESC
         """, nativeQuery = true)
     List<Object[]> findAllActiveSales();
