@@ -4,6 +4,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
+import org.owasp.html.PolicyFactory;
+import org.owasp.html.Sanitizers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +20,7 @@ import dk.aau.network_management_system.auth.AuthenticatedUser;
 public class NoticeService {
 
     private static final Logger log = LoggerFactory.getLogger(NoticeService.class);
+    private static final PolicyFactory SANITIZER = Sanitizers.FORMATTING.and(Sanitizers.BLOCKS);
 
     private final NoticeRepository noticeRepository;
     private final AuthenticatedUser authenticatedUser;
@@ -80,8 +83,8 @@ public class NoticeService {
         requireManagerOrAdmin();
         try {
             Notice notice = new Notice(
-                dto.getTitle(),
-                dto.getContent(),
+                SANITIZER.sanitize(dto.getTitle()),
+                SANITIZER.sanitize(dto.getContent()),
                 dto.getPriority(),
                 authenticatedUser.getWorkerId(),
                 dto.getExpiresAt(),
@@ -182,9 +185,9 @@ public class NoticeService {
 
     private void applyUpdates(Notice notice, NoticeDTO dto) {
         if (dto.getTitle() != null && !dto.getTitle().isBlank())
-            notice.setTitle(dto.getTitle());
+            notice.setTitle(SANITIZER.sanitize(dto.getTitle()));
         if (dto.getContent() != null && !dto.getContent().isBlank())
-            notice.setContent(dto.getContent());
+            notice.setContent(SANITIZER.sanitize(dto.getContent()));
         if (dto.getPriority() != null)
             notice.setPriority(dto.getPriority());
         if (dto.getExpiresAt() != null)
