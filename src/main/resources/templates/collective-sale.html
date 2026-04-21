@@ -62,6 +62,7 @@
   .badge-accepted { background: #d4edda; color: #1b5e20; }
   .badge-invited  { background: #fff3cd; color: #856404; }
   .badge-creator  { background: #e8f4f8; color: var(--accent); }
+  .badge-left     { background: #f8d7da; color: #721c24; }
   .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; }
   .modal-overlay.open { display: flex; }
   .modal-box { background: white; border-radius: var(--radius); padding: 28px; width: 440px; }
@@ -108,6 +109,9 @@
     </div>
     <div class="nav-item" onclick="navigate('manage',this)">
       <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Manage Sale
+    </div>
+    <div class="nav-item" onclick="navigate('history',this)">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>History
     </div>
   </nav>
 </aside>
@@ -303,6 +307,23 @@
       </div>
     </div>
 
+    <!-- ── HISTORY ── -->
+    <div id="page-history" class="page">
+      <div class="page-header">
+        <h1 class="page-title" style="margin-bottom:0">History</h1>
+        <button class="btn-sm" onclick="loadHistory()">Refresh</button>
+      </div>
+      <div id="historyError"></div>
+      <div class="table-card">
+        <table>
+          <thead>
+            <tr><th>ID</th><th>Material</th><th>Buyer</th><th>Price/kg</th><th>Expected Date</th><th>Completed / Cancelled</th><th>Status</th></tr>
+          </thead>
+          <tbody id="historyTable"><tr><td colspan="7" class="loading">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 </main>
 
@@ -359,7 +380,8 @@ const loaders = {
   active:      loadActiveSales,
   invitations: loadInvitations,
   create:      loadDropdowns,
-  manage:      () => { loadDropdowns(); loadManageSaleList(); }
+  manage:      () => { loadDropdowns(); loadManageSaleList(); },
+  history:     loadHistory
 };
 
 function navigate(page, el) {
@@ -484,6 +506,38 @@ async function loadActiveSales() {
 }
 
 let activeSalesCache = [];
+
+// ── History ────────────────────────────────────────────────────────────────
+
+async function loadHistory() {
+  document.getElementById('historyError').innerHTML = '';
+  document.getElementById('historyTable').innerHTML = '<tr><td colspan="7" class="loading">Loading...</td></tr>';
+  try {
+    const list = (await api('/api/collective-sale/my?status=HISTORY')) ?? [];
+    document.getElementById('historyTable').innerHTML = list.length
+      ? list.map(s => {
+          const st = s.status ?? '—';
+          const bc = st === 'COMPLETED' ? 'badge-accepted'
+                   : st === 'CANCELLED' ? 'badge-left'
+                   : st === 'LEFT'      ? 'badge-left'
+                                        : 'badge-invited';
+          const endDate = s.soldAt ?? s.cancelledAt ?? null;
+          return `<tr>
+            <td class="mono">${s.collectiveSaleId}</td>
+            <td>${s.materialName}</td>
+            <td>${s.buyerName}</td>
+            <td class="mono">${fmt(s.pricePerKg)} kr</td>
+            <td class="mono">${fmtDate(s.expectedSaleDate)}</td>
+            <td class="mono">${fmtDate(endDate)}</td>
+            <td><span class="badge ${bc}">${st}</span></td>
+          </tr>`;
+        }).join('')
+      : '<tr><td colspan="7" class="loading">No past collective sales</td></tr>';
+  } catch (e) {
+    document.getElementById('historyError').innerHTML = `<div class="error-msg">Error: ${e.message}</div>`;
+    document.getElementById('historyTable').innerHTML = '';
+  }
+}
 
 async function goManage(saleId) {
   navigate('manage', document.querySelector('.nav-item:nth-child(5)'));
@@ -655,7 +709,7 @@ async function loadSaleReport(saleId) {
           <td>${c.cooperativeName ?? c.cooperativeId}</td>
           <td class="mono">${fmt(c.contributedWeight)} kg</td>
           <td class="mono">${fmt(c.revenueShare)} kr</td>
-          <td><span class="badge ${c.status === 'ACCEPTED' ? 'badge-accepted' : 'badge-invited'}">${c.status}</span></td>
+          <td><span class="badge ${c.status === 'ACCEPTED' ? 'badge-accepted' : c.status === 'LEFT' ? 'badge-left' : 'badge-invited'}">${c.status ?? '—'}</span></td>
         </tr>`).join('')
       : '<tr><td colspan="4" class="loading">No contributions yet</td></tr>';
 
