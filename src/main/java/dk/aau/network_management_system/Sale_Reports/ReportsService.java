@@ -83,6 +83,7 @@ private CollectiveSaleReportDTO mapToReportDTO(List<Object[]> rawData) {
         Double totalWeight = firstRow[8] != null ? ((Number) firstRow[8]).doubleValue() : 0.0;
         Double pricePerKg = firstRow[9] != null ? ((Number) firstRow[9]).doubleValue() : 0.0;
         Long creatorCooperativeId = firstRow[14] != null ? ((Number) firstRow[14]).longValue() : null;
+        Instant cancelledAt = firstRow[16] != null ? ((Timestamp) firstRow[16]).toInstant() : null;
 
         List<ContributionDetailDTO> contributions = new ArrayList<>();
 
@@ -117,6 +118,7 @@ private CollectiveSaleReportDTO mapToReportDTO(List<Object[]> rawData) {
             buyerName,
             createdAt,
             soldAt,
+            cancelledAt,
             expectedSaleDate,
             totalWeight,
             pricePerKg,
