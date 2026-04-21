@@ -128,4 +128,21 @@ public class SalesController {
         service.cancelSale(saleId, cooperativeId);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping
+    public ResponseEntity<List<SaleDTO>> getNormalSales(
+            @RequestParam(required = false) Long cooperativeId,
+            @RequestParam(defaultValue = "ACTIVE") String status) {
+
+        permissionHelper.requireManagerOrAdmin();
+
+        if (!status.matches("(?i)(ACTIVE|HISTORY)")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Invalid status. Must be ACTIVE or HISTORY");
+        }
+
+        Long targetCooperativeId = permissionHelper.determineTargetCooperative(cooperativeId);
+
+        return ResponseEntity.ok(service.getNormalSales(targetCooperativeId, status));
+    }
 }

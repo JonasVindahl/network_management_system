@@ -110,35 +110,36 @@
 
         private List<SaleDTO> mapRegularSales(List<Object[]> raw) {
             return raw.stream()
-                .map(row -> new SaleDTO(
-                    ((Number) row[0]).longValue(),
-                    (String) row[1],
-                    row[2] != null ? ((Timestamp) row[2]).toInstant() : null,
-                    row[3] != null ? ((Timestamp) row[3]).toInstant() : null,
-                    row[4] != null ? ((Timestamp) row[4]).toInstant() : null,
-                    (String) row[5],
-                    ((Number) row[6]).doubleValue(),
-                    ((Number) row[7]).doubleValue(),
-                    (String) row[8]
-                ))
-                .collect(Collectors.toList());
+                    .map(row -> new SaleDTO(
+                            ((Number) row[0]).longValue(),                                    // saleId
+                            (String) row[1],                                                  // saleType
+                            row[2] != null ? ((Timestamp) row[2]).toInstant() : null,        // createdAt
+                            row[3] != null ? ((Timestamp) row[3]).toInstant() : null,        // soldAt
+                            row[4] != null ? ((Timestamp) row[4]).toInstant() : null,        // cancelledAt
+                            row[5] != null ? ((Timestamp) row[5]).toInstant() : null,        // expectedSaleDate
+                            (String) row[6],                                                  // materialName
+                            ((Number) row[7]).doubleValue(),                                  // weight
+                            ((Number) row[8]).doubleValue(),                                  // pricePerKg
+                            (String) row[9]                                                   // buyerName
+                    ))
+                    .collect(Collectors.toList());
         }
 
         private List<SaleDTO> mapCollectiveSales(List<Object[]> raw) {
             return raw.stream()
-                .map(row -> new SaleDTO(
-                    ((Number) row[0]).longValue(),
-                    (String) row[1],
-                    row[2] != null ? ((Timestamp) row[2]).toInstant() : null,
-                    row[3] != null ? ((Timestamp) row[3]).toInstant() : null,
-                    row[4] != null ? ((Timestamp) row[4]).toInstant() : null,
-                    (String) row[5],
-                    ((Number) row[6]).doubleValue(),
-                    ((Number) row[7]).doubleValue(),
-                    (String) row[8],
-                    ((Number) row[9]).intValue()
-                ))
-                .collect(Collectors.toList());
+                    .map(row -> new SaleDTO(
+                            ((Number) row[0]).longValue(),                                // collectiveSaleId
+                            (String) row[1],                                              // saleType
+                            row[2] != null ? ((Timestamp) row[2]).toInstant() : null,    // createdAt
+                            row[3] != null ? ((Timestamp) row[3]).toInstant() : null,    // soldAt
+                            row[4] != null ? ((Timestamp) row[4]).toInstant() : null,    // expectedSaleDate
+                            (String) row[5],                                              // materialName
+                            ((Number) row[6]).doubleValue(),                              // weight
+                            ((Number) row[7]).doubleValue(),                              // pricePerKg
+                            (String) row[8],                                              // buyerName
+                            ((Number) row[9]).intValue()                                  // cooperativeCount
+                    ))
+                    .collect(Collectors.toList());
         }
 
 
@@ -248,5 +249,34 @@
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                         "Error cancelling sale");
             }
+        }
+
+        public List<SaleDTO> getNormalSales(Long cooperativeId, String status) {
+
+            validateCooperativeOwnership(cooperativeId);
+
+            List<SaleDTO> activeSales = new ArrayList<>();
+
+            if ("ACTIVE".equalsIgnoreCase(status)) {
+                activeSales.addAll(mapRegularSales(
+                        repository.findActiveSalesByCooperative(cooperativeId)
+                ));
+            }
+
+            if ("HISTORY".equalsIgnoreCase(status)) {
+                activeSales.addAll(mapRegularSales(
+                        repository.findSalesHistoryByCooperative(cooperativeId)
+                ));
+            }
+
+            // Sortere efter created_at
+            return activeSales.stream()
+                    .sorted((a, b) -> {
+                        if (a.getCreatedAt() == null && b.getCreatedAt() == null) return 0;
+                        if (a.getCreatedAt() == null) return 1;
+                        if (b.getCreatedAt() == null) return -1;
+                        return b.getCreatedAt().compareTo(a.getCreatedAt());
+                    })
+                    .collect(Collectors.toList());
         }
     }

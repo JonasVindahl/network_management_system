@@ -152,6 +152,9 @@
     <div class="nav-item" onclick="navigate('inventory',this)">
       <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>Inventory
     </div>
+    <div class="nav-item" onclick="navigate('sales',this)">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Sales
+    </div>
     <div class="nav-item" onclick="navigate('noticeboard',this)">
       <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Notice Board
     </div>
@@ -295,6 +298,33 @@
       </div>
     </div>
     <!-- END INVENTORY -->
+
+    <!-- SALES -->
+    <div id="page-sales" class="page">
+      <h1 class="page-title">Sales</h1>
+
+      <div style="display:flex;gap:8px;margin-bottom:20px">
+        <button class="quick-btn active" id="salesTypeNormal" onclick="setSalesType('normal')">Normal Sales</button>
+        <button class="quick-btn" id="salesTypeCollective" onclick="setSalesType('collective')">Collective Sales</button>
+      </div>
+
+      <div class="table-card" style="margin-bottom:20px">
+        <div class="table-card-header">Active Sales</div>
+        <table>
+          <thead><tr><th>Material</th><th>Weight (kg)</th><th>Price/kg</th><th>Buyer</th><th>Expected Date</th><th>Status</th></tr></thead>
+          <tbody id="activeSalesTable"><tr><td colspan="6" class="loading">Loading...</td></tr></tbody>
+        </table>
+      </div>
+
+      <div class="table-card">
+        <div class="table-card-header">History</div>
+        <table>
+          <thead><tr><th>Material</th><th>Weight (kg)</th><th>Price/kg</th><th>Buyer</th><th>Expected Date</th><th>Status</th></tr></thead>
+          <tbody id="historySalesTable"><tr><td colspan="6" class="loading">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <!-- END SALES -->
 
     <!-- NOTICE BOARD -->
     <div id="page-noticeboard" class="page">
@@ -464,7 +494,8 @@ const loaders = {
   workers: loadWorkers,
   inventory: loadInventory,
   noticeboard: loadNotices,
-  multipliers: loadMultipliers
+  multipliers: loadMultipliers,
+  sales: loadSales
 };
 
 function navigate(page, el) {
@@ -849,6 +880,58 @@ document.addEventListener('visibilitychange', () => {
     }
   }
 });
+
+let salesType = 'normal';
+
+function setSalesType(type) {
+  salesType = type;
+  document.getElementById('salesTypeNormal').classList.toggle('active', type === 'normal');
+  document.getElementById('salesTypeCollective').classList.toggle('active', type === 'collective');
+  loadSales();
+}
+
+async function loadSales() {
+  document.getElementById('activeSalesTable').innerHTML = '<tr><td colspan="6" class="loading">Loading...</td></tr>';
+  document.getElementById('historySalesTable').innerHTML = '<tr><td colspan="6" class="loading">Loading...</td></tr>';
+
+  const activeEndpoint  = salesType === 'normal'
+          ? '/api/sales?status=ACTIVE'
+          : '/api/collective-sale/my?status=ACTIVE';
+  const historyEndpoint = salesType === 'normal'
+          ? '/api/sales?status=HISTORY'
+          : '/api/collective-sale/my?status=HISTORY';
+
+  try {
+    const [active, history] = await Promise.all([
+      api(activeEndpoint),
+      api(historyEndpoint)
+    ]);
+
+    const renderRow = s => `<tr>
+      <td>${s.materialName ?? '—'}</td>
+      <td class="mono">${fmt(s.weight ?? s.totalWeight)}</td>
+      <td class="mono">R$ ${fmt(s.pricePerKg ?? s.priceKg, 2)}</td>
+      <td>${s.buyerName ?? '—'}</td>
+      <td class="mono">${fmtDate(s.expectedSaleDate)}</td>
+      <td><span style="font-size:12px;font-weight:600;padding:2px 8px;border-radius:4px;background:${s.status==='COMPLETED'?'#d4edda':s.status==='CANCELLED'?'#f8d7da':'#fff3cd'};color:${s.status==='COMPLETED'?'#155724':s.status==='CANCELLED'?'#721c24':'#856404'}">${s.status ?? '—'}</span></td>
+    </tr>`;
+
+    const activeList  = Array.isArray(active)  ? active  : [];
+    const historyList = Array.isArray(history) ? history : [];
+
+    document.getElementById('activeSalesTable').innerHTML  = activeList.length
+            ? activeList.map(renderRow).join('')
+            : '<tr><td colspan="6" class="loading">No active sales</td></tr>';
+
+    document.getElementById('historySalesTable').innerHTML = historyList.length
+            ? historyList.map(renderRow).join('')
+            : '<tr><td colspan="6" class="loading">No history</td></tr>';
+
+  } catch (e) {
+    document.getElementById('activeSalesTable').innerHTML  = `<tr><td colspan="6" class="error-msg">Error: ${e.message}</td></tr>`;
+    document.getElementById('historySalesTable').innerHTML = `<tr><td colspan="6" class="error-msg">Error: ${e.message}</td></tr>`;
+  }
+}
 
 initDates();
 loadDashboard();

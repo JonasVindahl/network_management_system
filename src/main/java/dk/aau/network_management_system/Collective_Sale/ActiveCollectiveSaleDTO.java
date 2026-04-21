@@ -12,6 +12,8 @@ public class ActiveCollectiveSaleDTO {
     private Instant expectedSaleDate;
     private Instant createdAt;
     private Long creatorCooperativeId;
+    private String status;
+    private Instant soldAt;
     private String myStatus; // ACCEPTED or INVITED for managers; null for admins viewing all
 
     public ActiveCollectiveSaleDTO(Long collectiveSaleId, String materialName, String buyerName,
@@ -25,6 +27,8 @@ public class ActiveCollectiveSaleDTO {
         this.createdAt = createdAt;
         this.creatorCooperativeId = creatorCooperativeId;
         this.myStatus = myStatus;
+        this.soldAt = null;
+        this.status = "ACTIVE";
     }
 
     public Long getCollectiveSaleId() { return collectiveSaleId; }
@@ -50,4 +54,13 @@ public class ActiveCollectiveSaleDTO {
 
     public String getMyStatus() { return myStatus; }
     public void setMyStatus(String myStatus) { this.myStatus = myStatus; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+
+    public Instant getSoldAt() { return soldAt; }
+    public void setSoldAt(Instant soldAt) {
+        this.soldAt = soldAt;
+        this.status = soldAt == null ? "ACTIVE" : "COMPLETED";
+    }
 }

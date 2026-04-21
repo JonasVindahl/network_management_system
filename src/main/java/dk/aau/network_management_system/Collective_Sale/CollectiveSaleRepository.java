@@ -146,4 +146,54 @@ public interface CollectiveSaleRepository extends JpaRepository<CollectiveSaleEn
         ORDER BY cs.created_at DESC
         """, nativeQuery = true)
     List<Object[]> findAllActiveSales();
+
+    @Query(value = """
+    SELECT
+        cs.collective_sale_id,
+        cs.material_id,
+        m.material_name,
+        cs.total_weight,
+        cs.price_kg,
+        b.buyer_name,
+        cs.expected_sale_date,
+        cs.created_at,
+        cs.sold_at,
+        csc.contributed_weight,
+        csc.revenue_share,
+        csc.status AS participation_status
+    FROM collective_sale cs
+    JOIN collective_sale_contribution csc
+        ON csc.collective_sale_id = cs.collective_sale_id
+    JOIN materials m ON m.material_id = cs.material_id
+    JOIN buyers    b ON b.buyer_id    = cs.buyer_id
+    WHERE csc.cooperative_id = :cooperativeId
+      AND cs.sold_at IS NULL
+    ORDER BY cs.created_at DESC
+    """, nativeQuery = true)
+    List<Object[]> findActiveCollectiveSalesByCooperative(@Param("cooperativeId") Long cooperativeId);
+
+    @Query(value = """
+    SELECT
+        cs.collective_sale_id,
+        cs.material_id,
+        m.material_name,
+        cs.total_weight,
+        cs.price_kg,
+        b.buyer_name,
+        cs.expected_sale_date,
+        cs.created_at,
+        cs.sold_at,
+        csc.contributed_weight,
+        csc.revenue_share,
+        csc.status AS participation_status
+    FROM collective_sale cs
+    JOIN collective_sale_contribution csc
+        ON csc.collective_sale_id = cs.collective_sale_id
+    JOIN materials m ON m.material_id = cs.material_id
+    JOIN buyers    b ON b.buyer_id    = cs.buyer_id
+    WHERE csc.cooperative_id = :cooperativeId
+      AND cs.sold_at IS NOT NULL
+    ORDER BY cs.sold_at DESC
+    """, nativeQuery = true)
+    List<Object[]> findCollectiveSalesHistoryByCooperative(@Param("cooperativeId") Long cooperativeId);
 }

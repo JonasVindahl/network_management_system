@@ -20,6 +20,7 @@ public interface SalesRepository extends JpaRepository<CooperativeEntity, Long> 
             'REGULAR' as sale_type,
             s.created_at,
             s.sold_at,
+            s.cancelled_at,
             s.expected_sale_date,
             m.material_name,
             s.weight,
@@ -78,6 +79,7 @@ public interface SalesRepository extends JpaRepository<CooperativeEntity, Long> 
             'REGULAR' as sale_type,
             s.created_at,
             s.sold_at,
+            s.cancelled_at,
             s.expected_sale_date,
             m.material_name,
             s.weight,
@@ -197,4 +199,48 @@ public interface SalesRepository extends JpaRepository<CooperativeEntity, Long> 
             @Param("saleId") Long saleId,
             @Param("cooperativeId") Long cooperativeId
     );
+
+    @Query(value = """
+    SELECT
+        s.sale_id,
+        'REGULAR' as sale_type,
+        s.created_at,
+        s.sold_at,
+        s.cancelled_at,
+        s.expected_sale_date,
+        m.material_name,
+        s.weight,
+        s.price_kg,
+        b.buyer_name
+    FROM sales s
+    JOIN materials m ON m.material_id = s.material
+    JOIN buyers   b ON b.buyer_id     = s.buyer
+    WHERE s.cooperative_id = :cooperativeId
+      AND s.sold_at     IS NULL
+      AND s.cancelled_at IS NULL
+    ORDER BY s.created_at DESC
+    """, nativeQuery = true)
+    List<Object[]> findActiveSalesByCooperative(@Param("cooperativeId") Long cooperativeId);
+
+    @Query(value = """
+    SELECT
+        s.sale_id,
+        'REGULAR' as sale_type,
+        s.created_at,
+        s.sold_at,
+        s.cancelled_at,
+        s.expected_sale_date,
+        m.material_name,
+        s.weight,
+        s.price_kg,
+        b.buyer_name
+    FROM sales s
+    JOIN materials m ON m.material_id = s.material
+    JOIN buyers   b ON b.buyer_id     = s.buyer
+    WHERE s.cooperative_id = :cooperativeId
+      AND (s.sold_at IS NOT NULL OR s.cancelled_at IS NOT NULL)
+    ORDER BY COALESCE(s.sold_at, s.cancelled_at) DESC
+    """, nativeQuery = true)
+    List<Object[]> findSalesHistoryByCooperative(@Param("cooperativeId") Long cooperativeId);
+
 }
