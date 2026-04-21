@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import dk.aau.network_management_system.auth.PermissionHelper;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/collective-sale")
@@ -92,6 +93,26 @@ public class CollectiveSaleController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/my")
+    public ResponseEntity<List<ActiveCollectiveSaleDTO>> getMyCollectiveSales(
+            @RequestParam(defaultValue = "ACTIVE") String status) {
+
+        permissionHelper.requireManagerOrAdmin();
+
+        if (!status.matches("(?i)(ACTIVE|HISTORY)")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Invalid status. Must be ACTIVE or HISTORY");
+        }
+
+        Long cooperativeId = permissionHelper.determineTargetCooperative(null);
+
+        if ("ACTIVE".equalsIgnoreCase(status)) {
+            return ResponseEntity.ok(service.getMyCollectiveSales(cooperativeId));
+        } else {
+            return ResponseEntity.ok(service.getMyCollectiveSalesHistory(cooperativeId));
+        }
+    }
+    
     @DeleteMapping("/{saleId}")
     public ResponseEntity<Void> cancelCollectiveSale(@PathVariable Long saleId) {
         permissionHelper.requireManagerOrAdmin();

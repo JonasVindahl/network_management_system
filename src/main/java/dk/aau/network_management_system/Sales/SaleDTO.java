@@ -7,7 +7,8 @@ public class SaleDTO {
     private Long saleId;
     private String saleType;  
     private Instant createdAt;
-    private Instant soldAt;   
+    private Instant soldAt;
+    private Instant cancelledAt;
     private Instant expectedSaleDate;
     private String materialName;
     private Double weight;
@@ -23,29 +24,32 @@ public class SaleDTO {
     public SaleDTO() {}
     
     // normal sale constructor
-    public SaleDTO(Long saleId, String saleType, Instant createdAt, Instant soldAt,
+    public SaleDTO(Long saleId, String saleType, Instant createdAt, Instant soldAt, Instant cancelledAt,
                    Instant expectedSaleDate, String materialName, Double weight, 
                    Double pricePerKg, String buyerName) {
         this.saleId = saleId;
         this.saleType = saleType;
         this.createdAt = createdAt;
         this.soldAt = soldAt;
+        this.cancelledAt = cancelledAt;
         this.expectedSaleDate = expectedSaleDate;
         this.materialName = materialName;
         this.weight = weight;
         this.pricePerKg = pricePerKg;
         this.totalRevenue = weight * pricePerKg;
         this.buyerName = buyerName;
-        this.status = soldAt == null ? "PENDING" : "COMPLETED";
+        if (cancelledAt != null) this.status = "CANCELLED";
+        else if (soldAt != null) this.status = "COMPLETED";
+        else this.status = "PENDING";
     }
     
     // collectiv sale constructor
-    public SaleDTO(Long collectiveSaleId, String saleType, Instant createdAt, 
+    public SaleDTO(Long collectiveSaleId, String saleType, Instant createdAt,
                    Instant soldAt, Instant expectedSaleDate, String materialName,
-                   Double weight, Double pricePerKg, String buyerName, 
+                   Double weight, Double pricePerKg, String buyerName,
                    Integer cooperativeCount) {
-        this(null, saleType, createdAt, soldAt, expectedSaleDate, 
-             materialName, weight, pricePerKg, buyerName);
+        this(null, saleType, createdAt, soldAt, null, expectedSaleDate,
+                materialName, weight, pricePerKg, buyerName);
         this.collectiveSaleId = collectiveSaleId;
         this.cooperativeCount = cooperativeCount;
     }
@@ -107,5 +111,11 @@ public class SaleDTO {
     public Integer getCooperativeCount() { return cooperativeCount; }
     public void setCooperativeCount(Integer cooperativeCount) { 
         this.cooperativeCount = cooperativeCount; 
+    }
+
+    public Instant getCancelledAt() { return cancelledAt; }
+    public void setCancelledAt(Instant cancelledAt) {
+        this.cancelledAt = cancelledAt;
+        if (cancelledAt != null) this.status = "CANCELLED";
     }
 }

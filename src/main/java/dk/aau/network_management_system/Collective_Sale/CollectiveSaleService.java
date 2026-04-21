@@ -414,4 +414,53 @@ public class CollectiveSaleService {
                 "Expected sale date must be in the future");
         }
     }
+
+    public List<ActiveCollectiveSaleDTO> getMyCollectiveSales(Long cooperativeId) {
+        try {
+            return repository.findActiveCollectiveSalesByCooperative(cooperativeId).stream()
+                    .map(row -> {
+                        ActiveCollectiveSaleDTO dto = new ActiveCollectiveSaleDTO(
+                                ((Number) row[0]).longValue(),
+                                (String) row[2],
+                                (String) row[5],
+                                (BigDecimal) row[4],
+                                row[6] != null ? ((java.sql.Timestamp) row[6]).toInstant() : null,
+                                row[7] != null ? ((java.sql.Timestamp) row[7]).toInstant() : null,
+                                null,
+                                (String) row[11]
+                        );
+                        return dto;
+                    })
+                    .collect(Collectors.toList());
+        } catch (DataAccessException e) {
+            log.error("Database error fetching active collective sales for cooperative {}", cooperativeId, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Error retrieving collective sales");
+        }
+    }
+
+    public List<ActiveCollectiveSaleDTO> getMyCollectiveSalesHistory(Long cooperativeId) {
+        try {
+            return repository.findCollectiveSalesHistoryByCooperative(cooperativeId).stream()
+                    .map(row -> {
+                        ActiveCollectiveSaleDTO dto = new ActiveCollectiveSaleDTO(
+                                ((Number) row[0]).longValue(),
+                                (String) row[2],
+                                (String) row[5],
+                                (BigDecimal) row[4],
+                                row[6] != null ? ((java.sql.Timestamp) row[6]).toInstant() : null,
+                                row[7] != null ? ((java.sql.Timestamp) row[7]).toInstant() : null,
+                                null,
+                                (String) row[11]
+                        );
+                        dto.setSoldAt(row[8] != null ? ((java.sql.Timestamp) row[8]).toInstant() : null);
+                        return dto;
+                    })
+                    .collect(Collectors.toList());
+        } catch (DataAccessException e) {
+            log.error("Database error fetching collective sales history for cooperative {}", cooperativeId, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Error retrieving collective sales history");
+        }
+    }
 }
