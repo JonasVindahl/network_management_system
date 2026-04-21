@@ -121,8 +121,17 @@
   .last-sales-header select { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 5px 10px; font-size: 13px; color: var(--text-primary); background: var(--surface); outline: none; font-family: 'DM Sans', sans-serif; cursor: pointer; }
   .stock-bold { font-weight: 700; font-family: 'DM Mono', monospace; }
 
+<<<<<<< normal_sales_frontend
+  .sales-tab-group { display:flex; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden ; }
+  .sales-tab { padding:6px 18px; font-size:13px; font-weight:500; border:none; background:transparent; cursor:pointer; font-family: 'DM Sans',sans-serif; color:var(--text-secondary); transition:all 0.15s; }
+  .sales-tab.active { background:var(--accent); color:white; }
+  .badge-pending { background:#fff3cd; color:#856404; font-size:11px; font-weight:600; padding:2px 8px; border-radius:4px; }
+  .badge-completed { background:#d4edda; color:#155724; font-size:11px; font-weight:600; padding: 2px 8px; border-radius:4px; }
+  .badge-overdue { background:#f8d7da; color:#721c24; font-size:11px; font-weight:600; padding:2px 8px; border-radius:4px; }
+=======
   .dual-table-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
   .dual-table-grid .table-card { margin-bottom: 0; }
+>>>>>>> main
 
   /* MODALS */
   .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; }
@@ -154,6 +163,9 @@
     </div>
     <div class="nav-item" onclick="navigate('noticeboard',this)">
       <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Notice Board
+    </div>
+    <div class = "nav-item" onclick="navigate('sales', this)" >
+      <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2"/></svg>Sales
     </div>
     <div class="nav-item" onclick="navigate('multipliers',this)">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>Multipliers
@@ -324,7 +336,78 @@
     </div>
     <!-- END NOTICE BOARD -->
 
+<<<<<<< normal_sales_frontend
+    <div id="page-sales" class="page">
+      <div class ="page-header">
+        <h1 class = "page-title" style="margin-bottom:0">Sales</h1>
+        <div style="display:flex;gap:10px;align-items:center">
+          <div class="sales-tab-group">
+            <button class="sales-tab active" id="tabActive" onclick="switchSalesTab('active')">Active</button>
+            <button class="sales-tab" id="tabHistory" onclick="switchSalesTab('history')">History</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<!-- Active Sales Panel -->
+ <div id="salesPanelActive">
+  <div id="salesActiveError"></div>
+  <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
+    <div class="stat-card"><div class="stat-label">Active Sales</div><div class="stat-value" id="saleStatCount">—</div></div>
+    <div class="stat-card"><div class="stat-label">Total Weight (kg)</div><div class="stat-value" id="saleStatKg">—</div></div>
+    <div class="stat-card"><div class="stat-label">Expected Revenue</div><div class="stat-value" id="saleStatRevenue" style="font-size:20px">—</div></div>
+  </div>
+  <div class="table-card">
+    <div class="table-card-header">
+      <span>Pending Regular Sales</span>
+      <button class="btn-sm" onclick="loadSalesActive()">↻ Refresh</button>
+    </div>
+    <table>
+      <thead><tr>
+        <th>Sale ID</th><th>Material</th><th>Weight (kg)</th>
+        <th>Price/kg</th><th>Total Revenue</th><th>Buyer</th>
+        <th>Expected Date</th><th>Status</th>
+      </tr></thead>
+      <tbody id="salesActiveTable"><tr><td colspan="8" class="loading">Loading...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- History Panel -->
+<div id="salesPanelHistory" style="display:none">
+  <div class="page-header" style="margin-bottom:16px">
+    <div class="period-selector">Period:<input type="date" id="salesFrom">to<input type="date" id="salesTo">
+      <button class="period-btn" onclick="loadSalesHistory()">Apply</button>
+    </div>
+  </div>
+  <div id="salesHistoryError"></div>
+  <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
+    <div class="stat-card"><div class="stat-label">Completed Sales</div><div class="stat-value" id="histStatCount">—</div></div>
+    <div class="stat-card"><div class="stat-label">Total Weight Sold (kg)</div><div class="stat-value" id="histStatKg">—</div></div>
+    <div class="stat-card"><div class="stat-label">Total Revenue</div><div class="stat-value" id="histStatRevenue" style="font-size:20px">—</div></div>
+  </div>
+  <div class="table-card">
+    <div class="table-card-header">
+      <span>Sales History</span>
+      <span id="histPeriodLabel" style="font-size:12px;color:var(--text-muted);font-weight:400"></span>
+    </div>
+    <table>
+      <thead><tr>
+        <th>Sale ID</th><th>Material</th><th>Weight (kg)</th>
+        <th>Price/kg</th><th>Total Revenue</th><th>Buyer</th>
+        <th>Sold Date</th><th>Status</th>
+      </tr></thead>
+      <tbody id="salesHistoryTable"><tr><td colspan="8" class="loading">Loading...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+</div>
+
+
+
+=======
     <!-- MULTIPLIERS -->
+>>>>>>> main
     <div id="page-multipliers" class="page">
       <h1 class="page-title">Multipliers</h1>
       <div class="info-box">
@@ -443,6 +526,8 @@ function initDates() {
   document.getElementById('dashTo').value = to;
   document.getElementById('workersFrom').value = from;
   document.getElementById('workersTo').value = to;
+  document.getElementById('salesFrom').value = from;
+  document.getElementById('salesTo').value = to;
 }
 
 function applyQuickDash(days) {
@@ -464,6 +549,7 @@ const loaders = {
   workers: loadWorkers,
   inventory: loadInventory,
   noticeboard: loadNotices,
+  sales: loadSales,
   multipliers: loadMultipliers
 };
 
@@ -670,6 +756,109 @@ async function loadLast5Sales() {
       `<tr><td colspan="4" class="error-msg">Error: ${e.message}</td></tr>`;
   }
 }
+
+/* - SALES - */
+let currentSalesTab = 'active';
+
+function loadSales() {
+  if (currentSalesTab === 'active') loadSalesActive();
+  else loadSalesHistory();
+}
+
+function switchSalesTab(tab) {
+  currentSalesTab = tab;
+  document.getElementById('tabActive').classList.toggle('active', tab === 'active');
+  document.getElementById('tabHistory').classList.toggle('active', tab === 'history');
+  document.getElementById('salesPanelActive').style.display = tab === 'active' ? '' : 'none';
+  document.getElementById('salesPanelHistory').style.display = tab === 'history' ? '' : 'none';
+  loadSales();
+}
+
+function saleCurrencyFmt(n) {
+  if (n == null) return '-';
+  return 'R$ ' + Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+
+function saleStatusBadge(sale) {
+  const status = sale.status ??(sale.soldAt ? 'COMPLETED' : 'PENDING');
+  if (status === 'COMPLETED') return '<span class="badge-completed">Completed</span>';
+  if (sale.expectedSaleDate) {
+    const exp = new Date(sale.expectedSaleDate);
+    if (exp < new Date()) return '<span class="badge-overdue">Overdue</span>';
+  }
+  return '<span class="badge-pending">Pending</span>';
+}
+
+function saleRow(s, dateField) {
+  const id = s.saleId ?? '-';
+  const mat = s.materialName ?? '-';
+  const wt = fmt(s.weight, 1);
+  const ppk = saleCurrencyFmt(s.pricePerKg);
+  const rev = saleCurrencyFmt(s.totalRevenue);
+  const buyer = s.buyerName ?? '-';
+  const date = fmtDate(s[dateField]);
+  const badge = saleStatusBadge(s);
+  return `<tr>
+    <td class="mono" style="color:var(--text-muted)">#${id}</td>
+    <td>${mat}</td>
+    <td class="mono">${wt}</td>
+    <td class="mono">${ppk}</td>
+    <td class="mono" style="font-weight:600">${rev}</td>
+    <td>${buyer}</td>
+    <td class="mono">${date}</td>
+    <td>${badge}</td>
+   </tr>`;
+}
+
+async function loadSalesActive() {
+  document.getElementById('salesActiveError').innerHTML = '';
+  document.getElementById('salesActiveTable').innerHTML = '<tr><td colspan="8" class="loading">Loading...</td></tr>';
+  try {
+    const data = await api('/api/sales/active?type=REGULAR');
+    const list = Array.isArray(data) ? data : [];
+
+    const totalKg  = list.reduce((sum, s) => sum + (s.weight ?? 0), 0);
+    const totalRev = list.reduce((sum, s) => sum + (s.totalRevenue ?? (s.weight ?? 0) * (s.pricePerKg ?? 0)), 0);
+    document.getElementById('saleStatCount').textContent   = list.length;
+    document.getElementById('saleStatKg').textContent      = fmt(totalKg, 1);
+    document.getElementById('saleStatRevenue').textContent = saleCurrencyFmt(totalRev);
+
+    document.getElementById('salesActiveTable').innerHTML = list.length
+      ? list.map(s => saleRow(s, 'expectedSaleDate')).join('')
+      : '<tr><td colspan="8" class="loading">No active sales found</td></tr>';
+  } catch (e) {
+    document.getElementById('salesActiveError').innerHTML = `<div class="error-msg">Error: ${e.message}</div>`;
+    document.getElementById('salesActiveTable').innerHTML = '<tr><td colspan="8" class="loading">—</td></tr>';
+  }
+}
+
+async function loadSalesHistory() {
+  const from = (document.getElementById('salesFrom').value || defaultFrom()) + 'T00:00:00Z';
+  const to   = (document.getElementById('salesTo').value   || defaultTo())   + 'T23:59:59Z';
+  document.getElementById('salesHistoryError').innerHTML = '';
+  document.getElementById('salesHistoryTable').innerHTML = '<tr><td colspan="8" class="loading">Loading...</td></tr>';
+  document.getElementById('histPeriodLabel').textContent =
+    `${from.split('T')[0]} → ${to.split('T')[0]}`;
+  try {
+    const data = await api(`/api/sales/history?type=REGULAR&startDate=${from}&endDate=${to}`);
+    const list = Array.isArray(data) ? data : [];
+
+    const completed = list.filter(s => s.soldAt != null);
+    const totalKg  = completed.reduce((sum, s) => sum + (s.weight ?? 0), 0);
+    const totalRev = completed.reduce((sum, s) => sum + (s.totalRevenue ?? 0), 0);
+    document.getElementById('histStatCount').textContent   = completed.length;
+    document.getElementById('histStatKg').textContent      = fmt(totalKg, 1);
+    document.getElementById('histStatRevenue').textContent = saleCurrencyFmt(totalRev);
+
+    document.getElementById('salesHistoryTable').innerHTML = list.length
+      ? list.map(s => saleRow(s, 'soldAt')).join('')
+      : '<tr><td colspan="8" class="loading">No sales found for this period</td></tr>';
+  } catch (e) {
+    document.getElementById('salesHistoryError').innerHTML = `<div class="error-msg">Error: ${e.message}</div>`;
+    document.getElementById('salesHistoryTable').innerHTML = '<tr><td colspan="8" class="loading">—</td></tr>';
+  }
+}
+
 
 async function loadNotices() {
   try {
