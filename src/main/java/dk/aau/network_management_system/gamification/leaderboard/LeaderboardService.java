@@ -112,7 +112,7 @@ public class LeaderboardService {
                 jdbc.query("""
                         SELECT
                             wa.worker_id,
-                            COALESCE(SUM(COAwLESCE(axo.xp_reward_override, ad.base_xp_reward)), 0) AS ach_xp
+                            COALESCE(SUM(COALESCE(axo.xp_reward_override, ad.base_xp_reward)), 0) AS ach_xp
                         FROM worker_achievement wa
                         JOIN achievement_definition ad ON ad.achievement_id = wa.achievement_id
                         LEFT JOIN achievement_xp_override axo
