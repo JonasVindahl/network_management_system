@@ -44,6 +44,9 @@
   .mono { font-family: 'DM Mono', monospace; font-size: 13px; }
   .btn-sm { background: var(--accent); color: white; border: none; padding: 6px 14px; border-radius: var(--radius-sm); font-size: 12.5px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; }
   .btn-sm:hover { background: #154d64; }
+  .btn-pdf { background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; display: inline-flex; align-items: center; gap: 4px; }
+  .btn-pdf:hover { background: #bb2d3b; }
+  .btn-pdf svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .btn-danger { background: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; }
   .btn-danger:hover { background: #bb2d3b; }
   .form-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 20px; }
@@ -173,17 +176,19 @@
       <div id="manageError"></div>
 
       <div class="manage-layout">
-        <!-- Left: sale list -->
         <div class="table-card" style="margin-bottom:0">
           <div class="table-card-header" style="font-size:13px">Your Active Sales</div>
           <div id="manageSaleList"><div class="loading">Loading...</div></div>
         </div>
 
-        <!-- Right: management panel -->
         <div id="managePanel" style="display:none">
           <div class="table-card">
             <div class="table-card-header">
               <span id="managePanelTitle">Sale Details</span>
+              <button class="btn-pdf" id="managePdfBtn" onclick="downloadPdf(selectedSaleId)">
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Download PDF
+              </button>
             </div>
             <div style="padding:16px 24px" id="saleDetails"></div>
           </div>
@@ -259,7 +264,7 @@
               <button class="btn-danger" onclick="cancelSaleAction()">Cancel Sale</button>
             </div>
           </div>
-        </div><!-- /managePanel -->
+        </div>
       </div>
     </div>
 
@@ -273,9 +278,9 @@
       <div class="table-card">
         <table>
           <thead>
-            <tr><th>ID</th><th>Material</th><th>Buyer</th><th>Weight (kg)</th><th>Price/kg</th><th>Revenue</th><th>Completed / Cancelled</th><th>Status</th></tr>
+            <tr><th>ID</th><th>Material</th><th>Buyer</th><th>Weight (kg)</th><th>Price/kg</th><th>Revenue</th><th>Completed / Cancelled</th><th>Status</th><th></th></tr>
           </thead>
-          <tbody id="historyTable"><tr><td colspan="8" class="loading">Loading...</td></tr></tbody>
+          <tbody id="historyTable"><tr><td colspan="9" class="loading">Loading...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -295,7 +300,6 @@
 </div>
 
 <script>
-// ── Auth ───────────────────────────────────────────────────────────────────
 function getToken() {
   const m = document.cookie.match(/(?:^|;\s*)jwt=([^;]+)/);
   return m ? m[1] : null;
@@ -320,6 +324,26 @@ async function api(path, opts = {}) {
 function doLogout() {
   document.cookie = 'jwt=; path=/; max-age=0';
   window.location.href = '/login';
+}
+
+// ── PDF Download ───────────────────────────────────────────────────────────
+async function downloadPdf(saleId) {
+  const token = getToken();
+  try {
+    const res = await fetch(`/api/reports/pdf/normal-sale/${saleId}`, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sale-${saleId}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    alert('Could not download PDF: ' + e.message);
+  }
 }
 
 // ── Navigation ─────────────────────────────────────────────────────────────
@@ -376,7 +400,7 @@ function closeConfirm() {
   document.getElementById('confirmModal').classList.remove('open');
 }
 
-// ── Dropdowns + stock ──────────────────────────────────────────────────────
+// ── Dropdowns ──────────────────────────────────────────────────────────────
 let dropsLoaded = false;
 let stockByMaterial = {};
 let materialsCache = [];
@@ -415,16 +439,14 @@ function updateCreateStockHint() {
   const mid = document.getElementById('createMaterial').value;
   const hint = document.getElementById('createStockHint');
   if (!mid) { hint.textContent = ''; return; }
-  const avail = stockByMaterial[mid] ?? 0;
-  hint.textContent = `(${fmt(avail)} kg available)`;
+  hint.textContent = `(${fmt(stockByMaterial[mid] ?? 0)} kg available)`;
 }
 
 function updateManageStockHint() {
   const mid = document.getElementById('manageMaterial').value;
   const hint = document.getElementById('manageStockHint');
   if (!mid) { hint.textContent = ''; return; }
-  const avail = stockByMaterial[mid] ?? 0;
-  hint.textContent = `(${fmt(avail)} kg available)`;
+  hint.textContent = `(${fmt(stockByMaterial[mid] ?? 0)} kg available)`;
 }
 
 // ── Active Sales ───────────────────────────────────────────────────────────
@@ -442,7 +464,13 @@ async function loadActiveSales() {
           <td class="mono">${fmt(s.pricePerKg)} kr</td>
           <td class="mono">${fmt(s.totalRevenue)} kr</td>
           <td class="mono">${fmtDate(s.expectedSaleDate)}</td>
-          <td><button class="btn-sm" onclick="goManage(${s.saleId})">Manage</button></td>
+          <td style="display:flex;gap:6px;align-items:center">
+            <button class="btn-sm" onclick="goManage(${s.saleId})">Manage</button>
+            <button class="btn-pdf" onclick="downloadPdf(${s.saleId})">
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              PDF
+            </button>
+          </td>
         </tr>`).join('')
       : '<tr><td colspan="8" class="loading">No active sales</td></tr>';
   } catch (e) {
@@ -482,7 +510,7 @@ async function createSale() {
         expectedSaleDate: new Date(date).toISOString()
       })
     });
-    showMsg('createSuccess', `Sale created.`, false);
+    showMsg('createSuccess', 'Sale created.', false);
     document.getElementById('createWeight').value = '';
     document.getElementById('createPrice').value  = '';
     document.getElementById('createDate').value   = '';
@@ -547,7 +575,6 @@ function selectSale(saleId) {
     <div class="detail-row"><span class="detail-label">Created</span><span class="detail-value">${fmtDate(s.createdAt)}</span></div>
   `;
 
-  // Prefill form values
   const matSel = document.getElementById('manageMaterial');
   const buySel = document.getElementById('manageBuyer');
   const found = materialsCache.find(m => m.materialName === s.materialName);
@@ -566,10 +593,7 @@ async function putUpdate(body, errId, okId, okText) {
   if (!selectedSaleId) return;
   clearMsg(errId, okId);
   try {
-    await api(`/api/sales/${selectedSaleId}`, {
-      method: 'PUT',
-      body: JSON.stringify(body)
-    });
+    await api(`/api/sales/${selectedSaleId}`, { method: 'PUT', body: JSON.stringify(body) });
     showMsg(okId, okText, false);
     await loadManageSaleList();
   } catch (e) {
@@ -607,7 +631,7 @@ function updateDate() {
   putUpdate({ expectedSaleDate: new Date(v).toISOString() }, 'dateError', 'dateSuccess', 'Date updated.');
 }
 
-// ── Complete / Cancel ─────────────────────────────────────────────────────
+// ── Complete / Cancel ──────────────────────────────────────────────────────
 function completeSale() {
   if (!selectedSaleId) return;
   confirm2('Complete sale?', `Mark sale #${selectedSaleId} as completed. This cannot be undone.`, async () => {
@@ -641,7 +665,7 @@ function cancelSaleAction() {
 // ── History ────────────────────────────────────────────────────────────────
 async function loadHistory() {
   document.getElementById('historyError').innerHTML = '';
-  document.getElementById('historyTable').innerHTML = '<tr><td colspan="8" class="loading">Loading...</td></tr>';
+  document.getElementById('historyTable').innerHTML = '<tr><td colspan="9" class="loading">Loading...</td></tr>';
   try {
     const list = (await api('/api/sales?status=HISTORY')) ?? [];
     document.getElementById('historyTable').innerHTML = list.length
@@ -660,9 +684,15 @@ async function loadHistory() {
             <td class="mono">${fmt(s.totalRevenue)} kr</td>
             <td class="mono">${fmtDate(endDate)}</td>
             <td><span class="badge ${bc}">${st}</span></td>
+            <td>
+              <button class="btn-pdf" onclick="downloadPdf(${s.saleId})">
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                PDF
+              </button>
+            </td>
           </tr>`;
         }).join('')
-      : '<tr><td colspan="8" class="loading">No past sales</td></tr>';
+      : '<tr><td colspan="9" class="loading">No past sales</td></tr>';
   } catch (e) {
     document.getElementById('historyError').innerHTML = `<div class="error-msg">Error: ${e.message}</div>`;
     document.getElementById('historyTable').innerHTML = '';

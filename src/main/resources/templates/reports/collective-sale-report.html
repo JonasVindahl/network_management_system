@@ -117,7 +117,7 @@
         </div>
         <div>
             <strong>Sale ID:</strong> <span th:text="${report.collectiveSaleId}">0</span>
-            &nbsp;|&nbsp;
+            &#160;|&#160;
             <strong>Status:</strong>
             <span class="badge"
                   th:classappend="'badge-' + ${report.status}"
@@ -219,7 +219,10 @@
             <td class="right">
                 <span th:text="${#numbers.formatDecimal(c.percentageOfTotal, 1, 'POINT', 2, 'COMMA')}">0,00</span>%
             </td>
-            <td class="right" th:text="${#numbers.formatDecimal(c.revenueShare, 1, 'POINT', 2, 'COMMA')}">0,00</td>
+            <td class="right"
+                th:text="${#numbers.formatDecimal((report.totalRevenue * c.revenueShare / 100), 1, 'POINT', 2, 'COMMA')} + ' kr'">
+                0,00
+            </td>
             <td>
                 <span class="badge"
                       th:classappend="${c.status != null} ? 'badge-' + ${c.status} : 'badge-ACTIVE'"
