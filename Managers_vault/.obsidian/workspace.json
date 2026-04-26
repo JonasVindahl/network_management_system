@@ -1,0 +1,229 @@
+{
+  "main": {
+    "id": "910d77c083bfdb82",
+    "type": "split",
+    "children": [
+      {
+        "id": "d19b1977017b2265",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "3c990db97da67695",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "Nova aba"
+            }
+          }
+        ]
+      },
+      {
+        "id": "fb3911daae69360e",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "5ea778440321f773",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Visualização em gráfico"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "4ed246e928728b39",
+    "type": "split",
+    "children": [
+      {
+        "id": "7d8197b2209c24db",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "7c6a316868391e6d",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Explorador de arquivos"
+            }
+          },
+          {
+            "id": "df306f7175a4ef04",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Procurar"
+            }
+          },
+          {
+            "id": "8c37d9e76e019228",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Marcadores"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "b5beac1b9190caa2",
+    "type": "split",
+    "children": [
+      {
+        "id": "91648939bbab768a",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "12803ebf052802a0",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Links inversos"
+            }
+          },
+          {
+            "id": "179eb93750443a16",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Links de saída"
+            }
+          },
+          {
+            "id": "db3f1125c4823611",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Etiquetas"
+            }
+          },
+          {
+            "id": "4adb71b906342596",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "Todas as propriedades"
+            }
+          },
+          {
+            "id": "f6937393fe5e06b0",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Sumário"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Abrir a troca rápida": false,
+      "graph:Abrir visualização em gráfico": false,
+      "canvas:Criar novo canvas": false,
+      "daily-notes:Abrir a nota de hoje": false,
+      "templates:Inserir modelo": false,
+      "command-palette:Abrir paleta de comandos": false,
+      "bases:Criar nova base": false
+    }
+  },
+  "active": "3c990db97da67695",
+  "lastOpenFiles": [
+    "Improvements/Improvement Log.md",
+    "Planning/Known Gaps and Follow-ups.md",
+    "Planning/Code Inventory.md",
+    "Operations/Runbook.md",
+    "Operations/Build Test Deploy.md",
+    "Operations/Setup and Configuration.md",
+    "Domain/Gamification.md",
+    "Domain/Notice Board.md",
+    "Domain/Reports and PDFs.md",
+    "Domain/Cooperatives Analytics Buyers.md",
+    "Domain/Materials Stock and Measurements.md",
+    "Domain/Collective Sales.md",
+    "Domain/Normal Sales.md",
+    "API/API Reference.md",
+    "API/Authentication and Roles.md",
+    "Bem-vindo.md",
+    "Models/Java Models and DTOs.md",
+    "Models/Database Schema.md",
+    "Architecture/Frontend Views.md",
+    "Architecture/Scheduled Jobs.md",
+    "Architecture/Data Access and Persistence.md",
+    "Architecture/Runtime and Security.md",
+    "Architecture/System Overview.md",
+    "Home.md",
+    "Improvements",
+    "Planning",
+    "Operations",
+    "Domain",
+    "API",
+    "Models",
+    "Architecture"
+  ]
+}
