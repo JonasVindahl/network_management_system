@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="da">
+<head>
+<meta charset="UTF-8" />
+<title>Collective Sale Report</title>
+<style>
+    @page {
+        size: A4;
+        margin: 18mm 16mm 20mm 16mm;
+        @bottom-right {
+            content: "Page " counter(page) " of " counter(pages);
+            font-size: 9pt;
+            color: #666;
+        }
+    }
+    * { box-sizing: border-box; }
+    body {
+        font-family: "Helvetica", "Arial", sans-serif;
+        font-size: 10pt;
+        color: #1d1d1f;
+        margin: 0;
+    }
+    .header {
+        border-bottom: 2px solid #0f5132;
+        padding-bottom: 10px;
+        margin-bottom: 18px;
+    }
+    .header h1 {
+        margin: 0 0 4px 0;
+        font-size: 20pt;
+        color: #0f5132;
+    }
+    .header .meta {
+        font-size: 9pt;
+        color: #555;
+    }
+    .header .meta strong { color: #1d1d1f; }
+    h2 {
+        font-size: 12pt;
+        color: #0f5132;
+        margin: 18px 0 8px 0;
+        border-bottom: 1px solid #d0d0d0;
+        padding-bottom: 3px;
+    }
+    table.kv {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 6px;
+    }
+    table.kv td {
+        padding: 4px 6px;
+        vertical-align: top;
+    }
+    table.kv td.label {
+        width: 40%;
+        color: #555;
+        font-weight: bold;
+    }
+    table.data {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 6px;
+        font-size: 9.5pt;
+    }
+    table.data th {
+        background: #0f5132;
+        color: #fff;
+        text-align: left;
+        padding: 6px 8px;
+        font-weight: bold;
+    }
+    table.data td {
+        padding: 6px 8px;
+        border-bottom: 1px solid #e5e5e5;
+    }
+    table.data tr:nth-child(even) td { background: #f7f7f7; }
+    .right { text-align: right; }
+    .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 9pt;
+        font-weight: bold;
+    }
+    .badge-SOLD      { background: #d1e7dd; color: #0f5132; }
+    .badge-CANCELLED { background: #f8d7da; color: #721c24; }
+    .badge-ACTIVE    { background: #cfe2ff; color: #084298; }
+    .badge-LEFT      { background: #f8d7da; color: #721c24; }
+    .badge-ACCEPTED  { background: #d1e7dd; color: #0f5132; }
+    .badge-INVITED   { background: #fff3cd; color: #664d03; }
+    .totals {
+        margin-top: 10px;
+        text-align: right;
+        font-size: 11pt;
+    }
+    .totals strong { color: #0f5132; }
+    .footer {
+        margin-top: 22px;
+        font-size: 8.5pt;
+        color: #777;
+        border-top: 1px solid #d0d0d0;
+        padding-top: 6px;
+    }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Collective Sale Report</h1>
+    <div class="meta">
+        <div th:if="${viewerCooperativeName != null}">
+            <strong>Cooperative:</strong> <span th:text="${viewerCooperativeName}">Cooperative</span>
+        </div>
+        <div>
+            <strong>Generated:</strong>
+            <span th:text="${#temporals.format(generatedAt, 'dd-MM-yyyy HH:mm', 'Europe/Copenhagen')}">01-01-2026 12:00</span>
+        </div>
+        <div>
+            <strong>Sale ID:</strong> <span th:text="${report.collectiveSaleId}">0</span>
+            &#160;|&#160;
+            <strong>Status:</strong>
+            <span class="badge"
+                  th:classappend="'badge-' + ${report.status}"
+                  th:text="${report.status}">ACTIVE</span>
+        </div>
+    </div>
+</div>
+
+<h2>Overview</h2>
+<table class="kv">
+    <tr>
+        <td class="label">Material</td>
+        <td>
+            <span th:text="${report.materialName}">Material</span>
+            (ID: <span th:text="${report.materialId}">0</span>)
+        </td>
+    </tr>
+    <tr>
+        <td class="label">Buyer</td>
+        <td>
+            <span th:text="${report.buyerName}">Buyer</span>
+            (ID: <span th:text="${report.buyerId}">0</span>)
+        </td>
+    </tr>
+    <tr>
+        <td class="label">Creator Cooperative ID</td>
+        <td th:text="${report.creatorCooperativeId} ?: '—'">0</td>
+    </tr>
+    <tr>
+        <td class="label">Total Cooperatives</td>
+        <td th:text="${report.totalCooperatives}">0</td>
+    </tr>
+</table>
+
+<h2>Timeline</h2>
+<table class="kv">
+    <tr>
+        <td class="label">Created</td>
+        <td th:text="${report.createdAt != null} ? ${#temporals.format(report.createdAt, 'dd-MM-yyyy HH:mm', 'Europe/Copenhagen')} : '—'">—</td>
+    </tr>
+    <tr>
+        <td class="label">Expected Sale Date</td>
+        <td th:text="${report.expectedSaleDate != null} ? ${#temporals.format(report.expectedSaleDate, 'dd-MM-yyyy', 'Europe/Copenhagen')} : '—'">—</td>
+    </tr>
+    <tr>
+        <td class="label">Sold At</td>
+        <td th:text="${report.soldAt != null} ? ${#temporals.format(report.soldAt, 'dd-MM-yyyy HH:mm', 'Europe/Copenhagen')} : '—'">—</td>
+    </tr>
+    <tr>
+        <td class="label">Cancelled At</td>
+        <td th:text="${report.cancelledAt != null} ? ${#temporals.format(report.cancelledAt, 'dd-MM-yyyy HH:mm', 'Europe/Copenhagen')} : '—'">—</td>
+    </tr>
+</table>
+
+<h2>Financials</h2>
+<table class="kv">
+    <tr>
+        <td class="label">Total Weight</td>
+        <td>
+            <span th:text="${#numbers.formatDecimal(report.totalWeight, 1, 'POINT', 2, 'COMMA')}">0,00</span> kg
+        </td>
+    </tr>
+    <tr>
+        <td class="label">Price per kg</td>
+        <td>
+            <span th:text="${#numbers.formatDecimal(report.pricePerKg, 1, 'POINT', 2, 'COMMA')}">0,00</span> kr
+        </td>
+    </tr>
+    <tr>
+        <td class="label">Total Revenue</td>
+        <td>
+            <strong>
+                <span th:text="${#numbers.formatDecimal(report.totalRevenue, 1, 'POINT', 2, 'COMMA')}">0,00</span> kr
+            </strong>
+        </td>
+    </tr>
+</table>
+
+<h2>Contributions</h2>
+<table class="data">
+    <thead>
+        <tr>
+            <th>Cooperative</th>
+            <th class="right">Weight (kg)</th>
+            <th class="right">% of Total</th>
+            <th class="right">Revenue Share (kr)</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr th:each="c : ${report.contributions}">
+            <td>
+                <span th:text="${c.cooperativeName}">Cooperative</span>
+                <span style="color:#888;font-size:8.5pt;">
+                    (ID <span th:text="${c.cooperativeId}">0</span>)
+                </span>
+            </td>
+            <td class="right" th:text="${#numbers.formatDecimal(c.contributedWeight, 1, 'POINT', 2, 'COMMA')}">0,00</td>
+            <td class="right">
+                <span th:text="${#numbers.formatDecimal(c.percentageOfTotal, 1, 'POINT', 2, 'COMMA')}">0,00</span>%
+            </td>
+            <td class="right"
+                th:text="${#numbers.formatDecimal((report.totalRevenue * c.revenueShare / 100), 1, 'POINT', 2, 'COMMA')} + ' kr'">
+                0,00
+            </td>
+            <td>
+                <span class="badge"
+                      th:classappend="${c.status != null} ? 'badge-' + ${c.status} : 'badge-ACTIVE'"
+                      th:text="${c.status} ?: '—'">—</span>
+            </td>
+        </tr>
+        <tr th:if="${report.contributions == null or report.contributions.isEmpty()}">
+            <td colspan="5" style="text-align:center;color:#888;">No contributions</td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="totals">
+    Total Revenue:
+    <strong>
+        <span th:text="${#numbers.formatDecimal(report.totalRevenue, 1, 'POINT', 2, 'COMMA')}">0,00</span> kr
+    </strong>
+</div>
+
+<div class="footer">
+    Network Management System — Collective Sale Report — Sale ID <span th:text="${report.collectiveSaleId}">0</span>
+</div>
+
+</body>
+</html>
