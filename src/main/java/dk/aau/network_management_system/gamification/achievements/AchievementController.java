@@ -17,7 +17,7 @@ import dk.aau.network_management_system.auth.PermissionHelper;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api/gamification/achievements")
+@RequestMapping("/api/achievements")
 public class AchievementController {
     private final AchievementService achievementService;
     private final AuthenticatedUser authenticatedUser;
@@ -31,7 +31,7 @@ public class AchievementController {
         this.permissionHelper = permissionHelper;
     }
 
-    // GET /api/gamification/achievements
+    // GET /api/achievements
     @GetMapping
     public ResponseEntity<List<AchievementDTO>> listAchievements(
         @RequestParam(required = false) Long cooperativeId) {
@@ -39,7 +39,7 @@ public class AchievementController {
             return ResponseEntity.ok(achievementService.listAllAchievements(targetCoop));
         }
 
-    // PATCH /api/gamification/achievements/{achievementId}/xp
+    // PATCH /api/achievements/{achievementId}/xp
         @PatchMapping("/{achievementId}/xp")
         public ResponseEntity<Void> updateAchievementXp(
             @PathVariable Long achievementId,
@@ -52,7 +52,7 @@ public class AchievementController {
                 return ResponseEntity.noContent().build();
             }
 
-    // GET /api/gamification/achievements/workers/{workerId}/month
+    // GET /api/achievements/workers/{workerId}/month
     @GetMapping("/workers/{workerId}/month")
     public ResponseEntity<WorkerMonthSummaryDTO> getWorkerMonthSummary(
         @PathVariable Long workerId,
@@ -63,7 +63,7 @@ public class AchievementController {
             return ResponseEntity.ok(achievementService.getWorkerMonthSummary(targetWorker, yearMonth, targetCoop));
         }
 
-// GET /api/gamification/achievements/workers/{workerId}/top-month
+// GET /api/achievements/workers/{workerId}/top-month
     @GetMapping("/workers/{workerId}/top-month")
     public ResponseEntity<WorkerMonthSummaryDTO> getTopMonthThisYear(
             @PathVariable Long workerId,
@@ -75,7 +75,7 @@ public class AchievementController {
             achievementService.getTopMonthThisYear(targetWorker, targetCoop));
     }
  
-    // GET /api/gamification/achievements/workers/{workerId}/top-day
+    // GET /api/achievements/workers/{workerId}/top-day
     @GetMapping("/workers/{workerId}/top-day")
     public ResponseEntity<Map<String, Object>> getTopDayInMonth(
             @PathVariable Long workerId,

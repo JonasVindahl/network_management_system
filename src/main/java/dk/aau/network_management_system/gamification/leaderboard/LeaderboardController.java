@@ -20,14 +20,14 @@ public class LeaderboardController {
             this.permissionHelper = permissionHelper;
          }
 
-    // GET /api/gamification/leaderboard
+    // GET /api/leaderboard
     @GetMapping
     public ResponseEntity<LeaderboardDTO> getCurrentLeaderboard(@RequestParam(required = false) Long cooperativeId) {
         Long targetCoop = permissionHelper.determineTargetCooperative(cooperativeId);
         return ResponseEntity.ok(leaderboardService.getCurrentLeaderboard(targetCoop));
     }
 
-    // GET /api/gamification/leaderboard/history?cooperativeId=&yearMonth=2025-05&weekNumber=2
+    // GET /api/leaderboard/history?cooperativeId=&yearMonth=2025-05&weekNumber=2
     // Henter et leaderboard snapshot for en specifik uge og måned
 
     @GetMapping("/history")
