@@ -39,7 +39,7 @@ public class AnalyticsService {
             "You can only access your own cooperative's data");
     }
 
-    List<Object[]> results = repository.findCooperativePerformanceRaw(cooperativeId, startDate, endDate);
+    List<Object[]> results = repository.findCooperativePerformanceRaw(cooperativeId);
 
     return results.stream()
         .map(row -> new CooperativePerformanceDTO(
