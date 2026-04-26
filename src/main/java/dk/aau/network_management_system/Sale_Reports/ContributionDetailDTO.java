@@ -7,18 +7,20 @@ public class ContributionDetailDTO {
     private Double contributedWeight;
     private Double percentageOfTotal;
     private Double revenueShare;
+    private String status;
 
     public ContributionDetailDTO(){}
-    
+
     public ContributionDetailDTO(
-    Long cooperativeId, String cooperativeName, 
+    Long cooperativeId, String cooperativeName,
     Double contributedWeight, Double totalWeight,
-    Double revenueShare) {
+    Double revenueShare, String status) {
 
         this.cooperativeId = cooperativeId;
         this.cooperativeName = cooperativeName;
         this.contributedWeight = contributedWeight;
         this.revenueShare = revenueShare;
+        this.status = status;
 
         if(totalWeight != null && totalWeight > 0){
             this.percentageOfTotal = (contributedWeight / totalWeight) * 100;
@@ -48,6 +50,8 @@ public class ContributionDetailDTO {
         public Double getRevenueShare() { return revenueShare; }
         public void setRevenueShare(Double revenueShare) { this.revenueShare = revenueShare; }
 
+        public String getStatus() { return status; }
+        public void setStatus(String status) { this.status = status; }
 
 
 }

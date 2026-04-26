@@ -13,7 +13,6 @@
     --border: #e8edf2; --border-light: #f0f4f7;
     --radius: 10px; --radius-sm: 6px;
   }
-  *, *::before, *::after { box-sizing: border-box; }
   body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text-primary); display: flex; min-height: 100vh; font-size: 14px; }
   .sidebar { width: 200px; min-height: 100vh; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; }
   .sidebar-logo { padding: 22px 20px 18px; font-size: 17px; font-weight: 600; color: var(--accent); letter-spacing: -0.3px; border-bottom: 1px solid var(--border-light); }
@@ -45,6 +44,9 @@
   .mono { font-family: 'DM Mono', monospace; font-size: 13px; }
   .btn-sm { background: var(--accent); color: white; border: none; padding: 6px 14px; border-radius: var(--radius-sm); font-size: 12.5px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; }
   .btn-sm:hover { background: #154d64; }
+  .btn-pdf { background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; display: inline-flex; align-items: center; gap: 4px; }
+  .btn-pdf:hover { background: #bb2d3b; }
+  .btn-pdf svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .btn-danger { background: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; }
   .btn-danger:hover { background: #bb2d3b; }
   .form-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 20px; }
@@ -62,6 +64,7 @@
   .badge-accepted { background: #d4edda; color: #1b5e20; }
   .badge-invited  { background: #fff3cd; color: #856404; }
   .badge-creator  { background: #e8f4f8; color: var(--accent); }
+  .badge-left     { background: #f8d7da; color: #721c24; }
   .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; }
   .modal-overlay.open { display: flex; }
   .modal-box { background: white; border-radius: var(--radius); padding: 28px; width: 440px; }
@@ -72,7 +75,6 @@
   .detail-row:last-child { border-bottom: none; }
   .detail-label { color: var(--text-secondary); font-weight: 500; }
   .detail-value { font-family: 'DM Mono', monospace; font-size: 13px; }
-  /* Manage layout */
   .manage-layout { display: grid; grid-template-columns: 340px 1fr; gap: 24px; align-items: start; }
   .sale-list-item { padding: 14px 16px; border-bottom: 1px solid var(--border-light); cursor: pointer; transition: background 0.1s; }
   .sale-list-item:last-child { border-bottom: none; }
@@ -82,7 +84,6 @@
   .sale-list-item .sale-meta { font-size: 12px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
   .actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .section-divider { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; margin: 20px 0 12px; }
-  /* Create invite section */
   #createInviteSection { display: none; }
   .invited-list { margin-top: 12px; }
   .invited-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-light); font-size: 13px; }
@@ -101,13 +102,17 @@
       <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Active Sales
     </div>
     <div class="nav-item" onclick="navigate('invitations',this)">
-      <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.18 6.18l1.37-1.37a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Invitations <span id="invBadge" style="display:none;background:#dc3545;color:white;border-radius:10px;padding:1px 6px;font-size:11px;margin-left:4px"></span>
+      <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.18 6.18l1.37-1.37a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      Invitations <span id="invBadge" style="display:none;background:#dc3545;color:white;border-radius:10px;padding:1px 6px;font-size:11px;margin-left:4px"></span>
     </div>
     <div class="nav-item" onclick="navigate('create',this)">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Create Sale
     </div>
     <div class="nav-item" onclick="navigate('manage',this)">
       <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Manage Sale
+    </div>
+    <div class="nav-item" onclick="navigate('history',this)">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>History
     </div>
   </nav>
 </aside>
@@ -177,12 +182,10 @@
           </div>
           <div class="form-group">
             <label class="form-label">Expected Sale Date</label>
-            <input type="datetime-local" class="form-control" id="createDate">
+            <input type="date" class="form-control" id="createDate">
           </div>
           <button class="btn-create" onclick="createSale()">Create Sale</button>
         </div>
-
-        <!-- Invite section — shown after creation -->
         <div id="createInviteSection" class="form-card">
           <div class="form-title">Invite Cooperatives to Sale <span id="createdSaleIdLabel"></span></div>
           <div id="createInviteError"></div>
@@ -206,22 +209,19 @@
         <button class="btn-sm" onclick="loadManageSaleList()">Refresh</button>
       </div>
       <div id="manageError"></div>
-
       <div class="manage-layout">
-
-        <!-- Left: sale list -->
         <div class="table-card" style="margin-bottom:0">
           <div class="table-card-header" style="font-size:13px">Your Sales</div>
           <div id="manageSaleList"><div class="loading">Loading...</div></div>
         </div>
-
-        <!-- Right: management panel -->
         <div id="managePanel" style="display:none">
-
-          <!-- Details + contributions -->
           <div class="table-card">
             <div class="table-card-header">
               <span id="managePanelTitle">Sale Details</span>
+              <button class="btn-pdf" id="managePdfBtn" onclick="downloadPdf(selectedSaleId)">
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Download PDF
+              </button>
             </div>
             <div style="padding:16px 24px" id="saleDetails"></div>
           </div>
@@ -232,8 +232,6 @@
               <tbody id="contributionsTable"></tbody>
             </table>
           </div>
-
-          <!-- Owner-only actions -->
           <div id="ownerActions">
             <div class="section-divider">Owner Actions</div>
             <div class="actions-grid">
@@ -271,13 +269,11 @@
                 <div class="form-title">Delete Sale</div>
                 <div id="deleteError"></div>
                 <div id="deleteSuccess"></div>
-                <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px">As the creator, you cannot leave the sale. Deleting cancels the sale for all participants. The record is kept in the database.</p>
+                <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px">Deleting cancels the sale for all participants. The record is kept in the database.</p>
                 <button class="btn-danger" onclick="deleteSale()">Delete This Sale</button>
               </div>
             </div>
           </div>
-
-          <!-- Participant actions -->
           <div class="section-divider">My Actions</div>
           <div class="actions-grid">
             <div class="form-card" style="margin-bottom:0">
@@ -298,8 +294,24 @@
               <button class="btn-danger" onclick="leaveSale()">Leave This Sale</button>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
 
-        </div><!-- /managePanel -->
+    <!-- ── HISTORY ── -->
+    <div id="page-history" class="page">
+      <div class="page-header">
+        <h1 class="page-title" style="margin-bottom:0">History</h1>
+        <button class="btn-sm" onclick="loadHistory()">Refresh</button>
+      </div>
+      <div id="historyError"></div>
+      <div class="table-card">
+        <table>
+          <thead>
+            <tr><th>ID</th><th>Material</th><th>Buyer</th><th>Price/kg</th><th>Expected Date</th><th>Completed / Cancelled</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody id="historyTable"><tr><td colspan="8" class="loading">Loading...</td></tr></tbody>
+        </table>
       </div>
     </div>
 
@@ -318,8 +330,6 @@
 </div>
 
 <script>
-// ── Auth ───────────────────────────────────────────────────────────────────
-
 function getToken() {
   const m = document.cookie.match(/(?:^|;\s*)jwt=([^;]+)/);
   return m ? m[1] : null;
@@ -353,13 +363,33 @@ function doLogout() {
   window.location.href = '/login';
 }
 
-// ── Navigation ─────────────────────────────────────────────────────────────
+// ── PDF Download ───────────────────────────────────────────────────────────
+async function downloadPdf(saleId) {
+  const token = getToken();
+  try {
+    const res = await fetch(`/api/reports/pdf/collective-sale/${saleId}`, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `collective-sale-${saleId}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    alert('Could not download PDF: ' + e.message);
+  }
+}
 
+// ── Navigation ─────────────────────────────────────────────────────────────
 const loaders = {
   active:      loadActiveSales,
   invitations: loadInvitations,
   create:      loadDropdowns,
-  manage:      () => { loadDropdowns(); loadManageSaleList(); }
+  manage:      () => { loadDropdowns(); loadManageSaleList(); },
+  history:     loadHistory
 };
 
 function navigate(page, el) {
@@ -371,7 +401,6 @@ function navigate(page, el) {
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-
 function fmtDate(s) {
   if (!s) return '—';
   return new Date(s).toLocaleDateString('da-DK', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -403,7 +432,6 @@ function closeConfirm() {
 }
 
 // ── Dropdowns ──────────────────────────────────────────────────────────────
-
 let dropsLoaded = false;
 let stockByMaterial = {};
 let allCooperatives = [];
@@ -428,13 +456,12 @@ async function loadDropdowns() {
     const buyerList = Array.isArray(buyers) ? buyers : [];
     allCooperatives = Array.isArray(coops)  ? coops  : [];
 
-    // Always refresh the stock map (it can change on add/reserve)
     stockByMaterial = {};
     materials.forEach(m => { stockByMaterial[m.materialId] = m.currentStockKg ?? m.currentStock ?? 0; });
 
     if (dropsLoaded) return;
 
-    const matOpts  = '<option value="">— select —</option>' + materials.map(m => `<option value="${m.materialId}">${m.materialName}</option>`).join('');
+    const matOpts = '<option value="">— select —</option>' + materials.map(m => `<option value="${m.materialId}">${m.materialName}</option>`).join('');
 
     document.getElementById('createMaterial').innerHTML    = matOpts;
     document.getElementById('manageMaterial').innerHTML    = matOpts;
@@ -456,7 +483,6 @@ async function refreshStockCache() {
 }
 
 // ── Active Sales ───────────────────────────────────────────────────────────
-
 async function loadActiveSales() {
   document.getElementById('activeError').innerHTML = '';
   document.getElementById('activeTable').innerHTML = '<tr><td colspan="8" class="loading">Loading...</td></tr>';
@@ -473,7 +499,13 @@ async function loadActiveSales() {
             <td class="mono">${fmtDate(s.expectedSaleDate)}</td>
             <td class="mono">${s.creatorCooperativeId}</td>
             <td><span class="badge ${bc}">${s.myStatus ?? 'admin'}</span></td>
-            <td><button class="btn-sm" onclick="goManage(${s.collectiveSaleId})">Manage</button></td>
+            <td style="display:flex;gap:6px;align-items:center">
+              <button class="btn-sm" onclick="goManage(${s.collectiveSaleId})">Manage</button>
+              <button class="btn-pdf" onclick="downloadPdf(${s.collectiveSaleId})">
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                PDF
+              </button>
+            </td>
           </tr>`;
         }).join('')
       : '<tr><td colspan="8" class="loading">No active collective sales</td></tr>';
@@ -485,6 +517,43 @@ async function loadActiveSales() {
 
 let activeSalesCache = [];
 
+// ── History ────────────────────────────────────────────────────────────────
+async function loadHistory() {
+  document.getElementById('historyError').innerHTML = '';
+  document.getElementById('historyTable').innerHTML = '<tr><td colspan="8" class="loading">Loading...</td></tr>';
+  try {
+    const list = (await api('/api/collective-sale/my?status=HISTORY')) ?? [];
+    document.getElementById('historyTable').innerHTML = list.length
+      ? list.map(s => {
+          const st = s.status ?? '—';
+          const bc = st === 'COMPLETED' ? 'badge-accepted'
+                   : st === 'CANCELLED' ? 'badge-left'
+                   : st === 'LEFT'      ? 'badge-left'
+                                        : 'badge-invited';
+          const endDate = s.soldAt ?? s.cancelledAt ?? null;
+          return `<tr>
+            <td class="mono">${s.collectiveSaleId}</td>
+            <td>${s.materialName}</td>
+            <td>${s.buyerName}</td>
+            <td class="mono">${fmt(s.pricePerKg)} kr</td>
+            <td class="mono">${fmtDate(s.expectedSaleDate)}</td>
+            <td class="mono">${fmtDate(endDate)}</td>
+            <td><span class="badge ${bc}">${st}</span></td>
+            <td>
+              <button class="btn-pdf" onclick="downloadPdf(${s.collectiveSaleId})">
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                PDF
+              </button>
+            </td>
+          </tr>`;
+        }).join('')
+      : '<tr><td colspan="8" class="loading">No past collective sales</td></tr>';
+  } catch (e) {
+    document.getElementById('historyError').innerHTML = `<div class="error-msg">Error: ${e.message}</div>`;
+    document.getElementById('historyTable').innerHTML = '';
+  }
+}
+
 async function goManage(saleId) {
   navigate('manage', document.querySelector('.nav-item:nth-child(5)'));
   await loadManageSaleList();
@@ -492,7 +561,6 @@ async function goManage(saleId) {
 }
 
 // ── Invitations ────────────────────────────────────────────────────────────
-
 async function loadInvitations() {
   document.getElementById('invError').innerHTML = '';
   document.getElementById('invTable').innerHTML = '<tr><td colspan="7" class="loading">Loading...</td></tr>';
@@ -529,7 +597,6 @@ async function joinSale(saleId) {
 }
 
 // ── Create Sale ────────────────────────────────────────────────────────────
-
 let createdSaleId = null;
 
 async function createSale() {
@@ -575,7 +642,6 @@ async function sendCreateInvite() {
   clearMsg('createInviteError', 'createInviteSuccess');
   const coopId = document.getElementById('createInviteCoop').value;
   if (!coopId) { showMsg('createInviteError', 'Select a cooperative.', true); return; }
-
   try {
     await api(`/api/collective-sale/${createdSaleId}/invite`, {
       method: 'POST',
@@ -596,7 +662,6 @@ async function sendCreateInvite() {
 }
 
 // ── Manage: sale list ──────────────────────────────────────────────────────
-
 async function loadManageSaleList() {
   document.getElementById('manageSaleList').innerHTML = '<div class="loading">Loading...</div>';
   try {
@@ -617,24 +682,23 @@ async function loadManageSaleList() {
 }
 
 let selectedSaleId = null;
+let selectedSaleMaterialId = null;
 
 async function selectSale(saleId) {
   selectedSaleId = saleId;
   document.querySelectorAll('.sale-list-item').forEach(el => el.classList.remove('selected'));
   const item = document.getElementById(`sale-item-${saleId}`);
   if (item) item.classList.add('selected');
-  clearMsg('manageError', 'inviteError', 'inviteSuccess', 'materialError', 'materialSuccess', 'priceError', 'priceSuccess', 'deleteError', 'deleteSuccess', 'weightError', 'weightSuccess', 'leaveError', 'leaveSuccess');
+  clearMsg('manageError','inviteError','inviteSuccess','materialError','materialSuccess','priceError','priceSuccess','deleteError','deleteSuccess','weightError','weightSuccess','leaveError','leaveSuccess');
   document.getElementById('managePanel').style.display = 'none';
   await loadSaleReport(saleId);
 }
-
-let selectedSaleMaterialId = null;
 
 async function loadSaleReport(saleId) {
   try {
     await loadDropdowns();
     await refreshStockCache();
-    const data = await api(`/api/reports/collective-sale/${saleId}`);
+    const data = await api(`/api/reports/sales/collective/${saleId}`);
     const myCoopId = getMyCooperativeId();
     const isOwner  = myCoopId !== null && data.creatorCooperativeId != null && Number(myCoopId) === Number(data.creatorCooperativeId);
     selectedSaleMaterialId = data.materialId ?? null;
@@ -655,20 +719,16 @@ async function loadSaleReport(saleId) {
           <td>${c.cooperativeName ?? c.cooperativeId}</td>
           <td class="mono">${fmt(c.contributedWeight)} kg</td>
           <td class="mono">${fmt(c.revenueShare)} kr</td>
-          <td><span class="badge ${c.status === 'ACCEPTED' ? 'badge-accepted' : 'badge-invited'}">${c.status}</span></td>
+          <td><span class="badge ${c.status === 'ACCEPTED' ? 'badge-accepted' : c.status === 'LEFT' ? 'badge-left' : 'badge-invited'}">${c.status ?? '—'}</span></td>
         </tr>`).join('')
       : '<tr><td colspan="4" class="loading">No contributions yet</td></tr>';
 
-    // Show/hide owner-only section
     document.getElementById('ownerActions').style.display = isOwner ? 'block' : 'none';
-    // Hide "leave" for owner (creator cannot leave — must delete the sale instead)
     document.getElementById('leaveCard').style.display = isOwner ? 'none' : 'block';
-    // Prefill price input with current value
     if (isOwner && data.pricePerKg != null) {
       document.getElementById('managePrice').value = data.pricePerKg;
     }
 
-    // Exclude already-invited/participating (and own) coops from the invite dropdown
     const excludeIds = contributions
       .filter(c => c.status !== 'LEFT')
       .map(c => c.cooperativeId)
@@ -677,7 +737,6 @@ async function loadSaleReport(saleId) {
     document.getElementById('inviteCooperative').innerHTML = buildCoopOptions(excludeIds);
 
     updateStockHint();
-
     document.getElementById('managePanel').style.display = 'block';
   } catch (e) {
     showMsg('manageError', e.message, true);
@@ -759,45 +818,36 @@ async function updatePrice() {
 }
 
 async function deleteSale() {
-  confirm2(
-    'Delete Sale',
-    `Are you sure you want to delete sale #${selectedSaleId}? This cancels the sale for all participants. The record is kept in the database.`,
-    async () => {
-      clearMsg('deleteError', 'deleteSuccess');
-      try {
-        await api(`/api/collective-sale/${selectedSaleId}`, { method: 'DELETE' });
-        showMsg('deleteSuccess', 'Sale deleted.', false);
-        document.getElementById('managePanel').style.display = 'none';
-        loadManageSaleList();
-        loadActiveSales();
-      } catch (e) {
-        showMsg('deleteError', e.message, true);
-      }
+  confirm2('Delete Sale', `Delete sale #${selectedSaleId}? This cancels the sale for all participants.`, async () => {
+    clearMsg('deleteError', 'deleteSuccess');
+    try {
+      await api(`/api/collective-sale/${selectedSaleId}`, { method: 'DELETE' });
+      showMsg('deleteSuccess', 'Sale deleted.', false);
+      document.getElementById('managePanel').style.display = 'none';
+      loadManageSaleList();
+      loadActiveSales();
+    } catch (e) {
+      showMsg('deleteError', e.message, true);
     }
-  );
+  });
 }
 
 async function leaveSale() {
-  confirm2(
-    'Leave Sale',
-    `Are you sure you want to leave sale #${selectedSaleId}? This cannot be undone.`,
-    async () => {
-      clearMsg('leaveError', 'leaveSuccess');
-      try {
-        await api(`/api/collective-sale/${selectedSaleId}/leave`, { method: 'DELETE' });
-        showMsg('leaveSuccess', 'You have left the sale.', false);
-        document.getElementById('managePanel').style.display = 'none';
-        loadManageSaleList();
-        loadActiveSales();
-      } catch (e) {
-        showMsg('leaveError', e.message, true);
-      }
+  confirm2('Leave Sale', `Leave sale #${selectedSaleId}? This cannot be undone.`, async () => {
+    clearMsg('leaveError', 'leaveSuccess');
+    try {
+      await api(`/api/collective-sale/${selectedSaleId}/leave`, { method: 'DELETE' });
+      showMsg('leaveSuccess', 'You have left the sale.', false);
+      document.getElementById('managePanel').style.display = 'none';
+      loadManageSaleList();
+      loadActiveSales();
+    } catch (e) {
+      showMsg('leaveError', e.message, true);
     }
-  );
+  });
 }
 
 // ── Init ───────────────────────────────────────────────────────────────────
-
 loadActiveSales();
 loadInvitations();
 </script>

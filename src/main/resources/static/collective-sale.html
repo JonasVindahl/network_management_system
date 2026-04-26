@@ -349,7 +349,7 @@
         const saleId = document.getElementById('manageSaleId').value;
         if (!saleId) return;
 
-        const res = await fetch(`/api/reports/collective-sale/${saleId}`, { headers: authHeaders() });
+        const res = await fetch(`/api/reports/sales/collective/${saleId}`, { headers: authHeaders() });
         const panel = document.getElementById('saleReport');
 
         if (!res.ok) {
