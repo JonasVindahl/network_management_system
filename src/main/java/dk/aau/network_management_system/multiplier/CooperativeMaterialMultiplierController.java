@@ -57,22 +57,6 @@ public class CooperativeMaterialMultiplierController {
         return ResponseEntity.ok(service.getAllMultipliers(targetCooperativeId));
     }
 
-
-    /* 
-    @GetMapping("/multipliers")
-    public ResponseEntity<List<CooperativeMaterialMultiplier>> getAllMultipliers(
-            @RequestParam(required = false) Long cooperativeId) {
-
-        permissionHelper.requireManagerOrAdmin();
-
-        Long targetCooperativeId = permissionHelper.determineTargetCooperative(cooperativeId);
-
-        List<CooperativeMaterialMultiplier> result = service.getAllMultipliers(targetCooperativeId);
-        return ResponseEntity.ok(result);
-    }
-
-    */
-
     @GetMapping("/multipliers/single")
     public ResponseEntity<CooperativeMaterialMultiplier> getMultiplier(
             @RequestParam(required = false) Long cooperativeId,

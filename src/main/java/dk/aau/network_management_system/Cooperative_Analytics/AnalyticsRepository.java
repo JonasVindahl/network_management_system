@@ -23,9 +23,7 @@ public interface AnalyticsRepository extends JpaRepository<CooperativeEntity, Lo
     WHERE s.cooperative = :cooperativeId
     """, nativeQuery = true)
 List<Object[]> findCooperativePerformanceRaw(
-    @Param("cooperativeId") Long cooperativeId,
-    @Param("startDate") LocalDateTime startDate,
-    @Param("endDate") LocalDateTime endDate);
+    @Param("cooperativeId") Long cooperativeId);
 
     @Query(value = """
         SELECT 
@@ -130,16 +128,6 @@ List<Object[]> findRevenueRaw(
         @Param("cooperativeId") Long cooperativeId,
         @Param("materialId") Long materialId
     );
-
-
-    @Query(value = """
-        SELECT DISTINCT
-            mat.material_id,
-            mat.material_name
-        FROM materials mat
-        ORDER BY mat.material_name
-        """, nativeQuery = true)
-    List<Object[]> getAllMaterials();
 
     @Query(value = """
         SELECT DISTINCT
