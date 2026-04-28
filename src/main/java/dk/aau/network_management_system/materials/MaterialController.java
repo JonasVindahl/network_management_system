@@ -22,7 +22,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api")
-@Tag(name = "Materials", description = "Endpoints for recording material weighings. Admin access only.")
+@Tag(name = "Materials", description = "Endpoints for recording material weighings. Worker access only.")
 public class MaterialController {
 
 	private final MaterialService service;
@@ -38,15 +38,15 @@ public class MaterialController {
 			Records a new material measurement for a worker.
 			Updates bag state and cooperative stock accordingly.
 			If `bagFull` is true, the bag state resets (current_kg → 0, is_begun → false).
-			**Requires Admin role.**
+			**Requires Worker role.**
 			""", security = @SecurityRequirement(name = "BearerAuth"))
 	@ApiResponses({
 			@ApiResponse(responseCode = "200", description = "Material inserted successfully", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "\"Material inserted successfully\""))),
 			@ApiResponse(responseCode = "400", description = "Missing or invalid required fields", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = """
 					{ "status": 400, "error": "Bad Request", "message": "materialId must be specified" }
 					"""))),
-			@ApiResponse(responseCode = "403", description = "Caller does not have Admin role", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = """
-					{ "status": 403, "error": "Forbidden", "message": "Only admins can insert material" }
+			@ApiResponse(responseCode = "403", description = "Caller does not have Worker role", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = """
+					{ "status": 403, "error": "Forbidden", "message": "Only workers can insert material" }
 					"""))) })
 	@PostMapping("/insertMaterial")
 	public ResponseEntity<String> insertMaterial(
