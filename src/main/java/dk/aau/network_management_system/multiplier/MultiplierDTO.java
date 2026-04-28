@@ -12,7 +12,7 @@ public class MultiplierDTO {
 
     @NotNull
     @DecimalMin(value = "0.1", message = "Multiplier must be at least 0.1")
-    @DecimalMax(value = "10", message = "Multiplier cannot exceed 99")
+    @DecimalMax(value = "10", message = "Multiplier cannot exceed 10")
     @Digits(integer = 2, fraction = 3, message = "Max 3 decimal places")
     private Double multiplierValue;
 
