@@ -463,4 +463,46 @@ public class CollectiveSaleService {
                     "Error retrieving collective sales history");
         }
     }
+
+    @Transactional
+    public void confirmCollectiveSale(Long saleId) {
+        try {
+            Long creatorId = repository.findActiveSaleCreator(saleId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                            "Collective sale not found or already cancelled"));
+
+            if (!authenticatedUser.isAdmin() && !Objects.equals(creatorId, requireAuthenticatedCooperativeId())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                        "Only the creator cooperative can confirm the sale");
+            }
+
+            BigDecimal totalWeight = BigDecimal.ZERO;
+
+            List<Object[]> reservations = repository.findAcceptedContributionsWithWeight(saleId);
+            for (Object[] r : reservations) {
+                Long coopId = ((Number) r[0]).longValue();
+                BigDecimal weight = toBigDecimal(r[1]);
+                Long materialId = ((Number) r[2]).longValue();
+                BigDecimal pricePerKg = toBigDecimal(r[3]);
+                stockRepository.recordSale(coopId, materialId, weight.doubleValue());
+                totalWeight = totalWeight.add(weight);
+                BigDecimal revenueShare = weight.multiply(pricePerKg);
+                repository.updateRevenueShare(saleId, coopId, revenueShare);
+
+            }
+
+            int rows = repository.confirmSale(saleId, totalWeight);
+            if (rows == 0) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "Collective sale could not be completed");
+            }
+
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (DataAccessException e) {
+            log.error("Database error while cancelling sale {}", saleId, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Error deleting sale");
+        }
+    }
 }

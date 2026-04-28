@@ -119,4 +119,11 @@ public class CollectiveSaleController {
         service.cancelCollectiveSale(saleId);
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("/{saleId}/complete")
+    public ResponseEntity<Void> completeCollectiveSale(@PathVariable Long saleId) {
+        permissionHelper.requireManagerOrAdmin();
+        service.confirmCollectiveSale(saleId);
+        return ResponseEntity.noContent().build();
+    }
 }
