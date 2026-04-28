@@ -154,7 +154,7 @@ public interface CollectiveSaleRepository extends JpaRepository<CollectiveSaleEn
     );
 
     @Query(value = """
-        SELECT csc.cooperative_id, csc.contributed_weight, cs.material_id
+        SELECT csc.cooperative_id, csc.contributed_weight, cs.material_id, cs.price_kg
         FROM collective_sale_contribution csc
         JOIN collective_sale cs ON cs.collective_sale_id = csc.collective_sale_id
         WHERE csc.collective_sale_id = :saleId
@@ -268,4 +268,33 @@ public interface CollectiveSaleRepository extends JpaRepository<CollectiveSaleEn
     ORDER BY COALESCE(cs.sold_at, cs.cancelled_at, cs.created_at) DESC
     """, nativeQuery = true)
     List<Object[]> findCollectiveSalesHistoryByCooperative(@Param("cooperativeId") Long cooperativeId);
+
+    @Modifying
+    @Transactional
+    @Query(value = """
+    UPDATE collective_sale
+    SET sold_at = now(),
+        total_weight = :totalWeight
+    WHERE collective_sale_id = :saleId
+      AND sold_at IS NULL
+      AND cancelled_at IS NULL
+    """, nativeQuery = true)
+    int confirmSale(
+            @Param("saleId") Long saleId,
+            @Param("totalWeight") BigDecimal totalWeight
+    );
+
+    @Modifying
+    @Transactional
+    @Query(value = """
+    UPDATE collective_sale_contribution
+    SET revenue_share = :revenueShare
+    WHERE collective_sale_id = :saleId
+      AND cooperative_id = :cooperativeId
+    """, nativeQuery = true)
+    void updateRevenueShare(
+            @Param("saleId") Long saleId,
+            @Param("cooperativeId") Long cooperativeId,
+            @Param("revenueShare") BigDecimal revenueShare
+    );
 }
