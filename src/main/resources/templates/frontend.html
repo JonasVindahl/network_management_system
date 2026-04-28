@@ -346,6 +346,10 @@
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         <span><strong>Note:</strong> Multipliers affect workers' points and gamification in the mobile app. Higher multipliers mean workers earn more XP points for collecting that material.</span>
       </div>
+      <div class="info-box">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span><strong>Multiplier value:</strong> The value must be between 0.1 and 10.</span>
+      </div>
       <div class="table-card" style="max-width:700px">
         <div class="table-card-header">Material Multipliers</div>
         <table>
@@ -452,14 +456,22 @@ function plabel(p) { return p >= 3 ? 'high' : p >= 2 ? 'medium' : 'low'; }
 function ptext(p)  { return p >= 3 ? 'High' : p >= 2 ? 'Medium' : 'Low'; }
 
 function initDates() {
-  const from = defaultFrom();
-  const to = defaultTo();
-  document.getElementById('dashFrom').value = from;
-  document.getElementById('dashTo').value = to;
-  document.getElementById('workersFrom').value = from;
-  document.getElementById('workersTo').value = to;
-  document.getElementById('salesFrom').value = from;
-  document.getElementById('salesTo').value = to;
+  const quick = document.getElementById('dashQuickSelect').value;
+
+  if (quick) {
+    applyQuickDash(quick);
+  } else {
+    const from = defaultFrom();
+    const to = defaultTo();
+
+    document.getElementById('dashFrom').value = from;
+    document.getElementById('dashTo').value = to;
+  }
+
+  const wQuick = document.getElementById('workersQuickSelect').value;
+  if (wQuick) {
+    applyQuickWorkers(wQuick);
+  }
 }
 
 function applyQuickDash(days) {
@@ -1024,8 +1036,8 @@ async function loadSales() {
 }
 
 initDates();
-loadDashboard();
 resetTimer();
+  ;
 </script>
 </body>
 </html>

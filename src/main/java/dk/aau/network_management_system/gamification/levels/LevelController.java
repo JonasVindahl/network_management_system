@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import dk.aau.network_management_system.auth.PermissionHelper;
 
 @RestController
-@RequestMapping("/api/gamification/levels")
+@RequestMapping("/api/levels")
 public class LevelController {
 
     private final LevelService levelService;
@@ -22,7 +22,7 @@ public class LevelController {
         this.permissionHelper = permissionHelper;
     }
 
-    // GET /api/gamification/levels
+    // GET /api/levels
     // Returnerer alle 10 level-definitioner med XP-krav
 
     @GetMapping
@@ -30,7 +30,7 @@ public class LevelController {
         return ResponseEntity.ok(levelService.getAllLevels());
     }
 
-    // GET /api/gamification/levels/worker/{workerId}
+    // GET /api/levels/worker/{workerId}
     // Returnerer en workers nuværende level, total XP og XP til næste level
     // Workers kan kun se sig selv
 

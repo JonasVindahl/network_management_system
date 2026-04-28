@@ -1,9 +1,19 @@
 package dk.aau.network_management_system.multiplier;
 
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.NotNull;
+
 public class MultiplierDTO {
     private Long cooperativeId;
     private Long materialId;
-    private String materialName; // ← NY
+    private String materialName;
+
+    @NotNull
+    @DecimalMin(value = "0.1", message = "Multiplier must be at least 0.1")
+    @DecimalMax(value = "10", message = "Multiplier cannot exceed 10")
+    @Digits(integer = 2, fraction = 3, message = "Max 3 decimal places")
     private Double multiplierValue;
 
     public MultiplierDTO() {}
