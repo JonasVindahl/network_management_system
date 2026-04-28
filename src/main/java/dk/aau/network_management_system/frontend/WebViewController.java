@@ -29,4 +29,9 @@ public class WebViewController {
     public String collectiveSale() {
         return "collective-sale";
     }
+
+    @GetMapping("/normal-sale")
+    public String normalSale() {
+        return "normal-sale";
+    }
 }

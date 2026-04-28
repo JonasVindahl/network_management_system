@@ -252,15 +252,20 @@ public interface CollectiveSaleRepository extends JpaRepository<CollectiveSaleEn
         cs.sold_at,
         csc.contributed_weight,
         csc.revenue_share,
-        csc.status AS participation_status
+        csc.status AS participation_status,
+        cs.cancelled_at
     FROM collective_sale cs
     JOIN collective_sale_contribution csc
         ON csc.collective_sale_id = cs.collective_sale_id
     JOIN materials m ON m.material_id = cs.material_id
     JOIN buyers    b ON b.buyer_id    = cs.buyer_id
     WHERE csc.cooperative_id = :cooperativeId
-      AND cs.sold_at IS NOT NULL
-    ORDER BY cs.sold_at DESC
+      AND (
+            cs.sold_at IS NOT NULL
+         OR cs.cancelled_at IS NOT NULL
+         OR csc.status = 'LEFT'
+      )
+    ORDER BY COALESCE(cs.sold_at, cs.cancelled_at, cs.created_at) DESC
     """, nativeQuery = true)
     List<Object[]> findCollectiveSalesHistoryByCooperative(@Param("cooperativeId") Long cooperativeId);
 

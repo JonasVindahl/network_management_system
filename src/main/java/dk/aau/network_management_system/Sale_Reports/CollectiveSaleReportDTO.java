@@ -14,7 +14,8 @@ public class CollectiveSaleReportDTO {
     private String buyerName;
     
     private Instant createdAt;
-    private Instant soldAt; 
+    private Instant soldAt;
+    private Instant cancelledAt;
     private Instant expectedSaleDate;
     
     private Double totalWeight;
@@ -31,7 +32,8 @@ public class CollectiveSaleReportDTO {
 
     public CollectiveSaleReportDTO(Long collectiveSaleId, Long materialId,
                                    String materialName, Long buyerId, String buyerName,
-                                   Instant createdAt, Instant soldAt, Instant expectedSaleDate,
+                                   Instant createdAt, Instant soldAt, Instant cancelledAt,
+                                   Instant expectedSaleDate,
                                    Double totalWeight, Double pricePerKg,
                                    Long creatorCooperativeId,
                                    List<ContributionDetailDTO> contributions) {
@@ -41,15 +43,16 @@ public class CollectiveSaleReportDTO {
         this.buyerId = buyerId;
         this.buyerName = buyerName;
         this.createdAt = createdAt;
-        this.soldAt = soldAt; 
+        this.soldAt = soldAt;
+        this.cancelledAt = cancelledAt;
         this.expectedSaleDate = expectedSaleDate;
         this.totalWeight = totalWeight;
         this.pricePerKg = pricePerKg;
         this.totalRevenue = totalWeight * pricePerKg;
-        this.status = soldAt == null ? "ACTIVE" : "SOLD";
         this.creatorCooperativeId = creatorCooperativeId;
         this.contributions = contributions;
         this.totalCooperatives = contributions != null ? contributions.size() : 0;
+        updateStatus();
     }
     
     public Long getCollectiveSaleId() { return collectiveSaleId; }
@@ -66,10 +69,26 @@ public class CollectiveSaleReportDTO {
     public String getMaterialName() { return materialName; }
     public void setMaterialName(String materialName) { this.materialName = materialName; }
     
-    public Instant getSoldAt() { return soldAt; } 
-    public void setSoldAt(Instant soldAt) { 
-        this.soldAt = soldAt;  
-        this.status = soldAt == null ? "ACTIVE" : "SOLD";
+    public Instant getSoldAt() { return soldAt; }
+    public void setSoldAt(Instant soldAt) {
+        this.soldAt = soldAt;
+        updateStatus();
+    }
+
+    public Instant getCancelledAt() { return cancelledAt; }
+    public void setCancelledAt(Instant cancelledAt) {
+        this.cancelledAt = cancelledAt;
+        updateStatus();
+    }
+
+    private void updateStatus() {
+        if (cancelledAt != null) {
+            this.status = "CANCELLED";
+        } else if (soldAt != null) {
+            this.status = "SOLD";
+        } else {
+            this.status = "ACTIVE";
+        }
     }
 
     public Long getBuyerId() { return buyerId; }

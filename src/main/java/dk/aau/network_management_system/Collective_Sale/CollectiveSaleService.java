@@ -454,6 +454,7 @@ public class CollectiveSaleService {
                                 (String) row[11]
                         );
                         dto.setSoldAt(row[8] != null ? ((java.sql.Timestamp) row[8]).toInstant() : null);
+                        dto.setCancelledAt(row[12] != null ? ((java.sql.Timestamp) row[12]).toInstant() : null);
                         return dto;
                     })
                     .collect(Collectors.toList());
