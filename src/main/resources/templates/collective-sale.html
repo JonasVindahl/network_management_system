@@ -266,6 +266,13 @@
                 <button class="btn-create" onclick="updatePrice()">Change Price</button>
               </div>
               <div class="form-card" style="margin-bottom:0">
+                <div class="form-title">Complete Sale</div>
+                <div id="completeError"></div>
+                <div id="completeSuccess"></div>
+                <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px">Mark the sale as completed (sold). Revenue will be recorded.</p>
+                <button class="btn-create" onclick="confirmSale()">Comfirm This Sale</button>
+              </div>
+              <div class="form-card" style="margin-bottom:0">
                 <div class="form-title">Delete Sale</div>
                 <div id="deleteError"></div>
                 <div id="deleteSuccess"></div>
@@ -815,6 +822,25 @@ async function updatePrice() {
   } catch (e) {
     showMsg('priceError', e.message, true);
   }
+}
+
+async function confirmSale() {
+  confirm2(
+          'Complete',
+          `Are you sure you want to complete #${selectedSaleId}? This complete the sale all participats.`,
+          async () => {
+            clearMsg('completeSaleError', 'completeSaleSucces');
+            try {
+              await api(`/api/collective-sale/${selectedSaleId}/complete`, {method: 'PATCH'});
+              showMsg('completeSaleSuccess', 'Complete sale success.', false);
+              document.getElementById('managePanel').style.display = 'none';
+              loadManageSaleList();
+              loadActiveSales();
+            } catch (e) {
+              showMsg('completeError', e.message, true);
+            }
+          }
+  )
 }
 
 async function deleteSale() {
