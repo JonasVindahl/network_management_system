@@ -1,77 +1,63 @@
 # Executive Summary
 
-Audience: project owners, supervisors, and anyone who needs the state of the system without reading the code.
-Scope: the `network_management_system` repository as observed on branch `main`, last commit 21 May 2026.
+A plain-language description of what the Network Management System is and what it does. It assumes no knowledge of the code. For technical depth, follow the links at the bottom.
 
-## What the system is
+## The problem it solves
 
-A cooperative waste management platform built as a single Spring Boot application. It lets several waste picker cooperatives register material weighings, track stock, sell materials individually or jointly with other cooperatives, generate sale reports as PDFs, publish notices, and motivate workers through a gamification layer with achievements, levels, and leaderboards.
+Waste picker cooperatives collect recyclable material and sell it to buyers. Before this system, the work that decides a cooperative's income is hard to see: how much each worker collected, how much material is in stock right now, what a fair price is, and whether it is better to sell alone or together with neighbouring cooperatives.
 
-The application serves both a JSON REST API and server-rendered HTML pages from the same deployment, backed by one PostgreSQL database.
+The Network Management System is one application that records that work and turns it into numbers people can act on. It serves several cooperatives at once, keeping each one's data separate while allowing them to trade jointly when it pays off.
+
+## Who uses it
+
+Three kinds of users, distinguished by the role stored on their account.
+
+Workers collect material. Their weighings are registered in the system, and they can see their own productivity, achievements, level, and position on the leaderboard.
+
+Managers run one cooperative. They see their own cooperative's stock, revenue, and worker performance, create and complete sales, join collective sales with other cooperatives, publish notices, and pull reports.
+
+Admins work across cooperatives. They register weighings, adjust the values used by the gamification layer, and read data for any cooperative by naming it explicitly.
+
+Everyone logs in with a CPF number and a password. The system issues a token that carries the role and the cooperative, and every later request is checked against it. A manager cannot read another cooperative's data even by asking for it directly.
+
+## What it does
+
+Material intake. When a bag of material is weighed, the system compares the reading with what that bag weighed last time and records only the difference. A bag that is topped up and re-weighed therefore counts once, not twice. The difference is added to the cooperative's stock in the same operation.
+
+Stock. Each cooperative has a running balance per material: total collected, total sold, and what is currently available. Everything else reads from that balance.
+
+Normal sales. A manager registers a sale to a buyer with a material, a weight, a price per kilo and an expected date. The sale can be edited while it is open, then either completed, which stamps the sale date and moves the weight out of stock, or cancelled.
+
+Collective sales. Several cooperatives sell one material together to reach a volume that commands a better price. One cooperative creates the sale and invites others. Each participant states how much it will contribute, and that amount is immediately set aside from its stock so it cannot be promised twice. Participants can adjust their contribution or leave, and the creator confirms the sale when it goes through. Revenue is split by contributed weight. If the sale is cancelled, every reservation is returned.
+
+Reports. Both kinds of sale produce a report, readable as data or downloadable as a PDF. The collective sale report shows each participant's contribution and share.
+
+Analytics. Managers get their cooperative's performance, per-worker productivity, revenue, stock by material, and recent sale prices for a material across cooperatives, which gives a reference point when negotiating.
+
+Notice board. Notices can be published to one cooperative or to everyone, with a priority and an expiry date. Content is cleaned of unsafe HTML before it is stored.
+
+Gamification. Workers earn achievements for collected weight, days worked, and achievements reached. Achievements give XP, XP gives levels, and levels feed a leaderboard. Multipliers adjust the weighting: a cooperative can make a specific material worth more XP, and each month every cooperative gets a random multiplier, which keeps the leaderboard from settling permanently. Three background jobs do this work on their own: one sets the monthly random multipliers, one evaluates achievements and recalculates levels every night, and one saves the weekly and monthly leaderboard standings.
+
+## How it is built
+
+One Spring Boot application on Java 25, storing everything in a PostgreSQL database of 23 tables. The same deployment serves two things: a REST API of roughly 60 endpoints, documented and browsable through Swagger, and four web pages rendered by the server (login, dashboard, normal sales, collective sales). PDF reports are produced from HTML templates.
+
+The code is about 7,500 lines across 96 files, organised by subject: authentication, analytics, buyers, materials and stock, normal sales, collective sales, reports, notice board, multipliers, and three gamification modules for achievements, levels, and leaderboards.
+
+The application is packaged as a Docker image. Pushing to the `main` branch builds it and deploys it to a self-hosted server automatically. Database credentials and the token signing key are supplied as environment variables at deploy time.
 
 ## Current state
 
-The system is feature complete for its core flows and is deployed automatically to a self-hosted server on every push to `main`. Scale in numbers:
+All the flows described above are implemented and running. The project has around 309 commits made between February and May 2026.
 
-- 96 Java files, roughly 7,500 lines of application code
-- 14 functional packages covering auth, analytics, buyers, materials, sales, collective sales, reports, notices, multipliers, three gamification modules, page routing, and configuration
-- 23 database tables plus seed data for levels and achievements
-- around 60 HTTP endpoints across REST and page routes, documented through Swagger UI
-- 4 Thymeleaf screens (login, dashboard, normal sale, collective sale) and 2 PDF report templates
-- 3 scheduled jobs (monthly random multiplier, daily achievement and level evaluation, weekly and monthly leaderboard snapshots)
-- 309 commits between February and May 2026
-
-## What works
-
-Authentication and role separation. Login issues a JWT carrying role, cooperative, and worker identity. Three roles exist: admin, manager, and worker. A shared `PermissionHelper` enforces that managers and workers act only within their own cooperative, while admins must name the cooperative they act on.
-
-Material intake and stock. Weighings are recorded as deltas against a per-bag state, so a re-weighed bag does not double count. The computed delta updates cooperative stock in the same flow.
-
-Normal sales. Managers create, edit, complete, or cancel sales. Completion stamps `sold_at` and subtracts stock. History and active sales are served through a combined endpoint that merges normal and collective sales.
-
-Collective sales. A cooperative creates a sale, invites others, and participants join with a contribution weight. Contribution changes reserve or release stock atomically. Cancelling returns all reserved stock.
-
-Reporting. Both sale types produce JSON reports and downloadable PDFs rendered from Thymeleaf templates.
-
-Gamification. Achievements, XP, levels, and leaderboard snapshots are computed by scheduled jobs, with cooperative and material multipliers affecting XP.
-
-Delivery. GitHub Actions builds and deploys through Docker Compose on a self-hosted Proxmox runner.
-
-## Main risks
-
-Three items are business relevant rather than merely technical.
-
-Secrets are committed to the repository. `src/main/resources/application.properties` contains a database host, username, password, and the JWT signing secret in plain text. Environment variables in Docker Compose override them at runtime, but the values are in git history and must be treated as compromised. Rotating the database password and the JWT secret, then removing the values from the file, is the highest priority action. A leaked JWT secret allows an attacker to forge tokens for any role, including admin.
-
-Collective sale completion deducts stock twice. When a cooperative sets its contribution weight, `CollectiveSaleService.updateContribution` already reserves the stock by subtracting it from `current_stock_kg`. When the creator later confirms the sale, `confirmCollectiveSale` calls `StockRepository.recordSale`, which subtracts the same weight from `current_stock_kg` a second time. Two outcomes are possible, both wrong: if the cooperative holds enough remaining stock, its balance is reduced by twice the sold amount; if it does not, the update matches zero rows, that return value is not checked, and the sale is marked sold with `total_sold_kg` never updated while revenue shares are still written. Stock balances feed analytics, sale eligibility, and the dashboard, so this corrupts numbers the cooperatives act on. The fix is to move the reserved amount into `total_sold_kg` at completion without subtracting `current_stock_kg` again, and to check the affected row count.
-
-There is effectively no automated test coverage. One Spring Boot context test exists, and the Docker build runs `package -DskipTests`, so the CI pipeline never executes tests before deploying. Stock accounting, authorization rules, and sale lifecycles are currently verified only by hand.
-
-## Secondary findings
-
-- JWTs are accepted through a `token` query parameter, which leaks into browser history, proxy logs, and referrer headers.
-- `server.error.include-message=always` and `security=DEBUG` logging are production-unsafe defaults.
-- `GET /api/performance` accepts a date range that the underlying query ignores, so filtered results are silently wrong.
-- Normal sales do not reserve stock at creation, only check it at completion, so two open sales can promise the same stock.
-- Many services map SQL results by column index, which breaks silently when a query changes.
-- The UI mixes Danish and English text, and two competing collective sale pages exist (a Thymeleaf template and an older static tester).
-- `Planning/Known Gaps and Follow-ups` predates the collective sale completion feature and the analytics refactor, so parts of it no longer match the code. The findings above were re-verified against the current source.
-
-## Recommended sequence
-
-1. Rotate the database password and JWT secret, move both to environment variables, and purge them from the properties file.
-2. Correct the stock accounting in collective sale completion so reserved weight is not subtracted a second time.
-3. Make CI run `./mvnw test` as a separate step before the image build, then add tests for stock accounting and authorization first, since those carry the money and access risk.
-4. Harden configuration: remove query parameter tokens, disable error message exposure, and lower the security log level for production.
-5. Fix the remaining defects listed above, starting with the ignored date filter on `/api/performance`.
-6. Consolidate the frontend: one collective sale page, one UI language.
-
-Items 1 to 3 are the ones worth escalating. The rest are normal cleanup.
+Open items, including the ones worth prioritising, are tracked in [[Planning/Known Gaps and Follow-ups|Known Gaps and Follow-ups]].
 
 ## Related Notes
 
 - [[Architecture/System Overview|System Overview]]
-- [[Architecture/Runtime and Security|Runtime and Security]]
-- [[Planning/Known Gaps and Follow-ups|Known Gaps and Follow-ups]]
+- [[API/Authentication and Roles|Authentication and Roles]]
+- [[Domain/Normal Sales|Normal Sales]]
+- [[Domain/Collective Sales|Collective Sales]]
+- [[Domain/Gamification|Gamification]]
 - [[Planning/Code Inventory|Code Inventory]]
 - [[Operations/Build Test Deploy|Build, Test, and Deploy]]
