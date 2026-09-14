@@ -4,6 +4,7 @@ This vault documents the Network Management System codebase in English.
 
 ## Start Here
 
+- [[Executive Summary]]
 - [[Architecture/System Overview|System Overview]]
 - [[Architecture/Runtime and Security|Runtime and Security]]
 - [[Architecture/Data Access and Persistence|Data Access and Persistence]]

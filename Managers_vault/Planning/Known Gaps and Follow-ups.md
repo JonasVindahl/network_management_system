@@ -11,8 +11,8 @@ These are observed from the code and configuration. They are not guesses.
 
 ## API and Authorization
 
-- Collective sales have create, invite, join, contribute, update, leave, and cancel endpoints, but no observed endpoint to complete a collective sale and set `sold_at`.
-- `GET /api/getLast5Sales` blocks workers but does not scope manager requests to the manager's cooperative.
+- Collective sale completion (`PATCH /api/collective-sale/{saleId}/complete`) now exists, but it double counts stock: `updateContribution` already reserves the weight through `adjustStock`, and `confirmCollectiveSale` subtracts it again through `StockRepository.recordSale`. The `recordSale` row count is also unchecked, so an insufficient-stock case silently leaves `total_sold_kg` unchanged while the sale is marked sold.
+- `GET /api/cooperative/lastsales/all` returns last sales across every cooperative to any manager. This looks intentional as a price benchmark, but it should be confirmed as intended.
 - Admin multiplier writes can pass a null `cooperativeId` through `determineTargetCooperativeForWrite`; the service currently lets admins through ownership validation before persistence.
 - `GET /api/performance` accepts `startDate` and `endDate`, but the repository query does not use them.
 
