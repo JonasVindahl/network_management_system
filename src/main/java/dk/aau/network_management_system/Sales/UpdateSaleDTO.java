@@ -2,14 +2,17 @@ package dk.aau.network_management_system.Sales;
 
 import java.time.Instant;
 
+import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.Positive;
 
 public class UpdateSaleDTO {
 
     @Positive (message = "Weight must be positive")
+    @DecimalMax(value = "1000000", message = "Weight must not exceed 1,000,000 kg")
     private Double weight;
 
     @Positive (message = "Price per Kilo must be positive")
+    @DecimalMax(value = "100000", message = "Price per Kilo must not exceed 100,000")
     private Double priceKg;
 
     private Long materialId;

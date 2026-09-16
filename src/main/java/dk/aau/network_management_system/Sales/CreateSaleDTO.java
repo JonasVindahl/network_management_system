@@ -1,5 +1,6 @@
 package dk.aau.network_management_system.Sales;
 
+import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.time.Instant;
@@ -11,10 +12,12 @@ public class CreateSaleDTO {
 
     @NotNull(message = "weight is required")
     @Positive(message = "weight must be positive")
+    @DecimalMax(value = "1000000", message = "weight must not exceed 1,000,000 kg")
     private Double weight;
 
     @NotNull(message = "priceKg is required")
     @Positive(message = "priceKg must be positive")
+    @DecimalMax(value = "100000", message = "priceKg must not exceed 100,000")
     private Double priceKg;
 
     @NotNull(message = "buyerId is required")
